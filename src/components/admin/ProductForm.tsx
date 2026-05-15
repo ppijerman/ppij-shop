@@ -76,7 +76,7 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
       </div>
 
       <div style={{ marginBottom: 32 }}>
-        <label style={labelStyle}>Sizes & Stock</label>
+        <label style={labelStyle}>Sizes</label>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
           {['S', 'M', 'L', 'XL', 'XXL', 'ONE SIZE'].map(s => (
             <button 
