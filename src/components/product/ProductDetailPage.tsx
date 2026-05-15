@@ -35,6 +35,9 @@ export default function ProductDetailPage({ product, images, products }: Product
   const currentPrice = currentVariant?.price ?? getProductBasePrice(product.id);
   const currentOriginalPrice = currentVariant?.original_price ?? getProductOriginalPrice(product.id);
 
+  const availableQty = product.stock[selColor.name]?.[selSize] || 0;
+  const isOutOfStock = availableQty <= 0;
+
   useEffect(() => {
     setSelColor(getUniqueColors(product.id)[0]);
     setSelSize(selSize);
@@ -44,6 +47,7 @@ export default function ProductDetailPage({ product, images, products }: Product
   }, [product.id]);
 
   const handleAddToCart = () => {
+    if (isOutOfStock) return;
     addToCart(product, qty, selColor, selSize);
     showToast(`✦ added · ${product.name}`);
   };
@@ -109,8 +113,18 @@ export default function ProductDetailPage({ product, images, products }: Product
             <span style={{ color: 'var(--orange)', letterSpacing: '2px', fontSize: 15 }}>★★★★★</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>4.9 · 124 reviews</span>
             <span style={{ width: 1, height: 14, background: 'var(--line)' }} />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#1F8A5B', letterSpacing: '0.18em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#1F8A5B' }} /> in stock
+            <span style={{ 
+              fontFamily: 'var(--font-mono)', 
+              fontSize: 11, 
+              color: isOutOfStock ? '#f44336' : '#1F8A5B', 
+              letterSpacing: '0.18em', 
+              textTransform: 'uppercase', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 6 
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: isOutOfStock ? '#f44336' : '#1F8A5B' }} /> 
+              {isOutOfStock ? 'out of stock' : `in stock (${availableQty})`}
             </span>
           </div>
 
@@ -163,6 +177,11 @@ export default function ProductDetailPage({ product, images, products }: Product
               <button onClick={() => setQty(q => q + 1)} style={{ width: 46, height: 54, background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}>+</button>
             </div>
             <AddToCartBtn price={currentPrice * qty} onClick={handleAddToCart} />
+            <AddToCartBtn 
+              price={product.price * qty} 
+              onClick={handleAddToCart} 
+              disabled={isOutOfStock}
+            />
             <button style={{ width: 54, height: 54, background: 'transparent', border: '1px solid var(--line)', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--black)' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
             </button>
@@ -258,16 +277,32 @@ export default function ProductDetailPage({ product, images, products }: Product
   );
 }
 
-function AddToCartBtn({ price, onClick }: { price: number; onClick: () => void }) {
+function AddToCartBtn({ price, onClick, disabled }: { price: number; onClick: () => void; disabled?: boolean }) {
   const [hovered, setHovered] = useState(false);
   return (
     <button
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
+      disabled={disabled}
+      onMouseEnter={() => !disabled && setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{ flex: 1, background: hovered ? 'var(--orange)' : 'var(--black)', color: hovered ? 'var(--black)' : 'var(--cream)', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: 'pointer', borderRadius: 999, fontWeight: 600, transition: 'all 0.2s' }}
+      style={{ 
+        flex: 1, 
+        background: disabled ? 'var(--line)' : (hovered ? 'var(--orange)' : 'var(--black)'), 
+        color: disabled ? 'var(--muted)' : (hovered ? 'var(--black)' : 'var(--cream)'), 
+        border: 'none', 
+        padding: '15px', 
+        fontFamily: 'var(--font-mono)', 
+        fontSize: 12, 
+        letterSpacing: '0.22em', 
+        textTransform: 'uppercase', 
+        cursor: disabled ? 'not-allowed' : 'pointer', 
+        borderRadius: 999, 
+        fontWeight: 600, 
+        transition: 'all 0.2s' 
+      }}
     >
-      add to cart — €{price.toFixed(2)} ↗
+      {disabled ? 'sold out' : `add to cart — €${price.toFixed(2)} ↗`}
     </button>
   );
 }
+

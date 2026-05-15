@@ -21,10 +21,21 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
 
   const [sizes, setSizes] = useState<string[]>(initialData?.sizes || []);
   const [colors, setColors] = useState<Color[]>(initialData?.colors || []);
+  const [stock, setStock] = useState<Record<string, Record<string, number>>>(initialData?.stock || {});
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleStockChange = (color: string, size: string, value: number) => {
+    setStock(prev => ({
+      ...prev,
+      [color]: {
+        ...(prev[color] || {}),
+        [size]: value
+      }
+    }));
   };
 
   return (
@@ -65,7 +76,7 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
       </div>
 
       <div style={{ marginBottom: 32 }}>
-        <label style={labelStyle}>Sizes & Stock</label>
+        <label style={labelStyle}>Sizes</label>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
           {['S', 'M', 'L', 'XL', 'XXL', 'ONE SIZE'].map(s => (
             <button 
@@ -142,6 +153,48 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
         </div>
       </div>
 
+      {(colors.length > 0 && sizes.length > 0) && (
+        <div style={{ marginBottom: 32 }}>
+          <label style={labelStyle}>Inventory & Stock</label>
+          <div style={{ marginTop: 12, border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: '#f9f9f9', borderBottom: '1px solid var(--line)' }}>
+                  <th style={{ padding: 12, textAlign: 'left', fontFamily: 'var(--font-mono)', color: 'var(--muted)' }}>Color / Size</th>
+                  {sizes.map(s => (
+                    <th key={s} style={{ padding: 12, textAlign: 'center', fontFamily: 'var(--font-mono)', color: 'var(--muted)' }}>{s}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {colors.map(c => (
+                  <tr key={c.name} style={{ borderBottom: '1px solid var(--line)' }}>
+                    <td style={{ padding: 12, fontWeight: 600 }}>{c.name || 'Unnamed Color'}</td>
+                    {sizes.map(s => (
+                      <td key={s} style={{ padding: 8 }}>
+                        <input 
+                          type="number"
+                          value={stock[c.name]?.[s] || 0}
+                          onChange={(e) => handleStockChange(c.name, s, parseInt(e.target.value) || 0)}
+                          style={{ 
+                            width: '100%', 
+                            padding: '6px', 
+                            textAlign: 'center', 
+                            border: '1px solid var(--line)', 
+                            borderRadius: 4,
+                            fontFamily: 'var(--font-mono)'
+                          }}
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       <div style={{ marginBottom: 40 }}>
         <label style={labelStyle}>Images</label>
         <div style={{ 
@@ -158,7 +211,7 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
       </div>
 
       <button 
-        onClick={() => onSubmit({ ...formData, sizes, colors })}
+        onClick={() => onSubmit({ ...formData, sizes, colors, stock })}
         style={{
           width: '100%',
           padding: '16px',

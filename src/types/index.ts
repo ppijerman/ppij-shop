@@ -21,6 +21,7 @@ export interface Product {
   images: string[];
   primaryImg: PrimaryImg;
   featurePos: { x: number; y: number };
+  stock: Record<string, Record<string, number>>;
 }
 
 export interface CartItem extends Product {
