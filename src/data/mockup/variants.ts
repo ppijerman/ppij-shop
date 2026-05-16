@@ -69,6 +69,15 @@ export function getSizesForColor(productId: number, colorName: string) {
     .map(v => ({ size: v.size, stock: v.stock, inStock: v.stock > 0, variantId: v.id}))
 }
 
+export function getSizesById(productId: number): string[] {
+  const variants = PRODUCT_VARIANTS.filter(v => v.id === productId)
+  const sizes = new Array<string>()
+  variants.forEach(v => {
+    if (!sizes.includes(v.size)) sizes.push(v.size)
+  })
+return sizes
+}
+
 export function getVariant(productId: number, size: string, colorName: string): ProductVariant | null {
   return PRODUCT_VARIANTS.find(v =>
     v.product_id === productId &&
