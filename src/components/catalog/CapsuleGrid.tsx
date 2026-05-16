@@ -2,13 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Product, Color } from '@/types';
+import { Product } from '@/data/mockup/products';
 import { useTweaks } from '@/context/TweaksContext';
 import ProductCrop from '@/components/product/ProductCrop';
-
-function getImgSrc(primaryImg: string) {
-  return primaryImg === 'tshirt_grid' ? '/assets/v4/tshirt-grid.jpeg' : '/assets/v4/totebag-grid.jpeg';
-}
 
 interface CapsuleGridProps {
   products: Product[];
@@ -17,7 +13,6 @@ interface CapsuleGridProps {
 
 export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps) {
   const [hoveredId, setHoveredId] = useState<number | null>(null);
-  const [selectedColors, setSelectedColors] = useState<Record<number, Color>>({});
   const { tweaks } = useTweaks();
 
   return (
@@ -33,9 +28,8 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: tweaks.gridGap }}>
           {products.map((product, i) => {
-            const selColor = selectedColors[product.id] ?? product.colors[0];
             const isHovered = hoveredId === product.id;
-            const imgSrc = getImgSrc(product.primaryImg);
+            const categoryLabel = product.category === 'TOTEBAG' ? 'TOTE BAG' : 'T-SHIRT';
 
             return (
               <div
@@ -46,7 +40,7 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
               >
                 <Link href={`/product/${product.id}`} style={{ textDecoration: 'none', display: 'block' }}>
                   <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--cream-2)' }}>
-                    <ProductCrop src={imgSrc} pos={product.featurePos} height={340} scale={2.4} />
+                    <ProductCrop src={product.primary_image} height={340} scale={2.4} />
                     {tweaks.showBadges && product.tag && (
                       <div style={{ position: 'absolute', top: 10, left: 10, background: 'var(--cream)', padding: '4px 9px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--orange-deep)', border: '1px solid var(--orange-deep)' }}>
                         {product.tag}
@@ -67,36 +61,19 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
 
                   <div style={{ padding: '14px 4px 4px', textAlign: 'center' }}>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 5 }}>
-                      No. {product.no} · {product.category}
+                      {categoryLabel}
                     </div>
                     <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--black)', letterSpacing: '0.03em', lineHeight: 1.1 }}>
                       {product.name.toUpperCase()}
                     </div>
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--ink)', marginTop: 6, fontWeight: 500 }}>
                       €{product.price.toFixed(2)}
-                      {product.originalPrice && (
-                        <span style={{ color: 'var(--muted)', textDecoration: 'line-through', marginLeft: 8, fontSize: 11 }}>€{product.originalPrice.toFixed(2)}</span>
+                      {product.original_price && (
+                        <span style={{ color: 'var(--muted)', textDecoration: 'line-through', marginLeft: 8, fontSize: 11 }}>€{product.original_price.toFixed(2)}</span>
                       )}
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginTop: 10 }}>
-                      {product.sizes.map(s => (
-                        <span key={s} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--muted)', letterSpacing: '0.1em' }}>{s}</span>
-                      ))}
                     </div>
                   </div>
                 </Link>
-
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 8, paddingBottom: 4 }}>
-                  {product.colors.map(c => (
-                    <button
-                      key={c.hex}
-                      onClick={() => setSelectedColors(s => ({ ...s, [product.id]: c }))}
-                      style={{ width: 12, height: 12, borderRadius: '50%', background: c.hex, border: 'none', outline: selColor.hex === c.hex ? '1.5px solid var(--black)' : '1px solid var(--line)', outlineOffset: 2, cursor: 'pointer', padding: 0, transition: 'transform 0.15s' }}
-                      onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.3)')}
-                      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-                    />
-                  ))}
-                </div>
               </div>
             );
           })}

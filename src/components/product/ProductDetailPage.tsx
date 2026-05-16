@@ -2,19 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Product, Color } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import ProductCrop from './ProductCrop';
-
-function getImgSrc(primaryImg: string) {
-  return primaryImg === 'tshirt_grid' ? '/assets/v4/tshirt-grid.jpeg' : '/assets/v4/totebag-grid.jpeg';
-}
+import { Product, getProductPrimaryImage } from '@/data/mockup/products';
+import { ProductImage } from '@/data/mockup/images';
+import { getSizesById, getSizesForColor, getUniqueColors } from '@/data/mockup/variants';
 
 interface ProductDetailPageProps {
-  product: Product;
-  products: Product[];
+  product: Product
+  images: ProductImage[]
+  products: Product[]
 }
 
 const TABS = [['description', 'Detail Cerita'], ['specs', 'Spesifikasi'], ['care', 'Cara Merawat'], ['shipping', 'Pengiriman']] as const;
@@ -22,22 +20,21 @@ type Tab = typeof TABS[number][0];
 
 const TRUST_BADGES = [['✨', 'Free shipping', 'EU only'], ['↻', '7-day return', 'jika cacat'], ['🔒', 'Secure pay', 'PayPal / Card']];
 
-export default function ProductDetailPage({ product, products }: ProductDetailPageProps) {
-  const [selColor, setSelColor] = useState<Color>(product.colors[0]);
-  const [selSize, setSelSize] = useState(product.sizes[0]);
+export default function ProductDetailPage({ product, images, products }: ProductDetailPageProps) {
+  const [selColor, setSelColor] = useState(getUniqueColors(product.id)[0]);
+  const [selSize, setSelSize] = useState(getSizesForColor(product.id, selColor.name)[0].size);
   const [qty, setQty] = useState(1);
   const [activeTab, setActiveTab] = useState<Tab>('description');
   const [activeImg, setActiveImg] = useState(0);
   const { addToCart } = useCart();
   const { showToast } = useToast();
 
-  const imgSrc = getImgSrc(product.primaryImg);
-  const altPositions = [product.featurePos, { x: 50, y: 50 }, { x: product.featurePos.x + 10, y: product.featurePos.y - 5 }];
+  const imgSrc = product.primary_image;
   const related = products.filter(p => p.id !== product.id).slice(0, 4);
 
   useEffect(() => {
-    setSelColor(product.colors[0]);
-    setSelSize(product.sizes[0]);
+    setSelColor(getUniqueColors(product.id)[0]);
+    setSelSize(selSize);
     setQty(1);
     setActiveImg(0);
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -64,27 +61,37 @@ export default function ProductDetailPage({ product, products }: ProductDetailPa
         <Link href="/catalog" style={{ textDecoration: 'none', color: 'inherit' }}>shop</Link>
         <span>/</span>
         <span style={{ color: 'var(--black)' }}>{product.category}</span>
-        <span>/</span>
-        <span style={{ color: 'var(--orange-deep)' }}>No. {product.no}</span>
       </div>
 
       <div style={{ maxWidth: 1440, margin: '0 auto', padding: '22px 28px 0', display: 'grid', gridTemplateColumns: '1.15fr 1fr', gap: 48 }}>
         <div>
           <div style={{ position: 'relative', background: 'var(--cream-2)', overflow: 'hidden', aspectRatio: '4/5' }}>
-            <div style={{ width: '100%', height: '100%', backgroundImage: `url(${imgSrc})`, backgroundSize: '260%', backgroundPosition: `${altPositions[activeImg].x}% ${altPositions[activeImg].y}%`, backgroundRepeat: 'no-repeat', transition: 'background-position 0.4s ease' }} />
+          <img
+            src={imgSrc}
+            alt={product.name}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.3s ease' }}
+          />
             <div style={{ position: 'absolute', top: 18, left: 18, display: 'flex', gap: 8 }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink)', letterSpacing: '0.22em', textTransform: 'uppercase', background: 'var(--cream)', padding: '5px 10px' }}>No. {product.no}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink)', letterSpacing: '0.22em', textTransform: 'uppercase', background: 'var(--cream)', padding: '5px 10px' }}>{product.category}</span>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--cream)', letterSpacing: '0.22em', textTransform: 'uppercase', background: 'var(--black)', padding: '5px 10px' }}>{product.category}</span>
             </div>
             {product.tag && <div style={{ position: 'absolute', top: 18, right: 18, background: 'var(--orange)', color: 'var(--black)', padding: '6px 14px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', fontWeight: 700 }}>{product.tag}</div>}
             <div style={{ position: 'absolute', bottom: 18, right: 18, fontFamily: 'var(--font-script)', fontSize: 38, color: 'var(--cream)', textShadow: '0 2px 8px rgba(0,0,0,0.25)', transform: 'rotate(-4deg)' }}>vol. 01</div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 8 }}>
-            {altPositions.map((pos, i) => (
-              <button key={i} onClick={() => setActiveImg(i)} style={{ aspectRatio: '1', border: activeImg === i ? '2px solid var(--orange)' : '1px solid var(--line)', padding: 0, cursor: 'pointer', background: 'var(--cream-2)', overflow: 'hidden', outline: 'none' }}>
-                <div style={{ width: '100%', height: '100%', backgroundImage: `url(${imgSrc})`, backgroundSize: '260%', backgroundPosition: `${pos.x}% ${pos.y}%`, backgroundRepeat: 'no-repeat' }} />
-              </button>
-            ))}
+          {images.map((img, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveImg(i)}
+              style={{ aspectRatio: '1', border: activeImg === i ? '2px solid var(--orange)' : '1px solid var(--line)', padding: 0, cursor: 'pointer', background: 'var(--cream-2)', overflow: 'hidden', outline: 'none' }}
+            >
+              <img
+                src={img.url}
+                alt={`${product.name} view ${i + 1}`}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </button>
+          ))}
           </div>
         </div>
 
@@ -106,10 +113,10 @@ export default function ProductDetailPage({ product, products }: ProductDetailPa
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginTop: 18 }}>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: 54, color: 'var(--black)' }}>€{product.price.toFixed(2)}</span>
-            {product.originalPrice && (
+            {product.original_price && (
               <>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--muted)', textDecoration: 'line-through' }}>€{product.originalPrice.toFixed(2)}</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, background: 'var(--orange)', color: 'var(--black)', padding: '4px 9px', letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 700 }}>−{Math.round((1 - product.price / product.originalPrice) * 100)}%</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--muted)', textDecoration: 'line-through' }}>€{product.original_price.toFixed(2)}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, background: 'var(--orange)', color: 'var(--black)', padding: '4px 9px', letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 700 }}>−{Math.round((1 - product.price / product.original_price) * 100)}%</span>
               </>
             )}
           </div>
@@ -121,7 +128,7 @@ export default function ProductDetailPage({ product, products }: ProductDetailPa
               warna · <span style={{ color: 'var(--black)' }}>{selColor.name}</span>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              {product.colors.map(c => (
+              {getUniqueColors(product.id).map(c => (
                 <button key={c.hex} onClick={() => setSelColor(c)} style={{ width: 36, height: 36, borderRadius: '50%', background: c.hex, border: 'none', outline: selColor.hex === c.hex ? '2px solid var(--orange)' : '1px solid var(--line)', outlineOffset: 3, cursor: 'pointer', transition: 'transform 0.15s' }}
                   onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
                   onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
@@ -130,14 +137,14 @@ export default function ProductDetailPage({ product, products }: ProductDetailPa
             </div>
           </div>
 
-          {product.sizes[0] !== 'ONE SIZE' ? (
+          {getSizesById(product.id)[0] !== 'ONE SIZE' ? (
             <div style={{ marginTop: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase' }}>size · <span style={{ color: 'var(--black)' }}>{selSize}</span></span>
                 <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--orange-deep)', textDecoration: 'underline' }}>size guide ↗</button>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {product.sizes.map(s => (
+                {getSizesById(product.id).map(s => (
                   <button key={s} onClick={() => setSelSize(s)} style={{ minWidth: 50, padding: '11px 14px', border: '1px solid', borderColor: selSize === s ? 'var(--black)' : 'var(--line)', background: selSize === s ? 'var(--black)' : 'transparent', color: selSize === s ? 'var(--cream)' : 'var(--ink)', fontFamily: 'var(--font-mono)', fontSize: 13, cursor: 'pointer', transition: 'all 0.15s', fontWeight: 600 }}>{s}</button>
                 ))}
               </div>
@@ -229,14 +236,13 @@ export default function ProductDetailPage({ product, products }: ProductDetailPa
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 22 }}>
           {related.map(p => {
-            const src = p.primaryImg === 'tshirt_grid' ? '/assets/v4/tshirt-grid.jpeg' : '/assets/v4/totebag-grid.jpeg';
+            const src = p.primary_image === 'tshirt_grid' ? '/assets/v4/tshirt-grid.jpeg' : '/assets/v4/totebag-grid.jpeg';
             return (
               <Link key={p.id} href={`/product/${p.id}`} style={{ textDecoration: 'none', cursor: 'pointer' }}>
                 <div style={{ background: 'var(--cream-2)', overflow: 'hidden' }}>
-                  <ProductCrop src={src} pos={p.featurePos} height={300} scale={2.4} />
+                  <ProductCrop src={src} height={300} scale={2.4} />
                 </div>
                 <div style={{ padding: '12px 4px 0', textAlign: 'center' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase' }}>No. {p.no} · {p.category}</div>
                   <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, color: 'var(--black)', marginTop: 4 }}>{p.name.toUpperCase()}</div>
                   <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, marginTop: 4, color: 'var(--ink)' }}>€{p.price.toFixed(2)}</div>
                 </div>

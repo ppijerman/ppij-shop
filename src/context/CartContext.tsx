@@ -1,11 +1,26 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { CartItem, Color, Product } from '@/types';
+import { createContext, useContext, useState, useCallback, ReactNode, useMemo } from 'react';
+import { Product, getProductById } from '@/data/mockup/products';
+import { getVariant, getVariantById, getUniqueColors, getSizesById } from '@/data/mockup/variants';
+
+// Simplified interface to match the new mockup data and user preferences
+export interface CartItem {
+  cartId: number;
+  qty: number;
+  // Derived fields for UI
+  id: number;
+  category: string;
+  name: string;
+  price: number;
+  color: { name: string; hex: string };
+  size: string;
+  primary_image: string;
+}
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (product: Product, qty?: number, color?: Color | null, size?: string | null) => void;
+  addToCart: (product: Product, qty?: number, color?: { name: string; hex: string } | null, size?: string | null) => void;
   updateCart: (cartId: number, delta: number) => void;
   removeFromCart: (cartId: number) => void;
   cartCount: number;
@@ -14,35 +29,70 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | null>(null);
 
+interface CartStateItem {
+  cartId: number;
+  variantId: number;
+  qty: number;
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartStateItem[]>([]);
 
   const addToCart = useCallback((
     product: Product,
     qty = 1,
-    color: Color | null = null,
+    color: { name: string; hex: string } | null = null,
     size: string | null = null,
   ) => {
-    setCart(prev => {
-      const c = color ?? product.colors[0];
-      const s = size ?? product.sizes[0];
-      const key = `${product.id}-${c.hex}-${s}`;
-      const existing = prev.find(i => i.cartKey === key);
-      if (existing) return prev.map(i => i.cartKey === key ? { ...i, qty: i.qty + qty } : i);
-      return [...prev, { ...product, qty, cartId: Date.now() + Math.random(), cartKey: key, color: c, size: s }];
+    const c = color ?? getUniqueColors(product.id)[0];
+    const s = size ?? getSizesById(product.id)[0];
+    const variant = getVariant(product.id, s, c.name);
+    
+    if (!variant) {
+      console.warn(`Variant not found for product ${product.id}, size ${s}, color ${c.name}`);
+      return;
+    }
+
+    setItems(prev => {
+      const existing = prev.find(i => i.variantId === variant.id);
+      if (existing) {
+        return prev.map(i => i.variantId === variant.id ? { ...i, qty: i.qty + qty } : i);
+      }
+      return [...prev, { cartId: Date.now() + Math.random(), variantId: variant.id, qty }];
     });
   }, []);
 
   const updateCart = useCallback((cartId: number, delta: number) => {
-    setCart(prev => prev.map(i => i.cartId === cartId ? { ...i, qty: Math.max(1, i.qty + delta) } : i));
+    setItems(prev => prev.map(i => i.cartId === cartId ? { ...i, qty: Math.max(1, i.qty + delta) } : i));
   }, []);
 
   const removeFromCart = useCallback((cartId: number) => {
-    setCart(prev => prev.filter(i => i.cartId !== cartId));
+    setItems(prev => prev.filter(i => i.cartId !== cartId));
   }, []);
 
-  const cartCount = cart.reduce((s, i) => s + i.qty, 0);
-  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const cart = useMemo(() => {
+    return items.map(item => {
+      const variant = getVariantById(item.variantId);
+      const product = variant ? getProductById(variant.product_id) : null;
+      
+      if (!variant || !product) return null;
+
+      return {
+        cartId: item.cartId,
+        qty: item.qty,
+        id: product.id,
+        category: product.category === 'TOTEBAG' ? 'TOTE BAG' : 'T-SHIRT',
+        name: product.name,
+        price: product.price,
+        color: { name: variant.color_name, hex: variant.color_hex },
+        size: variant.size,
+        primary_image: product.primary_image,
+      } as CartItem;
+    }).filter((i): i is CartItem => i !== null);
+  }, [items]);
+
+  const cartCount = useMemo(() => cart.reduce((s, i) => s + i.qty, 0), [cart]);
+  const total = useMemo(() => cart.reduce((s, i) => s + i.price * i.qty, 0), [cart]);
 
   return (
     <CartContext.Provider value={{ cart, addToCart, updateCart, removeFromCart, cartCount, total }}>

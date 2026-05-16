@@ -5,10 +5,6 @@ import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import ProductCrop from '@/components/product/ProductCrop';
 
-function getImgSrc(primaryImg: string) {
-  return primaryImg === 'tshirt_grid' ? '/assets/v4/tshirt-grid.jpeg' : '/assets/v4/totebag-grid.jpeg';
-}
-
 export default function CartView() {
   const { cart, updateCart, removeFromCart, total } = useCart();
   const { showToast } = useToast();
@@ -35,14 +31,13 @@ export default function CartView() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 50, alignItems: 'start' }}>
             <div>
               {cart.map(item => {
-                const imgSrc = getImgSrc(item.primaryImg);
                 return (
                   <div key={item.cartId} style={{ display: 'flex', gap: 16, alignItems: 'center', padding: '18px 0', borderBottom: '1px solid var(--line)' }}>
                     <div style={{ width: 84, height: 84, background: 'var(--cream-2)', flexShrink: 0, overflow: 'hidden' }}>
-                      <ProductCrop src={imgSrc} pos={item.featurePos} height={84} scale={2.4} />
+                      <ProductCrop src={item.primary_image} height={84} scale={2.4} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.22em', color: 'var(--muted)', textTransform: 'uppercase' }}>No. {item.no} · {item.category}</div>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.22em', color: 'var(--muted)', textTransform: 'uppercase' }}>{item.category}</div>
                       <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--black)', marginTop: 4 }}>{item.name.toUpperCase()}</div>
                       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', marginTop: 4 }}>{item.color?.name} · size {item.size}</div>
                     </div>
