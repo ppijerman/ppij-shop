@@ -1,14 +1,14 @@
 import { notFound } from "next/navigation";
-import { PRODUCTS } from "@/data/products";
+import { PRODUCTS } from "@/data/mockup/products";
 import ProductDetailPage from "@/components/product/ProductDetailPage";
-
-export function generateStaticParams() {
-  return PRODUCTS.map((p) => ({ id: p.id.toString() }));
-}
+import { getProductImages } from "@/data/mockup/images";
 
 export default async function ProductPage({ params }: { params: { id: string } }) {
   const { id } = await params;
   const product = PRODUCTS.find((p) => p.id === parseInt(id));
   if (!product) notFound();
-  return <ProductDetailPage product={product} products={PRODUCTS} />;
+
+  const images = await getProductImages(product.id)
+
+  return <ProductDetailPage product={product} images={images} products={PRODUCTS} />;
 }

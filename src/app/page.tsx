@@ -7,8 +7,7 @@ import Editorial from "@/components/home/Editorial";
 import PhotoStrip from "@/components/home/PhotoStrip";
 import CtaStrip from "@/components/home/CtaStrip";
 import QuickViewModal from "@/components/product/QuickViewModal";
-import { PRODUCTS } from "@/data/products";
-import { Product } from "@/types";
+import { PRODUCTS, Product } from "@/data/mockup/products";
 
 export default function HomePage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);

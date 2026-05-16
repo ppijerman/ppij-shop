@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Product, Color } from '@/types';
+import { Product } from '@/data/mockup/products';
+import { getUniqueColors, getSizesById, getSizesForColor } from '@/data/mockup/variants';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import ProductCrop from './ProductCrop';
@@ -12,17 +13,14 @@ interface QuickViewModalProps {
   onClose: () => void;
 }
 
-function getImgSrc(primaryImg: string) {
-  return primaryImg === 'tshirt_grid' ? '/assets/v4/tshirt-grid.jpeg' : '/assets/v4/totebag-grid.jpeg';
-}
-
 export default function QuickViewModal({ product, onClose }: QuickViewModalProps) {
-  const [selColor, setSelColor] = useState<Color>(product.colors[0]);
-  const [selSize, setSelSize] = useState(product.sizes[0]);
+  const [selColor, setSelColor] = useState(getUniqueColors(product.id)[0]);
+  const [selSize, setSelSize] = useState(getSizesForColor(product.id, selColor.name)[0].size);
   const [qty, setQty] = useState(1);
   const { addToCart } = useCart();
   const { showToast } = useToast();
-  const imgSrc = getImgSrc(product.primaryImg);
+  
+  const categoryLabel = product.category === 'TOTEBAG' ? 'TOTE BAG' : 'T-SHIRT';
 
   const handleAdd = () => {
     addToCart(product, qty, selColor, selSize);
@@ -41,8 +39,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
       >
         <div style={{ display: 'grid', gridTemplateColumns: '1.05fr 0.95fr' }}>
           <div style={{ background: 'var(--cream-2)', position: 'relative', minHeight: 520 }}>
-            <ProductCrop src={imgSrc} pos={product.featurePos} height={560} scale={2.4} />
-            <div style={{ position: 'absolute', top: 18, left: 18, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink)', letterSpacing: '0.22em', textTransform: 'uppercase', background: 'var(--cream)', padding: '4px 10px' }}>No. {product.no}</div>
+            <ProductCrop src={product.primary_image} height={560} scale={2.4} />
             {product.tag && <div style={{ position: 'absolute', top: 18, right: 18, background: 'var(--orange)', color: 'var(--black)', padding: '5px 12px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase' }}>{product.tag}</div>}
           </div>
 
@@ -52,7 +49,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
             </button>
 
             <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 8 }}>{product.category} · {product.subtitle}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 8 }}>{categoryLabel} · {product.subtitle}</div>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 42, color: 'var(--black)', letterSpacing: '0.02em', lineHeight: 1 }}>{product.name.toUpperCase()}</h2>
             </div>
 
@@ -60,23 +57,23 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
 
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, paddingBottom: 14, borderBottom: '1px solid var(--line)' }}>
               <span style={{ fontFamily: 'var(--font-display)', fontSize: 38, color: 'var(--black)' }}>€{product.price.toFixed(2)}</span>
-              {product.originalPrice && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--muted)', textDecoration: 'line-through' }}>€{product.originalPrice.toFixed(2)}</span>}
+              {product.original_price && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--muted)', textDecoration: 'line-through' }}>€{product.original_price.toFixed(2)}</span>}
             </div>
 
             <div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 8 }}>warna · {selColor.name}</div>
               <div style={{ display: 'flex', gap: 8 }}>
-                {product.colors.map(c => (
+                {getUniqueColors(product.id).map(c => (
                   <button key={c.hex} onClick={() => setSelColor(c)} style={{ width: 28, height: 28, borderRadius: '50%', background: c.hex, border: 'none', outline: selColor.hex === c.hex ? '2px solid var(--orange)' : '1px solid var(--line)', outlineOffset: 2, cursor: 'pointer' }} />
                 ))}
               </div>
             </div>
 
-            {product.sizes[0] !== 'ONE SIZE' && (
+            {getSizesById(product.id)[0] !== 'ONE SIZE' && (
               <div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 8 }}>size</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {product.sizes.map(s => (
+                  {getSizesById(product.id).map(s => (
                     <button key={s} onClick={() => setSelSize(s)} style={{ minWidth: 42, padding: '8px 12px', border: '1px solid', borderColor: selSize === s ? 'var(--black)' : 'var(--line)', background: selSize === s ? 'var(--black)' : 'transparent', color: selSize === s ? 'var(--cream)' : 'var(--ink)', fontFamily: 'var(--font-mono)', fontSize: 12, cursor: 'pointer', transition: 'all 0.15s' }}>{s}</button>
                   ))}
                 </div>
