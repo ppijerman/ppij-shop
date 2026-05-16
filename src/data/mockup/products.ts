@@ -2,7 +2,8 @@ export interface Product {
   id: number
   name: string
   subtitle: string
-  type: string
+  category: string
+  fit_type: string | null
   desc: string,
   price: number
   original_price: number | null
@@ -18,7 +19,8 @@ export const PRODUCTS: Product[] = [
     id: 1,
     name: 'Fang & Horn',
     subtitle: 'OVERSIZED TEE — WHITE',
-    type: 'TSHIRT',
+    category: 'TSHIRT',
+    fit_type: 'normal',
     desc: "Kaos oversized 220gsm dengan hand-drawn graphic 'Fang & Horn'. Cotton combed 30s, premium ringspun.",
     price: 25,
     original_price: 30,
@@ -32,7 +34,8 @@ export const PRODUCTS: Product[] = [
     id: 2,
     name: 'Trio Komodores',
     subtitle: 'GRAPHIC TEE — BLACK',
-    type: 'TSHIRT',
+    category: 'TSHIRT',
+    fit_type: 'normal',
     desc: "Graphic tee dengan illustrasi 'Trio Komodores' — tribute ke fauna Indonesia. Soft heavyweight cotton.",
     price: 25,
     original_price: null,
@@ -46,7 +49,8 @@ export const PRODUCTS: Product[] = [
     id: 3,
     name: 'Elle the Elephant',
     subtitle: 'BACK PRINT TEE — GREY',
-    type: 'TSHIRT',
+    category: 'TSHIRT',
+    fit_type: 'oversized',
     desc: 'Tee abu dengan POV back print storytelling. Vintage washed look, fabric breathable untuk daily wear.',
     price: 28,
     original_price: 35,
@@ -60,7 +64,8 @@ export const PRODUCTS: Product[] = [
     id: 4,
     name: '"Einkaufen 101"',
     subtitle: 'HEAVY CANVAS TOTE — BLUE PRINT',
-    type: 'TOTEBAG',
+    category: 'TOTEBAG',
+    fit_type: null,
     desc: "Tote canvas 400gsm dengan blue print 'Einkaufen 101'. Tribute ke kehidupan supermarket di Jerman.",
     price: 18,
     original_price: null,
@@ -74,7 +79,8 @@ export const PRODUCTS: Product[] = [
     id: 5,
     name: '"Mit Karte Bitte"',
     subtitle: 'HEAVY CANVAS TOTE — GREEN PRINT',
-    type: 'TOTEBAG',
+    category: 'TOTEBAG',
+    fit_type: null,
     desc: "Tote canvas dengan green print 'Mit Karte Bitte!' — humor klasik tentang pembayaran kartu di Jerman.",
     price: 18,
     original_price: null,
@@ -94,6 +100,10 @@ export function getProductBySlug(slug: string): Product | null {
   return PRODUCTS.find(p => p.slug === slug) ?? null
 }
 
-export function getProductByType(type: Product['type']): Product | null {
-  return PRODUCTS.find(p => p.type === type) ?? null
+export function getProductByType(category: Product['category']): Product | null {
+  return PRODUCTS.find(p => p.category === category) ?? null
+}
+
+export function getProductPrimaryImage(id: number): string | null{
+  return PRODUCTS.find(p => p.id === id)?.primary_image ?? null
 }

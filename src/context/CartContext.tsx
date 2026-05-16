@@ -1,7 +1,10 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { CartItem, Color, Product } from '@/types';
+import { Color } from '@/types';
+import { CartItem } from '@/data/mockup/cart';
+import { Product } from '@/data/mockup/products';
+import { getUniqueColors, getSizesById } from '@/data/mockup/variants';
 
 interface CartContextType {
   cart: CartItem[];
@@ -24,8 +27,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     size: string | null = null,
   ) => {
     setCart(prev => {
-      const c = color ?? product.colors[0];
-      const s = size ?? product.sizes[0];
+      const c = color ?? getUniqueColors(product.id)[0];
+      const s = size ?? getSizesById(product.id)[0];
       const key = `${product.id}-${c.hex}-${s}`;
       const existing = prev.find(i => i.cartKey === key);
       if (existing) return prev.map(i => i.cartKey === key ? { ...i, qty: i.qty + qty } : i);
