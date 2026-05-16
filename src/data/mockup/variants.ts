@@ -70,7 +70,7 @@ export function getSizesForColor(productId: number, colorName: string) {
 }
 
 export function getSizesById(productId: number): string[] {
-  const variants = PRODUCT_VARIANTS.filter(v => v.id === productId)
+  const variants = PRODUCT_VARIANTS.filter(v => v.product_id === productId)
   const sizes = new Array<string>()
   variants.forEach(v => {
     if (!sizes.includes(v.size)) sizes.push(v.size)

@@ -3,8 +3,7 @@
 import { useState } from "react";
 import CapsuleGrid from "@/components/catalog/CapsuleGrid";
 import QuickViewModal from "@/components/product/QuickViewModal";
-import { PRODUCTS } from "@/data/products";
-import { Product } from "@/types";
+import { PRODUCTS, Product } from "@/data/mockup/products";
 
 export default function CatalogPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
