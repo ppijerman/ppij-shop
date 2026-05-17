@@ -271,4 +271,3 @@ function AddToCartBtn({ price, onClick }: { price: number; onClick: () => void }
     </button>
   );
 }
-
