@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import ProductCrop from './ProductCrop';
-import { Product } from '@/data/mockup/products';
+import { Product, getProductPrimaryImage } from '@/data/mockup/products';
 import { ProductImage } from '@/data/mockup/images';
-import { getSizesById, getSizesForColor, getUniqueColors, getVariant, getProductBasePrice, getProductOriginalPrice, getProductStock } from '@/data/mockup/variants';
+import { getSizesById, getSizesForColor, getUniqueColors, getVariant, getProductBasePrice, getProductOriginalPrice } from '@/data/mockup/variants';
 
 interface ProductDetailPageProps {
   product: Product
@@ -22,35 +22,28 @@ const TRUST_BADGES = [['✨', 'Free shipping', 'EU only'], ['↻', '7-day return
 
 export default function ProductDetailPage({ product, images, products }: ProductDetailPageProps) {
   const [selColor, setSelColor] = useState(getUniqueColors(product.id)[0]);
-  const [selSize, setSelSize] = useState(getSizesForColor(product.id, getUniqueColors(product.id)[0].name)[0].size);
+  const [selSize, setSelSize] = useState(getSizesForColor(product.id, selColor.name)[0].size);
   const [qty, setQty] = useState(1);
   const [activeTab, setActiveTab] = useState<Tab>('description');
   const [activeImg, setActiveImg] = useState(0);
   const { addToCart } = useCart();
   const { showToast } = useToast();
 
-  const imgSrc = images[activeImg]?.url || product.primary_image;
+  const imgSrc = product.primary_image;
   const related = products.filter(p => p.id !== product.id).slice(0, 4);
   const currentVariant = getVariant(product.id, selSize, selColor.name);
   const currentPrice = currentVariant?.price ?? getProductBasePrice(product.id);
   const currentOriginalPrice = currentVariant?.original_price ?? getProductOriginalPrice(product.id);
 
-  const availableQty = getProductStock(product.id, selSize, selColor.name);
-  const isOutOfStock = availableQty <= 0;
-
   useEffect(() => {
-    const colors = getUniqueColors(product.id);
-    const defaultColor = colors[0];
-    setSelColor(defaultColor);
-    const sizes = getSizesForColor(product.id, defaultColor.name);
-    setSelSize(sizes[0]?.size || 'ONE SIZE');
+    setSelColor(getUniqueColors(product.id)[0]);
+    setSelSize(selSize);
     setQty(1);
     setActiveImg(0);
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [product.id]);
 
   const handleAddToCart = () => {
-    if (isOutOfStock) return;
     addToCart(product, qty, selColor, selSize);
     showToast(`✦ added · ${product.name}`);
   };
@@ -81,7 +74,8 @@ export default function ProductDetailPage({ product, images, products }: Product
             alt={product.name}
             style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.3s ease' }}
           />
-            <div style={{ position: 'absolute', top: 18, left: 18 }}>
+            <div style={{ position: 'absolute', top: 18, left: 18, display: 'flex', gap: 8 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink)', letterSpacing: '0.22em', textTransform: 'uppercase', background: 'var(--cream)', padding: '5px 10px' }}>{product.category}</span>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--cream)', letterSpacing: '0.22em', textTransform: 'uppercase', background: 'var(--black)', padding: '5px 10px' }}>{product.category}</span>
             </div>
             {product.tag && <div style={{ position: 'absolute', top: 18, right: 18, background: 'var(--orange)', color: 'var(--black)', padding: '6px 14px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', fontWeight: 700 }}>{product.tag}</div>}
@@ -115,18 +109,8 @@ export default function ProductDetailPage({ product, images, products }: Product
             <span style={{ color: 'var(--orange)', letterSpacing: '2px', fontSize: 15 }}>★★★★★</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>4.9 · 124 reviews</span>
             <span style={{ width: 1, height: 14, background: 'var(--line)' }} />
-            <span style={{ 
-              fontFamily: 'var(--font-mono)', 
-              fontSize: 11, 
-              color: isOutOfStock ? '#f44336' : '#1F8A5B', 
-              letterSpacing: '0.18em', 
-              textTransform: 'uppercase', 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 6 
-            }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: isOutOfStock ? '#f44336' : '#1F8A5B' }} /> 
-              {isOutOfStock ? 'out of stock' : `in stock (${availableQty})`}
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#1F8A5B', letterSpacing: '0.18em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#1F8A5B' }} /> in stock
             </span>
           </div>
 
@@ -178,11 +162,7 @@ export default function ProductDetailPage({ product, images, products }: Product
               <span style={{ width: 40, fontFamily: 'var(--font-mono)', fontSize: 15, textAlign: 'center' }}>{qty}</span>
               <button onClick={() => setQty(q => q + 1)} style={{ width: 46, height: 54, background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}>+</button>
             </div>
-            <AddToCartBtn 
-              price={currentPrice * qty} 
-              onClick={handleAddToCart} 
-              disabled={isOutOfStock}
-            />
+            <AddToCartBtn price={currentPrice * qty} onClick={handleAddToCart} />
             <button style={{ width: 54, height: 54, background: 'transparent', border: '1px solid var(--line)', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--black)' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
             </button>
@@ -258,49 +238,36 @@ export default function ProductDetailPage({ product, images, products }: Product
           <Link href="/catalog" style={{ textDecoration: 'none', color: 'var(--black)', border: '1px solid var(--black)', padding: '10px 18px', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase' }}>view all ↗</Link>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 22 }}>
-          {related.map(p => (
-            <Link key={p.id} href={`/product/${p.id}`} style={{ textDecoration: 'none', cursor: 'pointer' }}>
-              <div style={{ background: 'var(--cream-2)', overflow: 'hidden' }}>
-                <ProductCrop src={p.primary_image} height={300} scale={2.4} />
-              </div>
-              <div style={{ padding: '12px 4px 0', textAlign: 'center' }}>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, color: 'var(--black)', marginTop: 4 }}>{p.name.toUpperCase()}</div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, marginTop: 4, color: 'var(--ink)' }}>€{getProductBasePrice(p.id).toFixed(2)}</div>
-              </div>
-            </Link>
-          ))}
+          {related.map(p => {
+            const src = p.primary_image === 'tshirt_grid' ? '/assets/v4/tshirt-grid.jpeg' : '/assets/v4/totebag-grid.jpeg';
+            return (
+              <Link key={p.id} href={`/product/${p.id}`} style={{ textDecoration: 'none', cursor: 'pointer' }}>
+                <div style={{ background: 'var(--cream-2)', overflow: 'hidden' }}>
+                  <ProductCrop src={src} height={300} scale={2.4} />
+                </div>
+                <div style={{ padding: '12px 4px 0', textAlign: 'center' }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, color: 'var(--black)', marginTop: 4 }}>{p.name.toUpperCase()}</div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, marginTop: 4, color: 'var(--ink)' }}>€{getProductBasePrice(p.id).toFixed(2)}</div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
 
-function AddToCartBtn({ price, onClick, disabled }: { price: number; onClick: () => void; disabled?: boolean }) {
+function AddToCartBtn({ price, onClick }: { price: number; onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
   return (
     <button
       onClick={onClick}
-      disabled={disabled}
-      onMouseEnter={() => !disabled && setHovered(true)}
+      onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{ 
-        flex: 1, 
-        background: disabled ? 'var(--line)' : (hovered ? 'var(--orange)' : 'var(--black)'), 
-        color: disabled ? 'var(--muted)' : (hovered ? 'var(--black)' : 'var(--cream)'), 
-        border: 'none', 
-        padding: '15px', 
-        fontFamily: 'var(--font-mono)', 
-        fontSize: 12, 
-        letterSpacing: '0.22em', 
-        textTransform: 'uppercase', 
-        cursor: disabled ? 'not-allowed' : 'pointer', 
-        borderRadius: 999, 
-        fontWeight: 600, 
-        transition: 'all 0.2s' 
-      }}
+      style={{ flex: 1, background: hovered ? 'var(--orange)' : 'var(--black)', color: hovered ? 'var(--black)' : 'var(--cream)', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: 'pointer', borderRadius: 999, fontWeight: 600, transition: 'all 0.2s' }}
     >
-      {disabled ? 'sold out' : `add to cart — €${price.toFixed(2)} ↗`}
+      add to cart — €{price.toFixed(2)} ↗
     </button>
   );
 }
-
