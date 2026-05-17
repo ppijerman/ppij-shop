@@ -83,7 +83,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         id: product.id,
         category: product.category === 'TOTEBAG' ? 'TOTE BAG' : 'T-SHIRT',
         name: product.name,
-        price: product.price,
+        price: variant.price,
         color: { name: variant.color_name, hex: variant.color_hex },
         size: variant.size,
         primary_image: product.primary_image,

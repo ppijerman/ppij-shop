@@ -7,7 +7,7 @@ import { useToast } from '@/context/ToastContext';
 import ProductCrop from './ProductCrop';
 import { Product, getProductPrimaryImage } from '@/data/mockup/products';
 import { ProductImage } from '@/data/mockup/images';
-import { getSizesById, getSizesForColor, getUniqueColors } from '@/data/mockup/variants';
+import { getSizesById, getSizesForColor, getUniqueColors, getVariant, getProductBasePrice, getProductOriginalPrice } from '@/data/mockup/variants';
 
 interface ProductDetailPageProps {
   product: Product
@@ -31,6 +31,9 @@ export default function ProductDetailPage({ product, images, products }: Product
 
   const imgSrc = product.primary_image;
   const related = products.filter(p => p.id !== product.id).slice(0, 4);
+  const currentVariant = getVariant(product.id, selSize, selColor.name);
+  const currentPrice = currentVariant?.price ?? getProductBasePrice(product.id);
+  const currentOriginalPrice = currentVariant?.original_price ?? getProductOriginalPrice(product.id);
 
   useEffect(() => {
     setSelColor(getUniqueColors(product.id)[0]);
@@ -112,11 +115,11 @@ export default function ProductDetailPage({ product, images, products }: Product
           </div>
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginTop: 18 }}>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: 54, color: 'var(--black)' }}>€{product.price.toFixed(2)}</span>
-            {product.original_price && (
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 54, color: 'var(--black)' }}>€{currentPrice.toFixed(2)}</span>
+            {currentOriginalPrice && (
               <>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--muted)', textDecoration: 'line-through' }}>€{product.original_price.toFixed(2)}</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, background: 'var(--orange)', color: 'var(--black)', padding: '4px 9px', letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 700 }}>−{Math.round((1 - product.price / product.original_price) * 100)}%</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--muted)', textDecoration: 'line-through' }}>€{currentOriginalPrice.toFixed(2)}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, background: 'var(--orange)', color: 'var(--black)', padding: '4px 9px', letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 700 }}>−{Math.round((1 - currentPrice / currentOriginalPrice) * 100)}%</span>
               </>
             )}
           </div>
@@ -159,7 +162,7 @@ export default function ProductDetailPage({ product, images, products }: Product
               <span style={{ width: 40, fontFamily: 'var(--font-mono)', fontSize: 15, textAlign: 'center' }}>{qty}</span>
               <button onClick={() => setQty(q => q + 1)} style={{ width: 46, height: 54, background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}>+</button>
             </div>
-            <AddToCartBtn price={product.price * qty} onClick={handleAddToCart} />
+            <AddToCartBtn price={currentPrice * qty} onClick={handleAddToCart} />
             <button style={{ width: 54, height: 54, background: 'transparent', border: '1px solid var(--line)', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--black)' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
             </button>
@@ -244,7 +247,7 @@ export default function ProductDetailPage({ product, images, products }: Product
                 </div>
                 <div style={{ padding: '12px 4px 0', textAlign: 'center' }}>
                   <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, color: 'var(--black)', marginTop: 4 }}>{p.name.toUpperCase()}</div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, marginTop: 4, color: 'var(--ink)' }}>€{p.price.toFixed(2)}</div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, marginTop: 4, color: 'var(--ink)' }}>€{getProductBasePrice(p.id).toFixed(2)}</div>
                 </div>
               </Link>
             );

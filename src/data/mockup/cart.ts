@@ -31,7 +31,7 @@ export function getCartByUser(userId: number): CartItemWithDetails[] {
       const variant = item.variant_id ? getVariantById(item.variant_id) : null
       const product = variant ? getProductById(variant.product_id) : null
       const bundle = item.bundle_id ? getBundleById(item.bundle_id) : null
-      const unit_price = variant ? (product?.price ?? 0) : (bundle?.price ?? 0)
+      const unit_price = variant ? (variant.price) : (bundle?.price ?? 0)
 
       return {
         ...item,
