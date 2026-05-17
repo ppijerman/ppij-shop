@@ -5,8 +5,6 @@ export interface Product {
   category: string
   fit_type: string | null
   desc: string,
-  price: number
-  original_price: number | null
   tag: string
   primary_image: string
   slug: string
@@ -22,8 +20,6 @@ export const PRODUCTS: Product[] = [
     category: 'TSHIRT',
     fit_type: 'normal',
     desc: "Kaos oversized 220gsm dengan hand-drawn graphic 'Fang & Horn'. Cotton combed 30s, premium ringspun.",
-    price: 25,
-    original_price: 30,
     tag: 'BESTSELLER',
     primary_image: '/assets/v4/tshirt-grid.jpeg',
     slug: 'fang-and-horn',
@@ -37,8 +33,6 @@ export const PRODUCTS: Product[] = [
     category: 'TSHIRT',
     fit_type: 'normal',
     desc: "Graphic tee dengan illustrasi 'Trio Komodores' — tribute ke fauna Indonesia. Soft heavyweight cotton.",
-    price: 25,
-    original_price: null,
     tag: 'NEW',
     primary_image: '/assets/v4/tshirt-grid.jpeg',
     slug: 'trio-komodores',
@@ -52,8 +46,6 @@ export const PRODUCTS: Product[] = [
     category: 'TSHIRT',
     fit_type: 'oversized',
     desc: 'Tee abu dengan POV back print storytelling. Vintage washed look, fabric breathable untuk daily wear.',
-    price: 28,
-    original_price: 35,
     tag: 'LIMITED',
     primary_image: '/assets/v4/tshirt-grid.jpeg',
     slug: 'elle-the-elephant',
@@ -67,8 +59,6 @@ export const PRODUCTS: Product[] = [
     category: 'TOTEBAG',
     fit_type: null,
     desc: "Tote canvas 400gsm dengan blue print 'Einkaufen 101'. Tribute ke kehidupan supermarket di Jerman.",
-    price: 18,
-    original_price: null,
     tag: 'NEW',
     primary_image: '/assets/v4/totebag-grid.jpeg',
     slug: 'einkaufen-101',
@@ -82,8 +72,6 @@ export const PRODUCTS: Product[] = [
     category: 'TOTEBAG',
     fit_type: null,
     desc: "Tote canvas dengan green print 'Mit Karte Bitte!' — humor klasik tentang pembayaran kartu di Jerman.",
-    price: 18,
-    original_price: null,
     tag: 'BESTSELLER',
     primary_image: '/assets/v4/totebag-grid.jpeg',
     slug: 'mit-karte-bitte',

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Product } from '@/data/mockup/products';
-import { getUniqueColors, getSizesById, getSizesForColor } from '@/data/mockup/variants';
+import { getUniqueColors, getSizesById, getSizesForColor, getVariant, getProductBasePrice, getProductOriginalPrice } from '@/data/mockup/variants';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import ProductCrop from './ProductCrop';
@@ -21,6 +21,9 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
   const { showToast } = useToast();
   
   const categoryLabel = product.category === 'TOTEBAG' ? 'TOTE BAG' : 'T-SHIRT';
+  const currentVariant = getVariant(product.id, selSize, selColor.name);
+  const currentPrice = currentVariant?.price ?? getProductBasePrice(product.id);
+  const currentOriginalPrice = currentVariant?.original_price ?? getProductOriginalPrice(product.id);
 
   const handleAdd = () => {
     addToCart(product, qty, selColor, selSize);
@@ -56,8 +59,8 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
             <p style={{ fontSize: 14, color: 'var(--ink)', lineHeight: 1.7 }}>{product.desc}</p>
 
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, paddingBottom: 14, borderBottom: '1px solid var(--line)' }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: 38, color: 'var(--black)' }}>€{product.price.toFixed(2)}</span>
-              {product.original_price && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--muted)', textDecoration: 'line-through' }}>€{product.original_price.toFixed(2)}</span>}
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: 38, color: 'var(--black)' }}>€{currentPrice.toFixed(2)}</span>
+              {currentOriginalPrice && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--muted)', textDecoration: 'line-through' }}>€{currentOriginalPrice.toFixed(2)}</span>}
             </div>
 
             <div>
@@ -90,7 +93,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto' }}>
-              <AddBtn price={product.price * qty} onClick={handleAdd} />
+              <AddBtn price={currentPrice * qty} onClick={handleAdd} />
               <Link
                 href={`/product/${product.id}`}
                 onClick={onClose}

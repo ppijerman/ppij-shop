@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Product } from '@/data/mockup/products';
+import { getProductBasePrice, getProductOriginalPrice } from '@/data/mockup/variants';
 import { useTweaks } from '@/context/TweaksContext';
 import ProductCrop from '@/components/product/ProductCrop';
 
@@ -67,9 +68,9 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
                       {product.name.toUpperCase()}
                     </div>
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--ink)', marginTop: 6, fontWeight: 500 }}>
-                      €{product.price.toFixed(2)}
-                      {product.original_price && (
-                        <span style={{ color: 'var(--muted)', textDecoration: 'line-through', marginLeft: 8, fontSize: 11 }}>€{product.original_price.toFixed(2)}</span>
+                      €{getProductBasePrice(product.id).toFixed(2)}
+                      {getProductOriginalPrice(product.id) && (
+                        <span style={{ color: 'var(--muted)', textDecoration: 'line-through', marginLeft: 8, fontSize: 11 }}>€{getProductOriginalPrice(product.id)?.toFixed(2)}</span>
                       )}
                     </div>
                   </div>
