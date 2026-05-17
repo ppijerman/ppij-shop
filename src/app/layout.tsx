@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import {
   Anton,
   Archivo,
@@ -65,22 +66,24 @@ export default function RootLayout({
       className={`${anton.variable} ${archivo.variable} ${caveat.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable}`}
     >
       <body>
-        <CartProvider>
-          <ToastProvider>
-            <TweaksProvider>
-              <div
-                style={{ position: "relative", zIndex: 2, minHeight: "100vh" }}
-              >
-                <PromoBar />
-                <Navbar />
-                <main>{children}</main>
-                <Footer />
-              </div>
-              <Toast />
-              <TweaksPanel />
-            </TweaksProvider>
-          </ToastProvider>
-        </CartProvider>
+        <ClerkProvider>
+          <CartProvider>
+            <ToastProvider>
+              <TweaksProvider>
+                <div
+                  style={{ position: "relative", zIndex: 2, minHeight: "100vh" }}
+                >
+                  <PromoBar />
+                  <Navbar />
+                  <main>{children}</main>
+                  <Footer />
+                </div>
+                <Toast />
+                <TweaksPanel />
+              </TweaksProvider>
+            </ToastProvider>
+          </CartProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

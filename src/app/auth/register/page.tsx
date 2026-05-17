@@ -1,240 +1,267 @@
 'use client';
 
+import { useAuth, useSignUp } from "@clerk/nextjs";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AuthError, AuthInput, AuthNotice, AuthShell, AuthSubmitButton } from "@/components/auth/AuthUi";
+import { getClerkErrorMessage } from "@/lib/clerkErrors";
+
+function getRequiredStringValue(formData: FormData, fieldName: string): string {
+  const value = formData.get(fieldName);
+
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new Error(`Missing form field: ${fieldName}`);
+  }
+
+  return value.trim();
+}
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { isLoaded: authLoaded, isSignedIn } = useAuth();
+  const { fetchStatus, signUp } = useSignUp();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const passwordMismatchMessage = "Konfirmasi password tidak cocok.";
+  const hasPasswordMismatch = password.length > 0 && confirmPassword.length > 0 && password !== confirmPassword;
+  const visibleError = error === passwordMismatchMessage ? null : error;
+
+  useEffect(() => {
+    if (authLoaded && isSignedIn) {
+      router.replace("/");
+    }
+  }, [authLoaded, isSignedIn, router]);
+
+  async function handleRegisterSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
-    setError(null);
 
-    const formData = new FormData(event.currentTarget);
-    const name = formData.get("name");
-    const email = formData.get("email");
-    const password = formData.get("password");
-    const confirmPassword = formData.get("confirmPassword");
-
-    if (password !== confirmPassword) {
-      setError("Konfirmasi password tidak cocok.");
-      setLoading(false);
+    if (signUp === null) {
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+      const formData = new FormData(event.currentTarget);
+      const firstName = getRequiredStringValue(formData, "firstName");
+      const lastName = getRequiredStringValue(formData, "lastName");
+      const email = getRequiredStringValue(formData, "email");
+      const formPassword = getRequiredStringValue(formData, "password");
+      const formConfirmPassword = getRequiredStringValue(formData, "confirmPassword");
+
+      if (formPassword !== formConfirmPassword) {
+        throw new Error(passwordMismatchMessage);
+      }
+
+      const createResult = await signUp.create({
+        emailAddress: email,
+        password: formPassword,
+        firstName,
+        lastName,
       });
 
-      if (response.ok) {
-        router.push('/auth/login?registered=true');
-      } else {
-        const data = await response.json();
-        setError(data.message || "Registrasi gagal. Silakan coba lagi.");
+      if (createResult.error !== null) {
+        throw createResult.error;
       }
-    } catch (err) {
-      setError("Terjadi kesalahan koneksi. Silakan coba lagi nanti.");
+
+      const sendCodeResult = await signUp.verifications.sendEmailCode();
+      if (sendCodeResult.error !== null) {
+        throw sendCodeResult.error;
+      }
+
+      setVerificationEmail(email);
+      setPendingVerification(true);
+    } catch (caughtError: unknown) {
+      setError(getClerkErrorMessage(caughtError));
     } finally {
       setLoading(false);
     }
   }
 
+  function handlePasswordChange(event: ChangeEvent<HTMLInputElement>) {
+    setPassword(event.target.value);
+    if (error !== null) {
+      setError(null);
+    }
+  }
+
+  function handleConfirmPasswordChange(event: ChangeEvent<HTMLInputElement>) {
+    setConfirmPassword(event.target.value);
+    if (error !== null) {
+      setError(null);
+    }
+  }
+
+  async function handleVerificationSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (signUp === null) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData(event.currentTarget);
+      const code = getRequiredStringValue(formData, "code");
+      const verifyResult = await signUp.verifications.verifyEmailCode({ code });
+
+      if (verifyResult.error !== null) {
+        throw verifyResult.error;
+      }
+
+      if (signUp.status !== "complete") {
+        throw new Error("Verifikasi email belum selesai. Coba lagi.");
+      }
+
+      const finalizeResult = await signUp.finalize();
+      if (finalizeResult.error !== null) {
+        throw finalizeResult.error;
+      }
+
+      router.replace("/");
+    } catch (caughtError: unknown) {
+      setError(getClerkErrorMessage(caughtError));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!authLoaded || isSignedIn) {
+    return null;
+  }
+
   return (
-    <div style={{
-      minHeight: 'calc(100vh - 300px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '80px 24px',
-      background: 'var(--cream)',
-    }}>
-      <div style={{
-        maxWidth: 400,
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 40,
-        animation: 'fadeUp 0.6s ease-out',
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ 
-            fontFamily: 'var(--font-mono)', 
-            fontSize: 10, 
-            color: 'var(--muted)', 
-            letterSpacing: '0.22em', 
-            textTransform: 'uppercase',
-            marginBottom: 12
-          }}>
-            Join the Community
-          </div>
-          <h1 style={{ 
-            fontFamily: 'var(--font-display)', 
-            fontSize: 48, 
-            color: 'var(--black)', 
-            letterSpacing: '0.02em',
-            lineHeight: 1,
-            margin: 0
-          }}>
-            REGISTER
-          </h1>
-        </div>
-
-        {error && (
-          <div style={{
-            background: 'rgba(243, 146, 0, 0.1)',
-            border: '1px solid var(--orange)',
-            padding: '14px 18px',
-            color: 'var(--black)',
-            fontSize: 13,
-            fontFamily: 'var(--font-body)',
-            borderRadius: 4,
-          }}>
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <InputField 
-            label="Full Name" 
-            name="name" 
-            type="text" 
-            placeholder="John Doe" 
-          />
-          <InputField 
-            label="Email Address" 
-            name="email" 
-            type="email" 
-            placeholder="your@email.com" 
-          />
-          <InputField 
-            label="Password" 
-            name="password" 
-            type="password" 
-            placeholder="••••••" 
-          />
-          <InputField 
-            label="Confirm Password" 
-            name="confirmPassword" 
-            type="password" 
-            placeholder="••••••" 
-          />
-
-          <RegisterButton loading={loading} />
-        </form>
-        
-        <div style={{ 
-          textAlign: 'center',
-          borderTop: '1px solid var(--line)',
-          paddingTop: 32,
-        }}>
-          <span style={{ 
-            fontFamily: 'var(--font-body)', 
-            fontSize: 13, 
-            color: 'var(--muted)' 
-          }}>
-            Already have an account?{' '}
+    <AuthShell
+      eyebrow={pendingVerification ? "Almost There" : "Join the Community"}
+      title={pendingVerification ? "VERIFY EMAIL" : "REGISTER"}
+      footer={
+        <div
+          style={{
+            textAlign: "center",
+            borderTop: "1px solid var(--line)",
+            paddingTop: 32,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "var(--font-body)",
+              fontSize: 13,
+              color: "var(--muted)",
+            }}
+          >
+            Already have an account?{" "}
           </span>
-          <Link href="/auth/login" style={{ 
-            fontFamily: 'var(--font-body)', 
-            fontSize: 13, 
-            fontWeight: 600,
-            color: 'var(--black)',
-            textDecoration: 'none',
-            borderBottom: '1px solid var(--black)',
-            transition: 'opacity 0.2s',
-          }}>
+          <Link
+            href="/auth/login"
+            style={{
+              fontFamily: "var(--font-body)",
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--black)",
+              textDecoration: "none",
+              borderBottom: "1px solid var(--black)",
+              transition: "opacity 0.2s",
+            }}
+          >
             Login here
           </Link>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function InputField({ label, name, type, placeholder }: { label: string, name: string, type: string, placeholder: string }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <label htmlFor={name} style={{ 
-        fontFamily: 'var(--font-mono)', 
-        fontSize: 10, 
-        color: 'var(--muted)', 
-        letterSpacing: '0.18em', 
-        textTransform: 'uppercase' 
-      }}>
-        {label}
-      </label>
-      <input 
-        type={type} 
-        id={name}
-        name={name} 
-        placeholder={placeholder} 
-        required
-        style={{
-          background: 'var(--paper)',
-          border: '1px solid var(--line)',
-          padding: '16px',
-          fontFamily: 'var(--font-body)',
-          fontSize: 14,
-          color: 'var(--black)',
-          outline: 'none',
-          transition: 'all 0.2s',
-        }}
-        onFocus={(e) => {
-          e.currentTarget.style.borderColor = 'var(--black)';
-          e.currentTarget.style.background = 'white';
-        }}
-        onBlur={(e) => {
-          e.currentTarget.style.borderColor = 'var(--line)';
-          e.currentTarget.style.background = 'var(--paper)';
-        }}
-      />
-    </div>
-  );
-}
-
-function RegisterButton({ loading }: { loading: boolean }) {
-  const [hovered, setHovered] = useState(false);
-  
-  return (
-    <button 
-      type="submit" 
-      disabled={loading}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{ 
-        background: loading ? 'var(--muted)' : (hovered ? 'var(--orange)' : 'var(--black)'), 
-        color: hovered && !loading ? 'var(--black)' : 'var(--cream)', 
-        border: 'none', 
-        padding: '18px', 
-        fontFamily: 'var(--font-mono)', 
-        fontSize: 12, 
-        letterSpacing: '0.22em', 
-        textTransform: 'uppercase', 
-        cursor: loading ? 'not-allowed' : 'pointer', 
-        borderRadius: 999, 
-        transition: 'all 0.2s',
-        marginTop: 12,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 10
-      }}
+      }
     >
-      {loading ? 'Creating Account...' : (
+      <AuthError message={visibleError} />
+      {pendingVerification ? (
         <>
-          Create Account
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="7" y1="17" x2="17" y2="7" /><polyline points="7 7 17 7 17 17" />
-          </svg>
+          <AuthNotice message={`Masukkan kode verifikasi yang dikirim ke ${verificationEmail}.`} />
+          <form onSubmit={handleVerificationSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            <AuthInput
+              label="Verification Code"
+              name="code"
+              type="text"
+              placeholder="123456"
+              autoComplete="one-time-code"
+            />
+            <AuthSubmitButton
+              loading={loading || fetchStatus === "fetching"}
+              loadingLabel="Verifying..."
+              idleLabel="Verify Email"
+            />
+          </form>
         </>
+      ) : (
+        <form onSubmit={handleRegisterSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <AuthInput
+              label="First Name"
+              name="firstName"
+              type="text"
+              placeholder="John"
+              autoComplete="given-name"
+            />
+            <AuthInput
+              label="Last Name"
+              name="lastName"
+              type="text"
+              placeholder="Doe"
+              autoComplete="family-name"
+            />
+          </div>
+          <AuthInput
+            label="Email Address"
+            name="email"
+            type="email"
+            placeholder="your@email.com"
+            autoComplete="email"
+          />
+          <AuthInput
+            label="Password"
+            name="password"
+            type="password"
+            placeholder="••••••"
+            autoComplete="new-password"
+            allowVisibilityToggle
+            value={password}
+            onChange={handlePasswordChange}
+          />
+          <AuthInput
+            label="Confirm Password"
+            name="confirmPassword"
+            type="password"
+            placeholder="••••••"
+            autoComplete="new-password"
+            allowVisibilityToggle
+            value={confirmPassword}
+            onChange={handleConfirmPasswordChange}
+          />
+          {hasPasswordMismatch && (
+            <div
+              style={{
+                marginTop: -12,
+                fontFamily: "var(--font-body)",
+                fontSize: 12,
+                color: "var(--orange-deep)",
+              }}
+            >
+              {passwordMismatchMessage}
+            </div>
+          )}
+          <div id="clerk-captcha" />
+          <AuthSubmitButton
+            loading={loading || fetchStatus === "fetching"}
+            loadingLabel="Creating Account..."
+            idleLabel="Create Account"
+            disabled={hasPasswordMismatch}
+          />
+        </form>
       )}
-    </button>
+    </AuthShell>
   );
 }

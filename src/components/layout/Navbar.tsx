@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useAuth, useUser } from "@clerk/nextjs";
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
@@ -17,6 +18,8 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
   const { cartCount } = useCart();
+  const { isLoaded: authLoaded, isSignedIn, signOut } = useAuth();
+  const { user } = useUser();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
@@ -57,16 +60,303 @@ export default function Navbar() {
               <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           </button>
-          <Link href="/auth/login" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--black)', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5, textDecoration: 'none' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-            </svg>
-            Account
-          </Link>
+          <AccountControl
+            authLoaded={authLoaded}
+            isSignedIn={Boolean(isSignedIn)}
+            triggerName={user?.firstName ?? user?.username ?? "Member"}
+            signedInName={user?.fullName ?? user?.firstName ?? user?.username ?? "Member"}
+            signOut={signOut}
+          />
           <CartPill count={cartCount} />
         </div>
       </div>
     </nav>
+  );
+}
+
+interface AccountControlProps {
+  authLoaded: boolean;
+  isSignedIn: boolean;
+  triggerName: string;
+  signedInName: string;
+  signOut: ReturnType<typeof useAuth>["signOut"];
+}
+
+type AccountMenuItem =
+  | { id: 'account'; label: string; kind: 'placeholder' }
+  | { id: 'orders'; label: string; kind: 'placeholder' }
+  | { id: 'sign-out'; label: string; kind: 'action' };
+
+const ACCOUNT_MENU_ITEMS: AccountMenuItem[] = [
+  { id: 'account', label: 'Account', kind: 'placeholder' },
+  { id: 'orders', label: 'Orders', kind: 'placeholder' },
+  { id: 'sign-out', label: 'Sign out', kind: 'action' },
+];
+
+function AccountPlaceholderItem({ label }: { label: string }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      aria-disabled="true"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '11px 12px',
+        color: hovered ? 'var(--black)' : 'var(--muted)',
+        background: hovered ? 'rgba(243, 146, 0, 0.12)' : 'transparent',
+        fontFamily: 'var(--font-body)',
+        fontSize: 13,
+        opacity: hovered ? 1 : 0.72,
+        cursor: 'default',
+        transition: 'all 0.2s',
+      }}
+    >
+      <span>{label}</span>
+      <span
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 9,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+        }}
+      >
+        Soon
+      </span>
+    </div>
+  );
+}
+
+interface AccountActionItemProps {
+  label: string;
+  onClick: () => void;
+}
+
+function AccountActionItem({ label, onClick }: AccountActionItemProps) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+        background: hovered ? 'rgba(243, 146, 0, 0.16)' : 'transparent',
+        border: 'none',
+        padding: '11px 12px',
+        color: 'var(--black)',
+        fontFamily: 'var(--font-body)',
+        fontSize: 13,
+        fontWeight: 600,
+        cursor: 'pointer',
+        textAlign: 'left',
+        transition: 'all 0.2s',
+      }}
+    >
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function AccountControl({ authLoaded, isSignedIn, triggerName, signedInName, signOut }: AccountControlProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const accountControlRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      setIsOpen(false);
+    }
+  }, [isSignedIn]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent): void {
+      if (accountControlRef.current === null) {
+        return;
+      }
+
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (!accountControlRef.current.contains(target)) {
+        setIsOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent): void {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen]);
+
+  if (!authLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn) {
+    return (
+      <Link
+        href="/auth/login"
+        style={{
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'var(--black)',
+          fontFamily: 'var(--font-body)',
+          fontSize: 13,
+          fontWeight: 500,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 5,
+          textDecoration: 'none',
+        }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+        </svg>
+        Account
+      </Link>
+    );
+  }
+
+  return (
+    <div
+      ref={accountControlRef}
+      style={{ position: 'relative' }}
+    >
+      <button
+        type="button"
+        onClick={() => setIsOpen((currentValue) => !currentValue)}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          background: isOpen ? 'var(--orange)' : 'transparent',
+          color: 'var(--black)',
+          border: '1px solid var(--line)',
+          borderRadius: 999,
+          padding: '8px 14px',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+        }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+          </svg>
+          <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600 }}>{triggerName}</span>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div
+          role="menu"
+          aria-label="Account menu"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 10px)',
+            right: 0,
+            minWidth: 220,
+            background: 'rgba(239,234,224,0.98)',
+            border: '1px solid var(--line)',
+            boxShadow: '0 18px 40px rgba(14,14,14,0.12)',
+            backdropFilter: 'blur(16px)',
+            padding: 8,
+            zIndex: 1100,
+          }}
+        >
+          <div
+            style={{
+              padding: '10px 12px 12px',
+              borderBottom: '1px solid var(--line)',
+              marginBottom: 6,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                color: 'var(--muted)',
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                marginBottom: 6,
+              }}
+            >
+              Signed in as
+            </div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, color: 'var(--black)' }}>
+              {signedInName}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {ACCOUNT_MENU_ITEMS.map((item) => {
+              if (item.kind === 'placeholder') {
+                return (
+                  <AccountPlaceholderItem
+                    key={item.id}
+                    label={item.label}
+                  />
+                );
+              }
+
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    borderTop: '1px solid var(--line)',
+                    marginTop: 6,
+                    paddingTop: 6,
+                  }}
+                >
+                  <AccountActionItem
+                    label={item.label}
+                    onClick={() => {
+                      setIsOpen(false);
+                      void signOut({ redirectUrl: '/' });
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
