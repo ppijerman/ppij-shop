@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import ProductCrop from './ProductCrop';
-import { Product, getProductPrimaryImage } from '@/data/mockup/products';
+import { Product } from '@/data/mockup/products';
 import { ProductImage } from '@/data/mockup/images';
-import { getSizesById, getSizesForColor, getUniqueColors, getVariant, getProductBasePrice, getProductOriginalPrice } from '@/data/mockup/variants';
+import { getSizesById, getSizesForColor, getUniqueColors, getVariant, getProductBasePrice, getProductOriginalPrice, getProductStock } from '@/data/mockup/variants';
 
 interface ProductDetailPageProps {
   product: Product
@@ -22,25 +22,28 @@ const TRUST_BADGES = [['✨', 'Free shipping', 'EU only'], ['↻', '7-day return
 
 export default function ProductDetailPage({ product, images, products }: ProductDetailPageProps) {
   const [selColor, setSelColor] = useState(getUniqueColors(product.id)[0]);
-  const [selSize, setSelSize] = useState(getSizesForColor(product.id, selColor.name)[0].size);
+  const [selSize, setSelSize] = useState(getSizesForColor(product.id, getUniqueColors(product.id)[0].name)[0].size);
   const [qty, setQty] = useState(1);
   const [activeTab, setActiveTab] = useState<Tab>('description');
   const [activeImg, setActiveImg] = useState(0);
   const { addToCart } = useCart();
   const { showToast } = useToast();
 
-  const imgSrc = product.primary_image;
+  const imgSrc = images[activeImg]?.url || product.primary_image;
   const related = products.filter(p => p.id !== product.id).slice(0, 4);
   const currentVariant = getVariant(product.id, selSize, selColor.name);
   const currentPrice = currentVariant?.price ?? getProductBasePrice(product.id);
   const currentOriginalPrice = currentVariant?.original_price ?? getProductOriginalPrice(product.id);
 
-  const availableQty = product.stock[selColor.name]?.[selSize] || 0;
+  const availableQty = getProductStock(product.id, selSize, selColor.name);
   const isOutOfStock = availableQty <= 0;
 
   useEffect(() => {
-    setSelColor(getUniqueColors(product.id)[0]);
-    setSelSize(selSize);
+    const colors = getUniqueColors(product.id);
+    const defaultColor = colors[0];
+    setSelColor(defaultColor);
+    const sizes = getSizesForColor(product.id, defaultColor.name);
+    setSelSize(sizes[0]?.size || 'ONE SIZE');
     setQty(1);
     setActiveImg(0);
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -176,9 +179,8 @@ export default function ProductDetailPage({ product, images, products }: Product
               <span style={{ width: 40, fontFamily: 'var(--font-mono)', fontSize: 15, textAlign: 'center' }}>{qty}</span>
               <button onClick={() => setQty(q => q + 1)} style={{ width: 46, height: 54, background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}>+</button>
             </div>
-            <AddToCartBtn price={currentPrice * qty} onClick={handleAddToCart} />
             <AddToCartBtn 
-              price={product.price * qty} 
+              price={currentPrice * qty} 
               onClick={handleAddToCart} 
               disabled={isOutOfStock}
             />
@@ -257,20 +259,17 @@ export default function ProductDetailPage({ product, images, products }: Product
           <Link href="/catalog" style={{ textDecoration: 'none', color: 'var(--black)', border: '1px solid var(--black)', padding: '10px 18px', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase' }}>view all ↗</Link>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 22 }}>
-          {related.map(p => {
-            const src = p.primary_image === 'tshirt_grid' ? '/assets/v4/tshirt-grid.jpeg' : '/assets/v4/totebag-grid.jpeg';
-            return (
-              <Link key={p.id} href={`/product/${p.id}`} style={{ textDecoration: 'none', cursor: 'pointer' }}>
-                <div style={{ background: 'var(--cream-2)', overflow: 'hidden' }}>
-                  <ProductCrop src={src} height={300} scale={2.4} />
-                </div>
-                <div style={{ padding: '12px 4px 0', textAlign: 'center' }}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, color: 'var(--black)', marginTop: 4 }}>{p.name.toUpperCase()}</div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, marginTop: 4, color: 'var(--ink)' }}>€{getProductBasePrice(p.id).toFixed(2)}</div>
-                </div>
-              </Link>
-            );
-          })}
+          {related.map(p => (
+            <Link key={p.id} href={`/product/${p.id}`} style={{ textDecoration: 'none', cursor: 'pointer' }}>
+              <div style={{ background: 'var(--cream-2)', overflow: 'hidden' }}>
+                <ProductCrop src={p.primary_image} height={300} scale={2.4} />
+              </div>
+              <div style={{ padding: '12px 4px 0', textAlign: 'center' }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, color: 'var(--black)', marginTop: 4 }}>{p.name.toUpperCase()}</div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, marginTop: 4, color: 'var(--ink)' }}>€{getProductBasePrice(p.id).toFixed(2)}</div>
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
     </section>
@@ -305,4 +304,3 @@ function AddToCartBtn({ price, onClick, disabled }: { price: number; onClick: ()
     </button>
   );
 }
-

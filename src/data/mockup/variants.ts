@@ -105,3 +105,8 @@ export function getProductOriginalPrice(productId: number): number | null {
   const variants = getVariantsByProduct(productId)
   return variants.length > 0 ? variants[0].original_price : null
 }
+
+export function getProductStock(productId: number, size: string, color: string): number {
+  const variant = getVariant(productId, size, color)
+  return variant ? variant.stock : 0
+}
