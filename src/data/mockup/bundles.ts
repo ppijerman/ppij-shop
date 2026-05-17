@@ -8,6 +8,8 @@ export interface Bundle {
   price: number
   original_price: number | null
   slug: string
+  created_at: string
+  updated_at: string | null
 }
 
 export interface BundleItem {
@@ -24,6 +26,8 @@ export const BUNDLES: Bundle[] = [
     price: 38,
     original_price: 43,
     slug: 'classic-bundle',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
   },
   {
     id: 2,
@@ -32,6 +36,8 @@ export const BUNDLES: Bundle[] = [
     price: 40,
     original_price: 46,
     slug: 'oversized-bundle',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
   },
 ]
 
