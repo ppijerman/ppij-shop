@@ -81,8 +81,7 @@ export default function ProductDetailPage({ product, images, products }: Product
             alt={product.name}
             style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.3s ease' }}
           />
-            <div style={{ position: 'absolute', top: 18, left: 18, display: 'flex', gap: 8 }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink)', letterSpacing: '0.22em', textTransform: 'uppercase', background: 'var(--cream)', padding: '5px 10px' }}>{product.category}</span>
+            <div style={{ position: 'absolute', top: 18, left: 18 }}>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--cream)', letterSpacing: '0.22em', textTransform: 'uppercase', background: 'var(--black)', padding: '5px 10px' }}>{product.category}</span>
             </div>
             {product.tag && <div style={{ position: 'absolute', top: 18, right: 18, background: 'var(--orange)', color: 'var(--black)', padding: '6px 14px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', fontWeight: 700 }}>{product.tag}</div>}
@@ -304,3 +303,4 @@ function AddToCartBtn({ price, onClick, disabled }: { price: number; onClick: ()
     </button>
   );
 }
+
