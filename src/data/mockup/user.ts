@@ -27,8 +27,8 @@ export const USERS: User[] = [
     last_name: 'Pork',
     email: 'john@pork.com',
     role: 'BUYER' as const,
-    created_at: '2026-04-03T14:00:00Z',
-    updated_at: "2024-02-01T10:00:00Z"
+    created_at: '2024-02-01T10:00:00Z',
+    updated_at: '2026-04-03T14:00:00Z'
   },
   {
     id: 3,
@@ -47,8 +47,8 @@ export const USERS: User[] = [
     last_name: null,
     email: 'it@ppij.org',
     role: 'ADMIN_IT' as const,
-    created_at: '2026-01-01T00:00:00Z',
-    updated_at: "2024-02-01T10:00:00Z"
+    created_at: '22024-02-01T10:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z'
   },
 ]
 
