@@ -57,12 +57,12 @@ export default function Navbar() {
               <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           </button>
-          <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--black)', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5 }}>
+          <Link href="/auth/login" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--black)', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5, textDecoration: 'none' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
             </svg>
             Account
-          </button>
+          </Link>
           <CartPill count={cartCount} />
         </div>
       </div>
