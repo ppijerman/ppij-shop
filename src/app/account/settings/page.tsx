@@ -1,12 +1,13 @@
 'use client';
 
-import { MOCK_USER } from '@/data/account';
+import { getUserById } from '@/data/mockup/user';
 import { useState } from 'react';
 
 export default function SettingsPage() {
+  const user = getUserById(1);
   const [formData, setFormData] = useState({
-    name: MOCK_USER.name,
-    email: MOCK_USER.email,
+    name: user ? `${user.first_name} ${user.last_name || ''}`.trim() : '',
+    email: user?.email || '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
