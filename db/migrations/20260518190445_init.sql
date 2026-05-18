@@ -171,5 +171,6 @@ CREATE TRIGGER set_timestamp_products BEFORE UPDATE ON "products" FOR EACH ROW E
 CREATE TRIGGER set_timestamp_orders BEFORE UPDATE ON "orders" FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER set_timestamp_bundles BEFORE UPDATE ON "bundles" FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER set_timestamp_product_variants BEFORE UPDATE ON "product_variants" FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+CREATE TRIGGER set_timestamp_cart_items BEFORE UPDATE ON "cart_items" FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
 -- migrate:down
