@@ -1,3 +1,5 @@
+SET TIME ZONE 'Europe/Berlin';
+
 TRUNCATE TABLE "users", "products", "bundles", "cart_items", "product_variants", "order_items", "order_status_logs", "bundle_items", "product_images" RESTART IDENTITY CASCADE;
 
 INSERT INTO "users" (clerk_user_id, first_name, last_name, email, role, created_at, updated_at) VALUES 
@@ -23,3 +25,8 @@ WHERE b.slug = 'classic-bundle' AND v.sku = 'FH-S-WHITE';
 
 INSERT INTO "orders" (user_id, status, total_price, delivery_type, created_at, updated_at)
 SELECT id, 'PENDING', 38, 'DELIVERY', NOW(), NOW() FROM "users" WHERE email = 'mulyono@gmail.com';
+
+INSERT INTO "cart_items" (user_id, variant_id, quantity, created_at, updated_at)
+SELECT u.id, v.id, 1, NOW(), NOW() 
+FROM "users" u, "product_variants" v 
+WHERE u.email = 'john@pork.com' AND v.sku = 'FH-S-WHITE';

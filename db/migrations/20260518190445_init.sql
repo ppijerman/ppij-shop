@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"last_name" VARCHAR(255),
 	"email" VARCHAR(255) NOT NULL UNIQUE,
 	"role" VARCHAR(255) NOT NULL,
-	"created_at" TIMESTAMP NOT NULL DEFAULT NOW(),
-	"updated_at" TIMESTAMP NOT NULL DEFAULT NOW()
+	"created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	"updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS "products" (
@@ -29,20 +29,20 @@ CREATE TABLE IF NOT EXISTS "products" (
 	"category" VARCHAR(255) NOT NULL,
 	"desc" TEXT NOT NULL,
 	"tag" VARCHAR(255),
-	"created_at" TIMESTAMP NOT NULL DEFAULT NOW(),
-	"updated_at" TIMESTAMP NOT NULL DEFAULT NOW()
+	"created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	"updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS "orders" (
 	"id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-	"user_id" UUID NOT NULL,
+	"user_id" UUID,
 	"status" VARCHAR(255) NOT NULL,
 	"total_price" NUMERIC NOT NULL,
 	"delivery_address" VARCHAR(255),
 	"delivery_type" VARCHAR(255) NOT NULL,
 	"payment_proof_url" VARCHAR(255),
-	"created_at" TIMESTAMP NOT NULL DEFAULT NOW(),
-	"updated_at" TIMESTAMP NOT NULL DEFAULT NOW()
+	"created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	"updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS "bundles" (
@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS "bundles" (
 	"original_price" NUMERIC,
 	"slug" VARCHAR(255) NOT NULL UNIQUE,
 	"desc" TEXT NOT NULL,
-	"created_at" TIMESTAMP NOT NULL DEFAULT NOW(),
-	"updated_at" TIMESTAMP NOT NULL DEFAULT NOW()
+	"created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	"updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS "cart_items" (
@@ -62,7 +62,8 @@ CREATE TABLE IF NOT EXISTS "cart_items" (
 	"user_id" UUID NOT NULL,
 	"bundle_id" UUID,
 	"quantity" INTEGER NOT NULL,
-	"created_at" TIMESTAMP NOT NULL DEFAULT NOW(),
+	"created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	"updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 	CONSTRAINT "cart_items_exclusive_id" CHECK (
 		(variant_id IS NOT NULL AND bundle_id IS NULL) OR 
 		(variant_id IS NULL AND bundle_id IS NOT NULL)
@@ -80,8 +81,8 @@ CREATE TABLE IF NOT EXISTS "product_variants" (
 	"sku" VARCHAR(100) NOT NULL UNIQUE,
 	"color_name" VARCHAR(100),
 	"color_hex" VARCHAR(7),
-	"created_at" TIMESTAMP NOT NULL DEFAULT NOW(),
-	"updated_at" TIMESTAMP NOT NULL DEFAULT NOW()
+	"created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	"updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS "order_items" (
@@ -102,7 +103,7 @@ CREATE TABLE IF NOT EXISTS "order_status_logs" (
 	"order_id" UUID NOT NULL,
 	"status" VARCHAR(255) NOT NULL,
 	"note" VARCHAR(255) NOT NULL,
-	"created_at" TIMESTAMP NOT NULL DEFAULT NOW()
+	"created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS "bundle_items" (
