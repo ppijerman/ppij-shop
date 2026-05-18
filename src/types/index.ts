@@ -21,6 +21,7 @@ export interface Product {
   images: string[];
   primaryImg: PrimaryImg;
   featurePos: { x: number; y: number };
+  stock: Record<string, Record<string, number>>;
 }
 
 export interface CartItem extends Product {
@@ -29,4 +30,34 @@ export interface CartItem extends Product {
   cartKey: string;
   color: Color;
   size: string;
+}
+
+export type OrderStatus = 'PENDING_PAYMENT' | 'PAYMENT_CONFIRMATION' | 'PROCESSING' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED';
+
+export interface OrderItem {
+  id: number;
+  name: string;
+  size: string;
+  quantity: number;
+  price: number;
+}
+
+export interface Order {
+  id: string;
+  buyerName: string;
+  email: string;
+  address: string;
+  totalPrice: number;
+  date: string;
+  status: OrderStatus;
+  items: OrderItem[];
+  paymentProof?: string; // image URL
+}
+
+export interface Bundle {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  productIds: number[];
 }
