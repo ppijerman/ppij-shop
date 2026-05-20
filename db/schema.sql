@@ -16,6 +16,50 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: delivery_type; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.delivery_type AS ENUM (
+    'PICKUP',
+    'DELIVERY'
+);
+
+
+--
+-- Name: order_status; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.order_status AS ENUM (
+    'PENDING',
+    'CONFIRMED',
+    'PROCESSING',
+    'SHIPPED',
+    'DONE'
+);
+
+
+--
+-- Name: product_category; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.product_category AS ENUM (
+    'TSHIRT',
+    'TOTEBAG'
+);
+
+
+--
+-- Name: user_role; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.user_role AS ENUM (
+    'BUYER',
+    'ADMIN_KK',
+    'ADMIN_IT'
+);
+
+
+--
 -- Name: update_updated_at_column(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -56,7 +100,10 @@ CREATE TABLE public.bundles (
     slug character varying(255) NOT NULL,
     "desc" text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    sku character varying(100) NOT NULL,
+    CONSTRAINT chk_bundle_original_price CHECK (((original_price IS NULL) OR (original_price >= price))),
+    CONSTRAINT chk_bundle_price CHECK ((price >= (0)::numeric))
 );
 
 
@@ -72,7 +119,8 @@ CREATE TABLE public.cart_items (
     quantity integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT cart_items_exclusive_id CHECK ((((variant_id IS NOT NULL) AND (bundle_id IS NULL)) OR ((variant_id IS NULL) AND (bundle_id IS NOT NULL))))
+    CONSTRAINT cart_items_exclusive_id CHECK ((((variant_id IS NOT NULL) AND (bundle_id IS NULL)) OR ((variant_id IS NULL) AND (bundle_id IS NOT NULL)))),
+    CONSTRAINT chk_cart_item_qty CHECK ((quantity > 0))
 );
 
 
@@ -87,6 +135,9 @@ CREATE TABLE public.order_items (
     bundle_id uuid,
     quantity integer NOT NULL,
     price_at_purchase numeric NOT NULL,
+    product_name_snapshot character varying(255),
+    sku_snapshot character varying(100),
+    CONSTRAINT chk_order_item_qty CHECK ((quantity > 0)),
     CONSTRAINT order_items_exclusive_id CHECK ((((variant_id IS NOT NULL) AND (bundle_id IS NULL)) OR ((variant_id IS NULL) AND (bundle_id IS NOT NULL))))
 );
 
@@ -98,7 +149,7 @@ CREATE TABLE public.order_items (
 CREATE TABLE public.order_status_logs (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     order_id uuid NOT NULL,
-    status character varying(255) NOT NULL,
+    status public.order_status NOT NULL,
     note character varying(255) NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -111,13 +162,15 @@ CREATE TABLE public.order_status_logs (
 CREATE TABLE public.orders (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid,
-    status character varying(255) NOT NULL,
+    status public.order_status NOT NULL,
     total_price numeric NOT NULL,
-    delivery_address character varying(255),
-    delivery_type character varying(255) NOT NULL,
+    delivery_address jsonb,
+    delivery_type public.delivery_type NOT NULL,
     payment_proof_url character varying(255),
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT chk_delivery_address_logic CHECK (((delivery_type = 'PICKUP'::public.delivery_type) OR ((delivery_type = 'DELIVERY'::public.delivery_type) AND (delivery_address ? 'street'::text) AND (delivery_address ? 'city'::text) AND (delivery_address ? 'postcode'::text) AND (delivery_address ? 'country'::text)))),
+    CONSTRAINT chk_order_total_price CHECK ((total_price >= (0)::numeric))
 );
 
 
@@ -148,7 +201,10 @@ CREATE TABLE public.product_variants (
     color_name character varying(100),
     color_hex character varying(7),
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT chk_original_price CHECK (((original_price IS NULL) OR (original_price >= price))),
+    CONSTRAINT chk_price CHECK ((price >= (0)::numeric)),
+    CONSTRAINT chk_stock CHECK ((stock >= 0))
 );
 
 
@@ -163,11 +219,13 @@ CREATE TABLE public.products (
     fit_type character varying(255) NOT NULL,
     primary_image text NOT NULL,
     slug character varying(255) NOT NULL,
-    category character varying(255) NOT NULL,
+    category public.product_category NOT NULL,
     "desc" text NOT NULL,
     tag character varying(255),
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    weight_g numeric NOT NULL,
+    is_active boolean DEFAULT true NOT NULL
 );
 
 
@@ -190,7 +248,7 @@ CREATE TABLE public.users (
     first_name character varying(255) NOT NULL,
     last_name character varying(255),
     email character varying(255) NOT NULL,
-    role character varying(255) NOT NULL,
+    role public.user_role NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -210,6 +268,14 @@ ALTER TABLE ONLY public.bundle_items
 
 ALTER TABLE ONLY public.bundles
     ADD CONSTRAINT bundles_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bundles bundles_sku_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bundles
+    ADD CONSTRAINT bundles_sku_key UNIQUE (sku);
 
 
 --
@@ -301,6 +367,22 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
+-- Name: bundle_items uq_bundle_variant; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bundle_items
+    ADD CONSTRAINT uq_bundle_variant UNIQUE (bundle_id, variant_id);
+
+
+--
+-- Name: users uq_users_clerk_id; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT uq_users_clerk_id UNIQUE (clerk_user_id);
+
+
+--
 -- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -384,6 +466,20 @@ CREATE INDEX idx_product_variants_product_id ON public.product_variants USING bt
 --
 
 CREATE INDEX idx_products_slug ON public.products USING btree (slug);
+
+
+--
+-- Name: idx_unique_cart_bundle; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_unique_cart_bundle ON public.cart_items USING btree (user_id, bundle_id);
+
+
+--
+-- Name: idx_unique_cart_variant; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_unique_cart_variant ON public.cart_items USING btree (user_id, variant_id) WHERE (variant_id IS NOT NULL);
 
 
 --
@@ -480,7 +576,7 @@ ALTER TABLE ONLY public.cart_items
 --
 
 ALTER TABLE ONLY public.order_items
-    ADD CONSTRAINT fk_order_items_bundle FOREIGN KEY (bundle_id) REFERENCES public.bundles(id) ON DELETE SET NULL;
+    ADD CONSTRAINT fk_order_items_bundle FOREIGN KEY (bundle_id) REFERENCES public.bundles(id) ON DELETE RESTRICT;
 
 
 --
@@ -496,7 +592,7 @@ ALTER TABLE ONLY public.order_items
 --
 
 ALTER TABLE ONLY public.order_items
-    ADD CONSTRAINT fk_order_items_variant FOREIGN KEY (variant_id) REFERENCES public.product_variants(id) ON DELETE SET NULL;
+    ADD CONSTRAINT fk_order_items_variant FOREIGN KEY (variant_id) REFERENCES public.product_variants(id) ON DELETE RESTRICT;
 
 
 --
@@ -543,4 +639,5 @@ ALTER TABLE ONLY public.product_variants
 --
 
 INSERT INTO public.schema_migrations (version) VALUES
-    ('20260518190445');
+    ('20260518190445'),
+    ('20260520002041');
