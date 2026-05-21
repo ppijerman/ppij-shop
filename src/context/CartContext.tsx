@@ -32,6 +32,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         cartId: `${Date.now()}-${Math.random()}`,
         variantId: variant.id,
         productId: product.id,
+        bundleId: null,
         name: product.name,
         category: product.category === 'TOTEBAG' ? 'TOTE BAG' : 'T-SHIRT',
         price: variant.price,

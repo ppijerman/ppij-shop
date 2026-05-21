@@ -4,6 +4,18 @@ export interface Color {
 }
 
 export type ProductCategory = 'TSHIRT' | 'TOTEBAG';
+export type UserRole = 'BUYER' | 'ADMIN_KK' | 'ADMIN_IT';
+
+export interface User {
+  id: string;
+  clerk_user_id: string;
+  first_name: string;
+  last_name: string | null;
+  email: string;
+  role: UserRole;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface Product {
   id: string;
@@ -14,7 +26,6 @@ export interface Product {
   slug: string;
   category: ProductCategory;
   desc: string;
-  skuPrefix?: string;
   tag: string | null;
   created_at: string;
   updated_at: string;
@@ -45,45 +56,51 @@ export interface ProductImage {
 
 export interface CartItem {
   cartId: string;
-  variantId: string;
-  productId: string;
+  variantId: string | null;
+  productId: string | null;
+  bundleId: string | null;
   name: string;
   category: string;
   price: number;
   qty: number;
-  size: string;
-  color: Color;
+  size: string | null;
+  color: Color | null;
   image: string;
 }
 
-export type OrderStatus = 'PENDING_PAYMENT' | 'PAYMENT_CONFIRMATION' | 'PROCESSING' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED';
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DONE';
 
 export interface OrderItem {
-  id: number;
-  name: string;
-  size: string;
+  id: string;
+  order_id: string;
+  variant_id: string | null;
+  bundle_id: string | null;
   quantity: number;
-  price: number;
+  price_at_purchase: number;
+  product_name_snapshot: string;
+  sku_snapshot: string;
 }
 
 export interface Order {
   id: string;
-  buyerName: string;
-  email: string;
-  address: string;
-  totalPrice: number;
-  date: string;
+  user_id: string | null;
   status: OrderStatus;
+  total_price: number;
+  delivery_address: any;
+  delivery_type: 'PICKUP' | 'DELIVERY';
+  payment_proof_url: string | null;
+  created_at: string;
+  updated_at: string;
   items: OrderItem[];
   paymentProof?: string; 
 }
 
 export interface Bundle {
-  id: number;
+  id: string;
   name: string;
   description: string;
   price: number;
-  originalPrice?: number;
-  skuPrefix?: string;
-  productIds: number[];
+  original_price: number | null;
+  slug: string;
+  sku: string;
 }
