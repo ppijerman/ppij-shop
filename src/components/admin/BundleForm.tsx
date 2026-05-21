@@ -1,31 +1,33 @@
 'use client';
 
 import { useState } from 'react';
-import { Bundle, Product } from '@/types';
 
 interface BundleFormProps {
-  initialData?: Bundle;
-  products: Product[];
+  initialData?: any; // Accepting any to handle DB-joined bundle structure
+  products: any[];
   onSubmit: (data: any) => void;
 }
 
 export default function BundleForm({ initialData, products, onSubmit }: BundleFormProps) {
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
-    description: initialData?.description || '',
+    description: initialData?.desc || '',
     price: initialData?.price || 0,
-    originalPrice: initialData?.originalPrice || '',
-    skuPrefix: initialData?.skuPrefix || '',
+    originalPrice: initialData?.original_price || '',
+    skuPrefix: initialData?.sku || '',
   });
 
-  const [selectedProducts, setSelectedProducts] = useState<number[]>(initialData?.productIds || []);
+  // Extract initial product IDs from the nested items if editing
+  const [selectedProducts, setSelectedProducts] = useState<string[]>(
+    initialData?.items?.map((item: any) => item.product_id) || []
+  );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const toggleProduct = (productId: number) => {
+  const toggleProduct = (productId: string) => {
     if (selectedProducts.includes(productId)) {
       setSelectedProducts(selectedProducts.filter(id => id !== productId));
     } else {
@@ -125,24 +127,6 @@ export default function BundleForm({ initialData, products, onSubmit }: BundleFo
   );
 }
 
-const fieldGroup: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 8
-};
-
-const labelStyle: React.CSSProperties = {
-  fontFamily: 'var(--font-mono)',
-  fontSize: 11,
-  textTransform: 'uppercase',
-  color: 'var(--muted)',
-  letterSpacing: '0.05em'
-};
-
-const inputStyle: React.CSSProperties = {
-  padding: '12px',
-  borderRadius: 6,
-  border: '1px solid var(--line)',
-  fontSize: 14,
-  fontFamily: 'inherit'
-};
+const fieldGroup: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 8 };
+const labelStyle: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '0.05em' };
+const inputStyle: React.CSSProperties = { padding: '12px', borderRadius: 6, border: '1px solid var(--line)', fontSize: 14, fontFamily: 'inherit' };

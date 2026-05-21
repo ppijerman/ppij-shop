@@ -1,30 +1,45 @@
 'use client';
 
 import { useState } from 'react';
-import { Product, ProductCategory, Color } from '@/types';
 
 interface ProductFormProps {
-  initialData?: Product;
+  initialData?: any; // The database-joined product object
   onSubmit: (data: any) => void;
 }
 
 export default function ProductForm({ initialData, onSubmit }: ProductFormProps) {
+  const variants = initialData?.variants || [];
+  
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
-    skuPrefix: initialData?.skuPrefix || '',
     subtitle: initialData?.subtitle || '',
     category: initialData?.category || 'T-SHIRT',
-    price: initialData?.price || 0,
-    originalPrice: initialData?.originalPrice || null,
+    price: variants[0]?.price || 0,
+    originalPrice: variants[0]?.original_price || null,
     tag: initialData?.tag || '',
     desc: initialData?.desc || '',
-    fitType: initialData?.fitType || 'REGULAR',
+    fitType: initialData?.fit_type || 'REGULAR',
+    skuPrefix: initialData?.sku_prefix || '',
   });
 
-  const [sizes, setSizes] = useState<string[]>(initialData?.sizes || []);
-  const [colors, setColors] = useState<Color[]>(initialData?.colors || []);
-  const [stock, setStock] = useState<Record<string, Record<string, number>>>(initialData?.stock || {});
-  const [primaryImage, setPrimaryImage] = useState<string | null>(initialData?.primaryImage || null);
+  const [sizes, setSizes] = useState<string[]>(
+    Array.from(new Set(variants.map((v: any) => v.size as string)))
+  );
+  
+  const [colors, setColors] = useState<{name: string, hex: string}[]>(
+    Array.from(new Set(variants.map((v: any) => JSON.stringify({ name: v.color_name, hex: v.color_hex }))))
+      .map(s => JSON.parse(s as string))
+  );
+
+  const [stock, setStock] = useState<Record<string, Record<string, number>>>(
+    variants.reduce((acc: any, v: any) => {
+      acc[v.color_name] = acc[v.color_name] || {};
+      acc[v.color_name][v.size] = v.stock;
+      return acc;
+    }, {})
+  );
+
+  const [primaryImage, setPrimaryImage] = useState<string | null>(initialData?.primary_image || null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -55,8 +70,8 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
         <div style={fieldGroup}>
           <label style={labelStyle}>Category</label>
           <select name="category" value={formData.category} onChange={handleChange} style={inputStyle}>
-            <option value="T-SHIRT">T-SHIRT</option>
-            <option value="TOTE BAG">TOTE BAG</option>
+            <option value="TSHIRT">T-SHIRT</option>
+            <option value="TOTEBAG">TOTE BAG</option>
           </select>
         </div>
         <div style={fieldGroup}>
@@ -226,7 +241,6 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
           Click or drag images to upload
         </div>
 
-
         <div>
           <label style={{ ...labelStyle, display: 'block', marginBottom: 8 }}>Select Primary Image</label>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -235,7 +249,7 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
                 No images uploaded yet.
               </p>
             ) : (
-              initialData?.images?.map((img, i) => (
+              initialData?.images?.map((img: string, i: number) => (
                 <div
                   key={i}
                   onClick={() => setPrimaryImage(img)}
@@ -291,24 +305,6 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
   );
 }
 
-const fieldGroup: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 8
-};
-
-const labelStyle: React.CSSProperties = {
-  fontFamily: 'var(--font-mono)',
-  fontSize: 11,
-  textTransform: 'uppercase',
-  color: 'var(--muted)',
-  letterSpacing: '0.05em'
-};
-
-const inputStyle: React.CSSProperties = {
-  padding: '12px',
-  borderRadius: 6,
-  border: '1px solid var(--line)',
-  fontSize: 14,
-  fontFamily: 'inherit'
-};
+const fieldGroup: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 8 };
+const labelStyle: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '0.05em' };
+const inputStyle: React.CSSProperties = { padding: '12px', borderRadius: 6, border: '1px solid var(--line)', fontSize: 14, fontFamily: 'inherit' };

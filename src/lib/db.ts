@@ -1,4 +1,7 @@
-import { Pool } from 'pg'
+import { Pool, types } from 'pg'
+
+// Force numeric types (OID 1700) to be parsed as floats
+types.setTypeParser(1700, (val) => parseFloat(val));
 
 const globalForPool = globalThis as unknown as {
   pool?: Pool;

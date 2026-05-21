@@ -39,7 +39,7 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
                 onMouseLeave={() => setHoveredId(null)}
                 style={{ cursor: 'pointer', position: 'relative', animation: `fadeUp 0.5s ${i * 0.06}s ease both`, opacity: 0, animationFillMode: 'forwards' }}
               >
-                <Link href={`/product/${product.id}`} style={{ textDecoration: 'none', display: 'block' }}>
+                <Link href={`/product/${product.slug}`} style={{ textDecoration: 'none', display: 'block' }}>
                   <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--cream-2)' }}>
                     <ProductCrop src={product.primary_image} height={340} scale={2.4} />
                     {tweaks.showBadges && product.tag && (

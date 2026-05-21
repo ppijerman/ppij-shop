@@ -34,7 +34,7 @@ export default function CartView() {
                 return (
                   <div key={item.cartId} style={{ display: 'flex', gap: 16, alignItems: 'center', padding: '18px 0', borderBottom: '1px solid var(--line)' }}>
                     <div style={{ width: 84, height: 84, background: 'var(--cream-2)', flexShrink: 0, overflow: 'hidden' }}>
-                      <ProductCrop src={item.primary_image} height={84} scale={2.4} />
+                      <ProductCrop src={item.image} height={84} scale={2.4} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.22em', color: 'var(--muted)', textTransform: 'uppercase' }}>{item.category}</div>

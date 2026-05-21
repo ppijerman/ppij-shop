@@ -10,32 +10,30 @@ INSERT INTO "users" (clerk_user_id, first_name, last_name, email, role, created_
 
 INSERT INTO "products" (name, subtitle, category, weight_g, fit_type, "desc", tag, primary_image, slug, created_at, updated_at) 
 VALUES 
-  ('Fang & Horn', 
-  'OVERSIZED TEE — WHITE', 
-  'TSHIRT', 
-  220,
-  'normal', 
-  'Kaos oversized 220gsm...', 
-  'BESTSELLER', 
-  '/assets/v4/tshirt-grid.jpeg', 
-  'fang-and-horn', 
-  NOW(), NOW()),
-  ('Trio Komodores', 
-  'GRAPHIC TEE — BLACK', 
-  'TSHIRT', 
-  250,
-  'normal', 
-  'Graphic tee...', 
-  'NEW', 
-  '/assets/v4/tshirt-grid.jpeg', 
-  'trio-komodores', 
-  NOW(), NOW());
+  ('Fang & Horn', 'OVERSIZED TEE — WHITE', 'TSHIRT', 220, 'normal', 'Kaos oversized 220gsm dengan hand-drawn graphic.', 'BESTSELLER', '/assets/v4/tshirt-grid.jpeg', 'fang-and-horn', NOW(), NOW()),
+  ('Trio Komodores', 'GRAPHIC TEE — BLACK', 'TSHIRT', 250, 'normal', 'Graphic tee dengan illustrasi.', 'NEW', '/assets/v4/tshirt-grid.jpeg', 'trio-komodores', NOW(), NOW()),
+  ('Elle the Elephant', 'BACK PRINT TEE — GREY', 'TSHIRT', 220, 'oversized', 'Tee abu dengan POV back print.', 'LIMITED', '/assets/v4/tshirt-grid.jpeg', 'elle-the-elephant', NOW(), NOW()),
+  ('"Einkaufen 101"', 'HEAVY CANVAS TOTE — BLUE PRINT', 'TOTEBAG', 400, 'none', 'Tote canvas dengan blue print.', 'NEW', '/assets/v4/totebag-grid.jpeg', 'einkaufen-101', NOW(), NOW()),
+  ('"Mit Karte Bitte"', 'HEAVY CANVAS TOTE — GREEN PRINT', 'TOTEBAG', 400, 'none', 'Tote canvas dengan green print.', 'BESTSELLER', '/assets/v4/totebag-grid.jpeg', 'mit-karte-bitte', NOW(), NOW());
 
-INSERT INTO "product_variants" (product_id, size, fit_type, price, sku, color_name, color_hex, stock, created_at, updated_at)
-SELECT id, 'S', 'OVERSIZED', 25, 'FH-S-WHITE', 'White', '#F5F1E6', 10, NOW(), NOW() FROM "products" WHERE slug = 'fang-and-horn';
+INSERT INTO "product_variants" (product_id, size, fit_type, price, original_price, sku, color_name, color_hex, stock, created_at, updated_at)
+SELECT p.id, v.size, v.fit_type, v.price, v.original_price, v.sku, v.color_name, v.color_hex, v.stock, NOW(), NOW()
+FROM (
+  SELECT 'fang-and-horn' as slug, 'S' as size, 'OVERSIZED' as fit_type, 25 as price, 30 as original_price, 'FH-S-WHITE' as sku, 'White' as color_name, '#F5F1E6' as color_hex, 10 as stock
+  UNION ALL SELECT 'fang-and-horn', 'M', 'OVERSIZED', 25, 30, 'FH-M-WHITE', 'White', '#F5F1E6', 8
+  UNION ALL SELECT 'fang-and-horn', 'L', 'OVERSIZED', 25, 30, 'FH-L-WHITE', 'White', '#F5F1E6', 5
+  UNION ALL SELECT 'fang-and-horn', 'S', 'OVERSIZED', 25, 30, 'FH-S-BLACK', 'Black', '#0E0E0E', 7
+  UNION ALL SELECT 'trio-komodores', 'S', 'NORMAL', 25, NULL, 'TK-S-BLACK', 'Black', '#0E0E0E', 10
+  UNION ALL SELECT 'trio-komodores', 'S', 'NORMAL', 25, NULL, 'TK-S-CHARCOAL', 'Charcoal', '#3A3A3A', 5
+  UNION ALL SELECT 'elle-the-elephant', 'S', 'NORMAL', 28, 35, 'EE-S-GREY', 'Grey', '#5A5A5A', 5
+  UNION ALL SELECT 'elle-the-elephant', 'S', 'NORMAL', 28, 35, 'EE-S-SAND', 'Sand', '#C9B89A', 4
+  UNION ALL SELECT 'einkaufen-101', 'ONE SIZE', 'none', 18, NULL, 'EK-OS-NATBLUE', 'Natural / Blue', '#E8E0CC', 20
+  UNION ALL SELECT 'mit-karte-bitte', 'ONE SIZE', 'none', 18, NULL, 'MKB-OS-NATGREEN', 'Natural / Green', '#E8E0CC', 15
+) v
+JOIN "products" p ON p.slug = v.slug;
 
-INSERT INTO "bundles" (name, "desc", price, original_price, slug, created_at, updated_at) VALUES 
-('Classic Bundle', 'Totebag + Normal Fit T-Shirt', 38, 43, 'classic-bundle', NOW(), NOW());
+INSERT INTO "bundles" (name, "desc", price, original_price, slug, sku, created_at, updated_at) VALUES 
+('Classic Bundle', 'Totebag + Normal Fit T-Shirt', 38, 43, 'classic-bundle', 'BNDL-CLASSIC', NOW(), NOW());
 
 INSERT INTO "bundle_items" (bundle_id, variant_id)
 SELECT b.id, v.id 
