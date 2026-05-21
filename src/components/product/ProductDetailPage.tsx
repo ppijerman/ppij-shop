@@ -50,13 +50,12 @@ export default function ProductDetailPage({
     }
   }, [uniqueColors, selColor]);
 
-  // Derive available sizes for the selected color
   const availableSizes = useMemo(() => {
     if (!selColor) return [];
     return variants
       .filter((v) => v.color_name === selColor.name)
       .map((v) => v.size.trim())
-      .sort(); // You might want a custom sort for clothing sizes later
+      .sort();
   }, [variants, selColor]);
 
   const [selSize, setSelSize] = useState<string>(availableSizes[0]);
