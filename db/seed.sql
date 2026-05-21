@@ -52,7 +52,7 @@ SELECT
   NOW(), NOW() 
 FROM "users" WHERE email = 'mulyono@gmail.com';
 
-INSERT INTO "order_items" (order_id, variant_id, quantity; price_at_purchase, product_name_snapshot, sku_snapshot)
+INSERT INTO "order_items" (order_id, variant_id, quantity, price_at_purchase, product_name_snapshot, sku_snapshot)
 SELECT
   o.id,
   v.id,
