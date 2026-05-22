@@ -15,6 +15,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Toast from "@/components/ui/Toast";
 import TweaksPanel from "@/components/ui/tweaks/TweaksPanel";
+import ClerkUserSync from "@/components/auth/ClerkUserSync";
 import "./globals.css";
 
 const anton = Anton({
@@ -67,6 +68,7 @@ export default function RootLayout({
     >
       <body>
         <ClerkProvider>
+          <ClerkUserSync />
           <CartProvider>
             <ToastProvider>
               <TweaksProvider>
