@@ -10,34 +10,32 @@ export default function AdminShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isItMode = pathname.startsWith('/admin/it');
+
+  //const currentAdminRole = 'ADMIN_IT'
+  //const isItAdmin = currentAdminRole === 'ADMIN_IT';
+  const isItAdmin = pathname.startsWith('/admin/it'); 
+  const basePath = isItAdmin ? '/admin/it' : '/admin/kk';
 
   return (
     <div style={{ display: 'flex', minHeight: 'calc(100vh - 200px)', background: 'var(--cream)' }}>
       {/* Sidebar */}
       <aside style={{ width: 240, borderRight: '1px solid var(--line)', padding: '40px 24px', flexShrink: 0 }}>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, marginBottom: 32, letterSpacing: '0.05em' }}>
-          {isItMode ? 'ADMIN IT' : 'ADMIN KK'}
+          {isItAdmin ? 'ADMIN IT' : 'ADMIN KK'}
         </h2>
 
         <nav style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <AdminNavLink href="/admin/kk">KK Mode</AdminNavLink>
-          <AdminNavLink href="/admin/it">IT Mode</AdminNavLink>
-
-          {!isItMode && (
-            <>
-              <AdminNavLink href="/admin/kk" activeOnSubroutes={false}>
+              <AdminNavLink href={basePath} activeOnSubroutes={false}>
                 Dashboard
               </AdminNavLink>
-              <AdminNavLink href="/admin/kk/orders">Orders</AdminNavLink>
-              <AdminNavLink href="/admin/kk/payments">Payments</AdminNavLink>
-              <AdminNavLink href="/admin/kk/products">Products</AdminNavLink>
-              <AdminNavLink href="/admin/kk/bundles">Bundles</AdminNavLink>
-            </>
-          )}
-
-          {isItMode && (
-            <AdminNavLink href="/admin/it">Users</AdminNavLink>
+              <AdminNavLink href={`${basePath}/orders`}>Orders</AdminNavLink>
+              <AdminNavLink href={`${basePath}/payments`}>Payments</AdminNavLink>
+              <AdminNavLink href={`${basePath}/products`}>Products</AdminNavLink>
+              <AdminNavLink href={`${basePath}/bundles`}>Bundles</AdminNavLink>
+          {isItAdmin && (
+            <AdminNavLink href="/admin/it/users" activeOnSubroutes={false}>
+              Users
+            </AdminNavLink>
           )}
         </nav>
       </aside>
