@@ -51,7 +51,7 @@ export const MOCK_BUNDLES: Bundle[] = [
   }
 ];
 
-export type AdminUserRole = 'CUSTOMER' | 'ADMIN_KK' | 'ADMIN_IT';
+export type AdminUserRole = 'BUYER' | 'ADMIN_KK' | 'ADMIN_IT';
 
 export type AdminUser = {
   id: string;
@@ -66,7 +66,7 @@ export const MOCK_USERS: AdminUser[] = [
     id: 'USR-001',
     name: 'John Doe',
     email: 'john@example.com',
-    role: 'CUSTOMER',
+    role: 'BUYER',
     joinedDate: '2024-05-10',
   },
   {
