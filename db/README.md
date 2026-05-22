@@ -15,7 +15,7 @@ Create or update your `.env.local` file with your database connection string.
 **Note:** For local development, you usually need to disable SSL.
 
 ```env
-DATABASE_URL="postgres://postgres:password@localhost:5432/ppij_shop?sslmode=disable"
+DATABASE_URL="postgres://postgres:password@localhost:5433/ppij_shop?sslmode=disable"
 ```
 
 ## Common Commands
