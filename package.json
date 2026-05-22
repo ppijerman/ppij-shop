@@ -3,8 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "db:logs": "powershell -ExecutionPolicy Bypass -File scripts/postgres-logs.ps1",
+    "dbmate": "node scripts/run-dbmate.js",
+    "db:new": "node scripts/run-dbmate.js new",
+    "db:rollback": "node scripts/run-dbmate.js rollback",
+    "db:start": "powershell -ExecutionPolicy Bypass -File scripts/start-postgres.ps1",
+    "db:status": "node scripts/run-dbmate.js status",
+    "db:stop": "powershell -ExecutionPolicy Bypass -File scripts/stop-postgres.ps1",
+    "db:up": "node scripts/run-dbmate.js up",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint"
   },
