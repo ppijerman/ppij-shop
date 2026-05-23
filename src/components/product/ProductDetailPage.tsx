@@ -91,7 +91,11 @@ export default function ProductDetailPage({
     }
   };
 
-  const related = products.filter((p) => p.id !== product.id).slice(0, 4);
+  const hasValidOriginalPrice = 
+    typeof currentOriginalPrice === 'number' && 
+    Number.isFinite(currentOriginalPrice) && 
+    currentOriginalPrice > 0;
+  const related = products.filter((p) => p.id !== product.id).slice(0, 4); 
 
   if (variants.length === 0) {
     return (
@@ -387,7 +391,7 @@ export default function ProductDetailPage({
             >
               €{currentPrice.toFixed(2)}
             </span>
-            {currentOriginalPrice && (
+            {hasValidOriginalPrice && (
               <>
                 <span
                   style={{
