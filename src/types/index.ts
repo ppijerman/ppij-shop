@@ -1,3 +1,5 @@
+import { exportPages } from "next/dist/export/worker";
+
 export interface Color {
   name: string;
   hex: string;
@@ -69,6 +71,12 @@ export interface CartItem {
 }
 
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DONE';
+export interface DeliveryAddress {
+  street: string,
+  city: string,
+  postcode: number,
+  country: string
+}
 
 export interface OrderItem {
   id: string;
@@ -86,7 +94,7 @@ export interface Order {
   user_id: string | null;
   status: OrderStatus;
   total_price: number;
-  delivery_address: any;
+  delivery_address: DeliveryAddress | null;
   delivery_type: 'PICKUP' | 'DELIVERY';
   payment_proof_url: string | null;
   created_at: string;
@@ -98,7 +106,7 @@ export interface Order {
 export interface Bundle {
   id: string;
   name: string;
-  description: string;
+  desc: string;
   price: number;
   original_price: number | null;
   slug: string;

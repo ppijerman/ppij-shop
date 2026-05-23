@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 interface ProductFormProps {
-  initialData?: any; // The database-joined product object
+  initialData?: any; 
   onSubmit: (data: any) => void;
 }
 
@@ -77,10 +77,8 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
         <div style={fieldGroup}>
           <label style={labelStyle}>Fit Type</label>
           <select name="fitType" value={formData.fitType} onChange={handleChange} style={inputStyle}>
-            <option value="REGULAR">REGULAR</option>
+            <option value="NORMAL">NORMAL</option>
             <option value="OVERSIZED">OVERSIZED</option>
-            <option value="SLIM">SLIM</option>
-            <option value="RELAXED">RELAXED</option>
           </select>
         </div>
         <div style={fieldGroup}>

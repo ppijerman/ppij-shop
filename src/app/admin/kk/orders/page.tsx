@@ -1,52 +1,13 @@
-'use client';
-
-import { useState } from 'react';
+import { getAllOrders } from '@/lib/dal/orders';
 import Link from 'next/link';
-import { MOCK_ORDERS } from '@/data/admin';
-import { OrderStatus } from '@/types';
 
-export default function AdminOrders() {
-  const [filter, setFilter] = useState<OrderStatus | 'ALL'>('ALL');
-
-  const filteredOrders = filter === 'ALL' 
-    ? MOCK_ORDERS 
-    : MOCK_ORDERS.filter(o => o.status === filter);
-
-  const statuses: (OrderStatus | 'ALL')[] = [
-    'ALL',
-    'PENDING_PAYMENT',
-    'PAYMENT_CONFIRMATION',
-    'PROCESSING',
-    'SHIPPED',
-    'COMPLETED',
-    'CANCELLED'
-  ];
+export default async function AdminOrders() {
+  const orders = await getAllOrders();
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 48 }}>ORDERS</h1>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {statuses.map(s => (
-            <button
-              key={s}
-              onClick={() => setFilter(s)}
-              style={{
-                padding: '6px 12px',
-                borderRadius: 999,
-                border: '1px solid var(--line)',
-                background: filter === s ? 'var(--black)' : 'white',
-                color: filter === s ? 'var(--cream)' : 'var(--black)',
-                fontSize: 10,
-                fontFamily: 'var(--font-mono)',
-                cursor: 'pointer',
-                textTransform: 'uppercase'
-              }}
-            >
-              {s.replace('_', ' ')}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div style={{ background: 'white', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
@@ -54,7 +15,6 @@ export default function AdminOrders() {
           <thead>
             <tr style={{ borderBottom: '1px solid var(--line)', background: 'var(--cream-2)' }}>
               <th style={thStyle}>ID</th>
-              <th style={thStyle}>Buyer</th>
               <th style={thStyle}>Total</th>
               <th style={thStyle}>Date</th>
               <th style={thStyle}>Status</th>
@@ -62,12 +22,11 @@ export default function AdminOrders() {
             </tr>
           </thead>
           <tbody>
-            {filteredOrders.map(order => (
+            {orders.map((order: any) => (
               <tr key={order.id} style={{ borderBottom: '1px solid var(--line)' }}>
-                <td style={tdStyle}>{order.id}</td>
-                <td style={tdStyle}>{order.buyerName}</td>
-                <td style={tdStyle}>€{order.totalPrice}</td>
-                <td style={tdStyle}>{order.date}</td>
+                <td style={tdStyle}>{order.id.substring(0, 8)}</td>
+                <td style={tdStyle}>€{Number(order.total_price).toFixed(2)}</td>
+                <td style={tdStyle}>{new Date(order.created_at).toLocaleDateString()}</td>
                 <td style={tdStyle}>
                   <span style={{ 
                     padding: '4px 8px', 
@@ -77,7 +36,7 @@ export default function AdminOrders() {
                     background: getStatusColor(order.status),
                     color: 'white'
                   }}>
-                    {order.status.replace('_', ' ')}
+                    {order.status}
                   </span>
                 </td>
                 <td style={tdStyle}>
@@ -111,14 +70,13 @@ const tdStyle: React.CSSProperties = {
   fontSize: 14
 };
 
-function getStatusColor(status: OrderStatus) {
+function getStatusColor(status: string) {
   switch (status) {
-    case 'PENDING_PAYMENT': return '#f39200';
-    case 'PAYMENT_CONFIRMATION': return '#2196f3';
+    case 'PENDING': return '#f39200';
+    case 'CONFIRMED': return '#2196f3';
     case 'PROCESSING': return '#9c27b0';
     case 'SHIPPED': return '#3f51b5';
-    case 'COMPLETED': return '#4caf50';
-    case 'CANCELLED': return '#f44336';
+    case 'DONE': return '#4caf50';
     default: return '#9e9e9e';
   }
 }

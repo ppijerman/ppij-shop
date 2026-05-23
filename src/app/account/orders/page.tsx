@@ -1,8 +1,10 @@
-import { getOrdersByUser } from '@/data/mockup/orders';
+import { getCurrentDbUserOrThrow } from '@/lib/users';
+import { getOrdersByUser } from '@/lib/dal/orders';
 import Link from 'next/link';
 
-export default function OrdersPage() {
-  const orders = getOrdersByUser(1); // Mock user ID 1
+export default async function OrdersPage() {
+  const user = await getCurrentDbUserOrThrow();
+  const orders = await getOrdersByUser(user.id);
 
   return (
     <div>
@@ -31,7 +33,7 @@ export default function OrdersPage() {
             <span style={{ textAlign: 'right' }}>Actions</span>
           </div>
 
-          {orders.map((order) => (
+          {orders.map((order: any) => (
             <div 
               key={order.id}
               style={{ 
@@ -43,9 +45,9 @@ export default function OrdersPage() {
                 fontSize: 14
               }}
             >
-              <span style={{ fontWeight: 600 }}>#{order.id}</span>
+              <span style={{ fontWeight: 600 }}>#{order.id.substring(0, 8)}</span>
               <span>{new Date(order.created_at).toLocaleDateString()}</span>
-              <span style={{ fontWeight: 600 }}>€{order.total_price.toFixed(2)}</span>
+              <span style={{ fontWeight: 600 }}>€{Number(order.total_price).toFixed(2)}</span>
               <span>
                 <span style={{ 
                   fontSize: 10, 

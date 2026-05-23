@@ -1,13 +1,11 @@
-import { getUserById } from '@/data/mockup/user';
-import { getOrdersByUser } from '@/data/mockup/orders';
+import { getCurrentDbUserOrThrow } from '@/lib/users';
+import { getOrdersByUser } from '@/lib/dal/orders';
 import Link from 'next/link';
 
-export default function AccountPage() {
-  const user = getUserById(1);
-  const orders = getOrdersByUser(1);
+export default async function AccountPage() {
+  const user = await getCurrentDbUserOrThrow();
+  const orders = await getOrdersByUser(user.id);
   const latestOrder = orders[0];
-
-  if (!user) return null;
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 40 }}>
@@ -46,7 +44,7 @@ export default function AccountPage() {
         {latestOrder ? (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-              <span style={{ fontSize: 14, fontWeight: 600 }}>#{latestOrder.id}</span>
+              <span style={{ fontSize: 14, fontWeight: 600 }}>#{latestOrder.id.substring(0, 8)}</span>
               <span style={{ 
                 fontSize: 10, 
                 fontWeight: 700, 
@@ -63,7 +61,7 @@ export default function AccountPage() {
             </p>
             <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}>
               <p style={{ fontSize: 14, marginBottom: 4 }}>Total Amount</p>
-              <p style={{ fontSize: 20, fontWeight: 700 }}>€{latestOrder.total_price.toFixed(2)}</p>
+              <p style={{ fontSize: 20, fontWeight: 700 }}>€{Number(latestOrder.total_price).toFixed(2)}</p>
             </div>
             <Link 
               href={`/account/orders/${latestOrder.id}`}

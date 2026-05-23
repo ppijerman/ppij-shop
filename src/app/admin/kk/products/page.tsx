@@ -1,9 +1,9 @@
-'use client';
-
-import { PRODUCTS } from '@/data/products';
+import { getAllProducts } from '@/lib/dal/products';
 import Link from 'next/link';
 
-export default function AdminProducts() {
+export default async function AdminProducts() {
+  const products = await getAllProducts();
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
@@ -30,18 +30,16 @@ export default function AdminProducts() {
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--line)', background: 'var(--cream-2)' }}>
-              <th style={thStyle}>No</th>
               <th style={thStyle}>Product</th>
-              <th style={thStyle}>Type</th>
+              <th style={thStyle}>Category</th>
               <th style={thStyle}>Price</th>
-              <th style={thStyle}>Stock / Sizes</th>
+              <th style={thStyle}>Stock</th>
               <th style={thStyle}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {PRODUCTS.map(product => (
+            {products.map((product: any) => (
               <tr key={product.id} style={{ borderBottom: '1px solid var(--line)' }}>
-                <td style={tdStyle}>{product.no}</td>
                 <td style={tdStyle}>
                   <div style={{ fontWeight: 600 }}>{product.name}</div>
                   <div style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>{product.subtitle}</div>
@@ -51,12 +49,16 @@ export default function AdminProducts() {
                     {product.category}
                   </span>
                 </td>
-                <td style={tdStyle}>€{product.price}</td>
+                <td style={tdStyle}>
+                  {product.variants && product.variants.length > 0 
+                    ? `€${Number(product.variants[0].price).toFixed(2)}` 
+                    : 'N/A'}
+                </td>
                 <td style={tdStyle}>
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                    {product.sizes.map(s => (
-                      <span key={s} style={{ fontSize: 10, border: '1px solid var(--line)', padding: '2px 4px', borderRadius: 2 }}>
-                        {s}: 10
+                    {product.variants?.map((v: any) => (
+                      <span key={v.id} style={{ fontSize: 10, border: '1px solid var(--line)', padding: '2px 4px', borderRadius: 2 }}>
+                        {v.size}: {v.stock}
                       </span>
                     ))}
                   </div>
@@ -71,7 +73,7 @@ export default function AdminProducts() {
                     </Link>
                     <button 
                       style={{ background: 'none', border: 'none', color: '#f44336', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0 }}
-                      onClick={() => confirm('Are you sure you want to delete this product?')}
+                      onClick={() => alert('Delete functionality needs server action')}
                     >
                       DELETE
                     </button>

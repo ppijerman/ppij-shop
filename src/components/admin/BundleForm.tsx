@@ -3,7 +3,11 @@
 import { useState } from 'react';
 
 interface BundleFormProps {
+<<<<<<< HEAD
   initialData?: any; // Accepting any to handle DB-joined bundle structure
+=======
+  initialData?: any;
+>>>>>>> c07cce9 (feat: migrate to postgresql database)
   products: any[];
   onSubmit: (data: any) => void;
 }

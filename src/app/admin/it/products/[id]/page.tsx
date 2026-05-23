@@ -1,1 +1,0 @@
-export { default } from '../../../kk/products/[id]/page';

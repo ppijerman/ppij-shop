@@ -1,22 +1,8 @@
-"use client";
+import CatalogWrapper from "@/components/catalog/CatalogWrapper";
+import { getAllProducts } from "@/lib/dal/products";
 
-import { useState } from "react";
-import CapsuleGrid from "@/components/catalog/CapsuleGrid";
-import QuickViewModal from "@/components/product/QuickViewModal";
-import { PRODUCTS, Product } from "@/data/mockup/products";
+export default async function CatalogPage() {
+  const products = await getAllProducts();
 
-export default function CatalogPage() {
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-
-  return (
-    <>
-      <CapsuleGrid products={PRODUCTS} onQuickView={setSelectedProduct} />
-      {selectedProduct && (
-        <QuickViewModal
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-        />
-      )}
-    </>
-  );
+  return <CatalogWrapper products={products} />;
 }

@@ -2,18 +2,16 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Product } from '@/data/mockup/products';
-import { getProductBasePrice, getProductOriginalPrice } from '@/data/mockup/variants';
 import { useTweaks } from '@/context/TweaksContext';
 import ProductCrop from '@/components/product/ProductCrop';
 
 interface CapsuleGridProps {
-  products: Product[];
-  onQuickView: (product: Product) => void;
+  products: any[];
+  onQuickView: (product: any) => void;
 }
 
 export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps) {
-  const [hoveredId, setHoveredId] = useState<number | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const { tweaks } = useTweaks();
 
   return (
@@ -31,6 +29,8 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
           {products.map((product, i) => {
             const isHovered = hoveredId === product.id;
             const categoryLabel = product.category === 'TOTEBAG' ? 'TOTE BAG' : 'T-SHIRT';
+            const price = product.variants?.[0]?.price || 0;
+            const originalPrice = product.variants?.[0]?.original_price || null;
 
             return (
               <div
@@ -68,9 +68,9 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
                       {product.name.toUpperCase()}
                     </div>
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--ink)', marginTop: 6, fontWeight: 500 }}>
-                      €{getProductBasePrice(product.id).toFixed(2)}
-                      {getProductOriginalPrice(product.id) && (
-                        <span style={{ color: 'var(--muted)', textDecoration: 'line-through', marginLeft: 8, fontSize: 11 }}>€{getProductOriginalPrice(product.id)?.toFixed(2)}</span>
+                      €{Number(price).toFixed(2)}
+                      {originalPrice && (
+                        <span style={{ color: 'var(--muted)', textDecoration: 'line-through', marginLeft: 8, fontSize: 11 }}>€{Number(originalPrice).toFixed(2)}</span>
                       )}
                     </div>
                   </div>

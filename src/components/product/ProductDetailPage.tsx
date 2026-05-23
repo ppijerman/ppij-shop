@@ -39,7 +39,7 @@ export default function ProductDetailPage({
     return Array.from(map.values());
   }, [variants]);
 
-  const [selColor, setSelColor] = useState<Color>(uniqueColors[0]);
+  const [selColor, setSelColor] = useState<Color | null>(uniqueColors[0] ?? null);
 
   useEffect(() => {
     if (uniqueColors.length > 0) {
@@ -53,12 +53,12 @@ export default function ProductDetailPage({
   const availableSizes = useMemo(() => {
     if (!selColor) return [];
     return variants
-      .filter((v) => v.color_name === selColor.name)
+      .filter((v) => v.color_name === selColor.name && v.stock > 0)
       .map((v) => v.size.trim())
       .sort();
   }, [variants, selColor]);
 
-  const [selSize, setSelSize] = useState<string>(availableSizes[0]);
+  const [selSize, setSelSize] = useState<string | null>(availableSizes[0]);
 
   useEffect(() => {
     if (availableSizes.length > 0) {
@@ -596,17 +596,6 @@ export default function ProductDetailPage({
             </div>
             <AddToCartBtn price={currentPrice * qty} onClick={handleAddToCart} />
           </div>
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 8,
-              marginTop: 22,
-              paddingTop: 18
-            }}
-          >
-          </div>
         </div>
       </div>
 
@@ -883,16 +872,6 @@ export default function ProductDetailPage({
                     }}
                   >
                     {p.name.toUpperCase()}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 12,
-                      marginTop: 4,
-                      color: 'var(--ink)',
-                    }}
-                  >
-                    from €{p.weight_g > 0 ? '...' : '0.00' /* Placeholder for price */}
                   </div>
                 </div>
               </Link>

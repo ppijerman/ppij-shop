@@ -2,31 +2,31 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Product } from '@/data/mockup/products';
-import { getUniqueColors, getSizesById, getSizesForColor, getVariant, getProductBasePrice, getProductOriginalPrice } from '@/data/mockup/variants';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import ProductCrop from './ProductCrop';
 
 interface QuickViewModalProps {
-  product: Product;
+  product: any; // Using 'any' until DB types are fully unified across the app
   onClose: () => void;
 }
 
 export default function QuickViewModal({ product, onClose }: QuickViewModalProps) {
-  const [selColor, setSelColor] = useState(getUniqueColors(product.id)[0]);
-  const [selSize, setSelSize] = useState(getSizesForColor(product.id, selColor.name)[0].size);
+  // Use product.variants for color/size logic
+  const variants = product.variants || [];
+  const [selColor, setSelColor] = useState(variants[0]?.color_name || 'Default');
+  const [selSize, setSelSize] = useState(variants[0]?.size || 'ONE SIZE');
   const [qty, setQty] = useState(1);
   const { addToCart } = useCart();
   const { showToast } = useToast();
   
   const categoryLabel = product.category === 'TOTEBAG' ? 'TOTE BAG' : 'T-SHIRT';
-  const currentVariant = getVariant(product.id, selSize, selColor.name);
-  const currentPrice = currentVariant?.price ?? getProductBasePrice(product.id);
-  const currentOriginalPrice = currentVariant?.original_price ?? getProductOriginalPrice(product.id);
+  const currentVariant = variants.find((v: any) => v.size === selSize && v.color_name === selColor) || variants[0];
+  const currentPrice = currentVariant?.price || 0;
+  const currentOriginalPrice = currentVariant?.original_price || null;
 
   const handleAdd = () => {
-    addToCart(product, qty, selColor, selSize);
+    addToCart(product, currentVariant, qty);
     showToast(`✦ added · ${product.name}`);
     onClose();
   };
@@ -59,25 +59,25 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
             <p style={{ fontSize: 14, color: 'var(--ink)', lineHeight: 1.7 }}>{product.desc}</p>
 
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, paddingBottom: 14, borderBottom: '1px solid var(--line)' }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: 38, color: 'var(--black)' }}>€{currentPrice.toFixed(2)}</span>
-              {currentOriginalPrice && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--muted)', textDecoration: 'line-through' }}>€{currentOriginalPrice.toFixed(2)}</span>}
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: 38, color: 'var(--black)' }}>€{Number(currentPrice).toFixed(2)}</span>
+              {currentOriginalPrice && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--muted)', textDecoration: 'line-through' }}>€{Number(currentOriginalPrice).toFixed(2)}</span>}
             </div>
 
             <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 8 }}>warna · {selColor.name}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 8 }}>warna · {selColor}</div>
               <div style={{ display: 'flex', gap: 8 }}>
-                {getUniqueColors(product.id).map(c => (
-                  <button key={c.hex} onClick={() => setSelColor(c)} style={{ width: 28, height: 28, borderRadius: '50%', background: c.hex, border: 'none', outline: selColor.hex === c.hex ? '2px solid var(--orange)' : '1px solid var(--line)', outlineOffset: 2, cursor: 'pointer' }} />
+                {[...new Set(variants.map((v: any) => v.color_name))].map((c: any) => (
+                  <button key={c} onClick={() => setSelColor(c)} style={{ width: 28, height: 28, borderRadius: '50%', background: variants.find((v:any) => v.color_name === c)?.color_hex, border: 'none', outline: selColor === c ? '2px solid var(--orange)' : '1px solid var(--line)', outlineOffset: 2, cursor: 'pointer' }} />
                 ))}
               </div>
             </div>
 
-            {getSizesById(product.id)[0] !== 'ONE SIZE' && (
+            {variants[0]?.size !== 'ONE SIZE' && (
               <div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 8 }}>size</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {getSizesById(product.id).map(s => (
-                    <button key={s} onClick={() => setSelSize(s)} style={{ minWidth: 42, padding: '8px 12px', border: '1px solid', borderColor: selSize === s ? 'var(--black)' : 'var(--line)', background: selSize === s ? 'var(--black)' : 'transparent', color: selSize === s ? 'var(--cream)' : 'var(--ink)', fontFamily: 'var(--font-mono)', fontSize: 12, cursor: 'pointer', transition: 'all 0.15s' }}>{s}</button>
+                  {[...new Set(variants.map((v: any) => v.size))].map(s => (
+                    <button key={s as string} onClick={() => setSelSize(s as string)} style={{ minWidth: 42, padding: '8px 12px', border: '1px solid', borderColor: selSize === s ? 'var(--black)' : 'var(--line)', background: selSize === s ? 'var(--black)' : 'transparent', color: selSize === s ? 'var(--cream)' : 'var(--ink)', fontFamily: 'var(--font-mono)', fontSize: 12, cursor: 'pointer', transition: 'all 0.15s' }}>{s as string}</button>
                   ))}
                 </div>
               </div>
@@ -93,7 +93,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto' }}>
-              <AddBtn price={currentPrice * qty} onClick={handleAdd} />
+              <AddBtn price={Number(currentPrice) * qty} onClick={handleAdd} />
               <Link
                 href={`/product/${product.id}`}
                 onClick={onClose}

@@ -1,13 +1,13 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
-import { PRODUCTS } from '@/data/products';
+import { useRouter } from 'next/navigation';
+import { getProductBySlug } from '@/lib/dal/products';
 import ProductForm from '@/components/admin/ProductForm';
 
-export default function EditProduct() {
-  const { id } = useParams();
+export default async function EditProduct({ params }: { params: { slug: string } }) {
+  const { slug } = await params;
   const router = useRouter();
-  const product = PRODUCTS.find(p => p.id === Number(id));
+  const product = await getProductBySlug(slug);
 
   if (!product) return <div>Product not found</div>;
 

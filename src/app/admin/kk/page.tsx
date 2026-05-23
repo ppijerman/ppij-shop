@@ -1,12 +1,11 @@
-'use client';
+import { getAllOrders } from '@/lib/dal/orders';
 
-import { MOCK_ORDERS } from '@/data/admin';
-
-export default function AdminDashboard() {
-  const totalOrders = MOCK_ORDERS.length;
-  const pendingPayments = MOCK_ORDERS.filter(o => o.status === 'PAYMENT_CONFIRMATION').length;
+export default async function AdminDashboard() {
+  const orders = await getAllOrders();
+  const totalOrders = orders.length;
+  const pendingPayments = orders.filter(o => o.status === 'CONFIRMED').length; // Adjust logic based on schema
   
-  const statusCounts = MOCK_ORDERS.reduce((acc, order) => {
+  const statusCounts = orders.reduce((acc, order) => {
     acc[order.status] = (acc[order.status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
@@ -24,7 +23,7 @@ export default function AdminDashboard() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {Object.entries(statusCounts).map(([status, count]) => (
           <div key={status} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px', background: 'white', borderRadius: 8, border: '1px solid var(--line)' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, textTransform: 'uppercase' }}>{status.replace('_', ' ')}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, textTransform: 'uppercase' }}>{status}</span>
             <span style={{ fontWeight: 600 }}>{count}</span>
           </div>
         ))}
