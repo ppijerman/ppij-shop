@@ -11,17 +11,20 @@ interface ProductFormProps {
 export default function ProductForm({ initialData, onSubmit }: ProductFormProps) {
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
+    skuPrefix: initialData?.skuPrefix || '',
     subtitle: initialData?.subtitle || '',
     category: initialData?.category || 'T-SHIRT',
     price: initialData?.price || 0,
     originalPrice: initialData?.originalPrice || null,
     tag: initialData?.tag || '',
     desc: initialData?.desc || '',
+    fitType: initialData?.fitType || 'REGULAR',
   });
 
   const [sizes, setSizes] = useState<string[]>(initialData?.sizes || []);
   const [colors, setColors] = useState<Color[]>(initialData?.colors || []);
   const [stock, setStock] = useState<Record<string, Record<string, number>>>(initialData?.stock || {});
+  const [primaryImage, setPrimaryImage] = useState<string | null>(initialData?.primaryImage || null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -57,8 +60,21 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
           </select>
         </div>
         <div style={fieldGroup}>
+          <label style={labelStyle}>Fit Type</label>
+          <select name="fitType" value={formData.fitType} onChange={handleChange} style={inputStyle}>
+            <option value="REGULAR">REGULAR</option>
+            <option value="OVERSIZED">OVERSIZED</option>
+            <option value="SLIM">SLIM</option>
+            <option value="RELAXED">RELAXED</option>
+          </select>
+        </div>
+        <div style={fieldGroup}>
           <label style={labelStyle}>Tag</label>
           <input name="tag" value={formData.tag} onChange={handleChange} style={inputStyle} placeholder="e.g. NEW, BESTSELLER" />
+        </div>
+        <div style={fieldGroup}>
+          <label style={labelStyle}>SKU Prefix</label>
+          <input name="skuPrefix" value={formData.skuPrefix} onChange={handleChange} style={inputStyle} placeholder="e.g. FH-TEE" />
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Price (€)</label>
@@ -197,21 +213,64 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
 
       <div style={{ marginBottom: 40 }}>
         <label style={labelStyle}>Images</label>
-        <div style={{ 
-          marginTop: 8, 
-          border: '2px dashed var(--line)', 
-          padding: 40, 
-          textAlign: 'center', 
+        <div style={{
+          marginTop: 8,
+          border: '2px dashed var(--line)',
+          padding: 40,
+          textAlign: 'center',
           borderRadius: 8,
           color: 'var(--muted)',
-          fontSize: 13
+          fontSize: 13,
+          marginBottom: 16
         }}>
           Click or drag images to upload
+        </div>
+
+
+        <div>
+          <label style={{ ...labelStyle, display: 'block', marginBottom: 8 }}>Select Primary Image</label>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            {!initialData?.images?.length ? (
+              <p style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
+                No images uploaded yet.
+              </p>
+            ) : (
+              initialData?.images?.map((img, i) => (
+                <div
+                  key={i}
+                  onClick={() => setPrimaryImage(img)}
+                  style={{
+                    position: 'relative',
+                    width: 80,
+                    height: 80,
+                    borderRadius: 6,
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    border: primaryImage === img
+                      ? '2px solid var(--black)'
+                      : '2px solid var(--line)',
+                  }}
+                >
+                  <img src={img} alt={`Image ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {primaryImage === img && (
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      background: 'rgba(0,0,0,0.35)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'white', fontSize: 18
+                    }}>
+                      ★
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 
       <button 
-        onClick={() => onSubmit({ ...formData, sizes, colors, stock })}
+        onClick={() => onSubmit({ ...formData, sizes, colors, stock, primaryImage })}
         style={{
           width: '100%',
           padding: '16px',

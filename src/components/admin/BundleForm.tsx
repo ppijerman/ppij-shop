@@ -14,6 +14,8 @@ export default function BundleForm({ initialData, products, onSubmit }: BundleFo
     name: initialData?.name || '',
     description: initialData?.description || '',
     price: initialData?.price || 0,
+    originalPrice: initialData?.originalPrice || '',
+    skuPrefix: initialData?.skuPrefix || '',
   });
 
   const [selectedProducts, setSelectedProducts] = useState<number[]>(initialData?.productIds || []);
@@ -43,9 +45,20 @@ export default function BundleForm({ initialData, products, onSubmit }: BundleFo
         <textarea name="description" value={formData.description} onChange={handleChange} style={{ ...inputStyle, minHeight: 100 }} />
       </div>
 
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 24 }}>
+        <div style={fieldGroup}>
+          <label style={labelStyle}>Price (€)</label>
+          <input name="price" type="number" value={formData.price} onChange={handleChange} style={inputStyle} />
+        </div>
+        <div style={fieldGroup}>
+          <label style={labelStyle}>Original Price (€)</label>
+          <input name="originalPrice" type="number" value={formData.originalPrice} onChange={handleChange} style={inputStyle} placeholder="Leave empty if no discount" />
+        </div>
+      </div>
+
       <div style={{ ...fieldGroup, marginTop: 24, width: '33%' }}>
-        <label style={labelStyle}>Price (€)</label>
-        <input name="price" type="number" value={formData.price} onChange={handleChange} style={inputStyle} />
+        <label style={labelStyle}>SKU Prefix</label>
+        <input name="skuPrefix" value={formData.skuPrefix} onChange={handleChange} style={inputStyle} placeholder="e.g. BUNDLE-DUO" />
       </div>
 
       <div style={{ marginTop: 32, marginBottom: 40 }}>

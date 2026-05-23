@@ -14,6 +14,9 @@ export interface Product {
   subtitle: string;
   price: number;
   originalPrice: number | null;
+  skuPrefix?: string;
+  fitType?: string;
+  primaryImage?: string;
   tag: string | null;
   colors: Color[];
   sizes: string[];
@@ -59,5 +62,7 @@ export interface Bundle {
   name: string;
   description: string;
   price: number;
+  originalPrice?: number;
+  skuPrefix?: string;
   productIds: number[];
 }
