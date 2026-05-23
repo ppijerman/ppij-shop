@@ -1,26 +1,38 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
 import { getProductBySlug } from '@/lib/dal/products';
-import ProductForm from '@/components/admin/ProductForm';
+import AdminProductEditForm from '@/components/admin/AdminProductEditForm';
+import { updateProduct } from '@/lib/dal/products'; // Assuming you have an updateProduct function in DAL
 
 export default async function EditProduct({ params }: { params: { slug: string } }) {
   const { slug } = await params;
-  const router = useRouter();
   const product = await getProductBySlug(slug);
 
   if (!product) return <div>Product not found</div>;
 
-  const handleSubmit = (data: any) => {
-    console.log('Updating product:', data);
-    alert('Product updated successfully!');
-    router.push('/admin/kk/products');
+  // Server Action
+  const updateProductAction = async (formData: FormData) => {
+    'use server';
+    const id = formData.get('id') as string;
+    const name = formData.get('name') as string;
+    const subtitle = formData.get('subtitle') as string;
+    const category = formData.get('category') as string;
+    const fitType = formData.get('fitType') as string;
+    const tag = formData.get('tag') as string;
+    const skuPrefix = formData.get('skuPrefix') as string;
+    const price = parseFloat(formData.get('price') as string);
+    const originalPrice = parseFloat(formData.get('originalPrice') as string);
+    const description = formData.get('desc') as string;
+    const primaryImage = formData.get('primaryImage') as string;
+    const sizes = JSON.parse(formData.get('sizes') as string);
+    const colors = JSON.parse(formData.get('colors') as string);
+    const stock = JSON.parse(formData.get('stock') as string);
+
+    await updateProduct(id, { name, subtitle, category, fitType, tag, skuPrefix, price, originalPrice, description, primaryImage, sizes, colors, stock });
   };
 
   return (
     <div>
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 48, marginBottom: 40 }}>EDIT PRODUCT</h1>
-      <ProductForm initialData={product} onSubmit={handleSubmit} />
+      <AdminProductEditForm initialData={product} updateProduct={updateProductAction} />
     </div>
   );
 }

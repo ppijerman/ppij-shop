@@ -11,17 +11,17 @@ export default async function EditBundle({ params }: { params: { id: string } })
 
   if (!bundle) notFound();
 
-  const handleSubmit = async (data: any) => {
+  async function handleSubmit(formData: FormData) {
     'use server';
-    console.log('Updating bundle:', data);
+    console.log('Updating bundle:', formData);
     // TODO: Implement server action for updating bundle
     redirect('/admin/kk/bundles');
-  };
+  }
 
   return (
     <div>
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 48, marginBottom: 40 }}>EDIT BUNDLE</h1>
-      <BundleForm initialData={bundle} products={products} onSubmit={handleSubmit} />
+      <BundleForm initialData={bundle} products={products} action={handleSubmit} />
     </div>
   );
 }

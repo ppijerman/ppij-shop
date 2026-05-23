@@ -9,5 +9,10 @@ export async function getVariantsByProductId(productId: string) {
     `,
     [productId]
   )
-  return res.rows
+  return res.rows.map(v => ({
+    ...v,
+    price: parseFloat(v.price),
+    original_price: parseFloat(v.original_price),
+    stock: parseFloat(v.stock)
+  }))
 }

@@ -2,6 +2,13 @@ import { getAllBundles } from '@/lib/dal/bundles';
 import { getAllProducts } from '@/lib/dal/products';
 import Link from 'next/link';
 
+async function deleteBundle(formData: FormData) {
+  'use server';
+  const id = formData.get('id');
+  console.log('Deleting bundle:', id);
+  // Implement actual DB deletion here
+}
+
 export default async function AdminBundles() {
   const bundles = await getAllBundles();
   const products = await getAllProducts();
@@ -33,6 +40,7 @@ export default async function AdminBundles() {
           <thead>
             <tr style={{ borderBottom: '1px solid var(--line)', background: 'var(--cream-2)' }}>
               <th style={thStyle}>Bundle Name</th>
+              <th style={thStyle}>Included Products</th>
               <th style={thStyle}>Price</th>
               <th style={thStyle}>Actions</th>
             </tr>
@@ -47,7 +55,7 @@ export default async function AdminBundles() {
                   </td>
                   <td style={tdStyle}>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {products.filter(p => p.bundle_id === bundle.id).map((p: any) => (
+                      {products.filter((p: any) => p.bundle_id === bundle.id).map((p: any) => (
                         <span key={p.id} style={{ fontSize: 10, background: 'var(--cream)', padding: '2px 6px', borderRadius: 4, fontFamily: 'var(--font-mono)' }}>
                           {p.name}
                         </span>
@@ -59,16 +67,19 @@ export default async function AdminBundles() {
                     <div style={{ display: 'flex', gap: 12 }}>
                       <Link 
                         href={`/admin/kk/bundles/${bundle.id}`}
-                        style={{ color: 'var(--black)', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}
+                        style={{ color: 'var(--black)', fontSize: 12, fontWeight: 600, textDecoration: 'none', padding: 1 }}
                       >
                         EDIT
                       </Link>
-                      <button 
-                        style={{ background: 'none', border: 'none', color: '#f44336', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0 }}
-                        onClick={() => alert('Delete logic requires Server Action')}
-                      >
-                        DELETE
-                      </button>
+                      <form action={deleteBundle}>
+                        <input type="hidden" name="id" value={bundle.id} />
+                        <button 
+                          type="submit"
+                          style={{ background: 'none', border: 'none', color: '#f44336', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0.5 }}
+                        >
+                          DELETE
+                        </button>
+                      </form>
                     </div>
                   </td>
                 </tr>

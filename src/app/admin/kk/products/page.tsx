@@ -1,6 +1,14 @@
 import { getAllProducts } from '@/lib/dal/products';
 import Link from 'next/link';
 
+// Simple server action for deletion
+async function deleteProduct(formData: FormData) {
+  'use server';
+  const id = formData.get('id');
+  console.log('Deleting product:', id);
+  // Implement actual DB deletion here
+}
+
 export default async function AdminProducts() {
   const products = await getAllProducts();
 
@@ -66,17 +74,20 @@ export default async function AdminProducts() {
                 <td style={tdStyle}>
                   <div style={{ display: 'flex', gap: 12 }}>
                     <Link 
-                      href={`/admin/kk/products/${product.id}`}
-                      style={{ color: 'var(--black)', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}
+                      href={`/admin/kk/products/${product.slug}`}
+                      style={{ color: 'var(--black)', fontSize: 12, fontWeight: 600, textDecoration: 'none', padding: 1 }}
                     >
                       EDIT
                     </Link>
-                    <button 
-                      style={{ background: 'none', border: 'none', color: '#f44336', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0 }}
-                      onClick={() => alert('Delete functionality needs server action')}
-                    >
-                      DELETE
-                    </button>
+                    <form action={deleteProduct}>
+                      <input type="hidden" name="id" value={product.id} />
+                      <button 
+                        type="submit"
+                        style={{ background: 'none', border: 'none', color: '#f44336', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0.5 }}
+                      >
+                        DELETE
+                      </button>
+                    </form>
                   </div>
                 </td>
               </tr>

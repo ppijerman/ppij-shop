@@ -3,33 +3,15 @@
 import { useState } from 'react';
 
 interface BundleFormProps {
-<<<<<<< HEAD
-  initialData?: any; // Accepting any to handle DB-joined bundle structure
-=======
   initialData?: any;
->>>>>>> c07cce9 (feat: migrate to postgresql database)
   products: any[];
-  onSubmit: (data: any) => void;
+  action: (formData: FormData) => Promise<void>;
 }
 
-export default function BundleForm({ initialData, products, onSubmit }: BundleFormProps) {
-  const [formData, setFormData] = useState({
-    name: initialData?.name || '',
-    description: initialData?.desc || '',
-    price: initialData?.price || 0,
-    originalPrice: initialData?.original_price || '',
-    skuPrefix: initialData?.sku || '',
-  });
-
-  // Extract initial product IDs from the nested items if editing
+export default function BundleForm({ initialData, products, action }: BundleFormProps) {
   const [selectedProducts, setSelectedProducts] = useState<string[]>(
     initialData?.items?.map((item: any) => item.product_id) || []
   );
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
 
   const toggleProduct = (productId: string) => {
     if (selectedProducts.includes(productId)) {
@@ -40,31 +22,34 @@ export default function BundleForm({ initialData, products, onSubmit }: BundleFo
   };
 
   return (
-    <div style={{ background: 'white', padding: 32, borderRadius: 12, border: '1px solid var(--line)', maxWidth: 800 }}>
+    <form action={action} style={{ background: 'white', padding: 32, borderRadius: 12, border: '1px solid var(--line)', maxWidth: 800 }}>
+      <input type="hidden" name="selectedProducts" value={JSON.stringify(selectedProducts)} />
+      {initialData?.id && <input type="hidden" name="id" value={initialData.id} />}
+      
       <div style={fieldGroup}>
         <label style={labelStyle}>Bundle Name</label>
-        <input name="name" value={formData.name} onChange={handleChange} style={inputStyle} placeholder="e.g. Tote Duo" />
+        <input name="name" defaultValue={initialData?.name || ''} style={inputStyle} placeholder="e.g. Tote Duo" />
       </div>
 
       <div style={{ ...fieldGroup, marginTop: 24 }}>
         <label style={labelStyle}>Description</label>
-        <textarea name="description" value={formData.description} onChange={handleChange} style={{ ...inputStyle, minHeight: 100 }} />
+        <textarea name="description" defaultValue={initialData?.desc || ''} style={{ ...inputStyle, minHeight: 100 }} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 24 }}>
         <div style={fieldGroup}>
           <label style={labelStyle}>Price (€)</label>
-          <input name="price" type="number" value={formData.price} onChange={handleChange} style={inputStyle} />
+          <input name="price" type="number" defaultValue={initialData?.price || 0} style={inputStyle} />
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Original Price (€)</label>
-          <input name="originalPrice" type="number" value={formData.originalPrice} onChange={handleChange} style={inputStyle} placeholder="Leave empty if no discount" />
+          <input name="originalPrice" type="number" defaultValue={initialData?.original_price || ''} style={inputStyle} placeholder="Leave empty if no discount" />
         </div>
       </div>
 
       <div style={{ ...fieldGroup, marginTop: 24, width: '33%' }}>
         <label style={labelStyle}>SKU Prefix</label>
-        <input name="skuPrefix" value={formData.skuPrefix} onChange={handleChange} style={inputStyle} placeholder="e.g. BUNDLE-DUO" />
+        <input name="skuPrefix" defaultValue={initialData?.sku || ''} style={inputStyle} placeholder="e.g. BUNDLE-DUO" />
       </div>
 
       <div style={{ marginTop: 32, marginBottom: 40 }}>
@@ -110,7 +95,7 @@ export default function BundleForm({ initialData, products, onSubmit }: BundleFo
       </div>
 
       <button 
-        onClick={() => onSubmit({ ...formData, selectedProducts })}
+        type="submit"
         style={{
           width: '100%',
           padding: '16px',
@@ -127,7 +112,7 @@ export default function BundleForm({ initialData, products, onSubmit }: BundleFo
       >
         {initialData ? 'SAVE CHANGES' : 'CREATE BUNDLE'}
       </button>
-    </div>
+    </form>
   );
 }
 

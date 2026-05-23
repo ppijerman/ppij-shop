@@ -5,17 +5,17 @@ import { redirect } from 'next/navigation';
 export default async function NewBundle() {
   const products = await getAllProducts();
 
-  const handleSubmit = async (data: any) => {
+  async function handleSubmit(formData: FormData) {
     'use server';
-    console.log('Creating bundle:', data);
+    console.log('Creating bundle:', formData);
     // TODO: Implement server action for creating bundle
     redirect('/admin/kk/bundles');
-  };
+  }
 
   return (
     <div>
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 48, marginBottom: 40 }}>NEW BUNDLE</h1>
-      <BundleForm products={products} onSubmit={handleSubmit} />
+      <BundleForm products={products} action={handleSubmit} />
     </div>
   );
 }
