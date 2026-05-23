@@ -1,5 +1,4 @@
-import { getAllBundles } from '@/lib/dal/bundles';
-import { getAllProducts } from '@/lib/dal/products';
+import { getAllBundles, getAllBundleItems } from '@/lib/dal/bundles';
 import Link from 'next/link';
 
 async function deleteBundle(formData: FormData) {
@@ -11,7 +10,7 @@ async function deleteBundle(formData: FormData) {
 
 export default async function AdminBundles() {
   const bundles = await getAllBundles();
-  const products = await getAllProducts();
+  const bundleItems = await getAllBundleItems();
 
   return (
     <div>
@@ -55,7 +54,9 @@ export default async function AdminBundles() {
                   </td>
                   <td style={tdStyle}>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {products.filter((p: any) => p.bundle_id === bundle.id).map((p: any) => (
+                      {bundleItems
+                        .filter((p: any) => p.bundle_id === bundle.id)
+                        .map((p: any) => (
                         <span key={p.id} style={{ fontSize: 10, background: 'var(--cream)', padding: '2px 6px', borderRadius: 4, fontFamily: 'var(--font-mono)' }}>
                           {p.name}
                         </span>

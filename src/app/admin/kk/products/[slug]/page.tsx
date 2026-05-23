@@ -2,7 +2,7 @@ import { getProductBySlug } from '@/lib/dal/products';
 import AdminProductEditForm from '@/components/admin/AdminProductEditForm';
 import { updateProduct } from '@/lib/dal/products'; // Assuming you have an updateProduct function in DAL
 
-export default async function EditProduct({ params }: { params: { slug: string } }) {
+export default async function EditProduct({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
 
@@ -19,7 +19,15 @@ export default async function EditProduct({ params }: { params: { slug: string }
     const tag = formData.get('tag') as string;
     const skuPrefix = formData.get('skuPrefix') as string;
     const price = parseFloat(formData.get('price') as string);
-    const originalPrice = parseFloat(formData.get('originalPrice') as string);
+
+    const originalPriceValue = formData.get('originalPrice');
+    const parsedOriginalPrice = 
+      typeof originalPriceValue === 'string' && 
+        originalPriceValue.trim() !== '' 
+      ? parseFloat(originalPriceValue)
+      : NaN;
+    const originalPrice = Number.isNaN(parsedOriginalPrice) ? null : parsedOriginalPrice;
+
     const description = formData.get('desc') as string;
     const primaryImage = formData.get('primaryImage') as string;
     const sizes = JSON.parse(formData.get('sizes') as string);

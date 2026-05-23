@@ -1,4 +1,4 @@
-import { getAllProducts } from '@/lib/dal/products';
+import { getAllProductsWithVariants } from '@/lib/dal/products';
 import Link from 'next/link';
 
 // Simple server action for deletion
@@ -10,7 +10,8 @@ async function deleteProduct(formData: FormData) {
 }
 
 export default async function AdminProducts() {
-  const products = await getAllProducts();
+  const products = await getAllProductsWithVariants();
+  console.log(JSON.stringify(products[0], null, 2));
 
   return (
     <div>

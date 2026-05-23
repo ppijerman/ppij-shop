@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { OrderStatus } from '@/types';
 
 export default function OrderDetailsForm({ initialOrder, items }: { initialOrder: any, items: any[] }) {
   const [status, setStatus] = useState<string>(initialOrder.status);
 
-  const statuses: string[] = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'];
+  const statuses: string[] = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DONE'];
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 40 }}>

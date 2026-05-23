@@ -5,10 +5,10 @@ export default async function AdminDashboard() {
   const totalOrders = orders.length;
   const pendingPayments = orders.filter(o => o.status === 'CONFIRMED').length; // Adjust logic based on schema
   
-  const statusCounts = orders.reduce((acc, order) => {
+  const statusCounts = orders.reduce<Record<string, number>>((acc, order) => {
     acc[order.status] = (acc[order.status] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {});
 
   return (
     <div>

@@ -58,7 +58,7 @@ export default function ProductDetailPage({
       .sort();
   }, [variants, selColor]);
 
-  const [selSize, setSelSize] = useState<string | null>(availableSizes[0]);
+  const [selSize, setSelSize] = useState<string | null>(availableSizes[0] ?? null);
 
   useEffect(() => {
     if (availableSizes.length > 0) {

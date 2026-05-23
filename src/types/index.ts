@@ -1,5 +1,3 @@
-import { exportPages } from "next/dist/export/worker";
-
 export interface Color {
   name: string;
   hex: string;

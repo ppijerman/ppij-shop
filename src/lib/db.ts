@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { Pool, PoolClient } from 'pg';
 
 const globalForPool = globalThis as unknown as {
   pool?: Pool;
@@ -15,3 +15,20 @@ const pool = globalForPool.pool ??
 if (process.env.NODE_ENV !== 'production') globalForPool.pool = pool;
 
 export const db = pool;
+
+export async function withTransaction<T>(
+  fn: (query: (text: string, values?: any[]) => Promise<any>) => Promise<T>
+): Promise<T> {
+  const client: PoolClient = await db.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await fn((text, values) => client.query(text, values));
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}

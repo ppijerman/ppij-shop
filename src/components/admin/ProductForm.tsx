@@ -60,7 +60,7 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
           <label style={labelStyle}>Category</label>
           <select name="category" defaultValue={initialData?.category || 'TSHIRT'} style={inputStyle}>
             <option value="TSHIRT">TSHIRT</option>
-            <option value="TOTE BAG">TOTE BAG</option>
+            <option value="TOTEBAG">TOTE BAG</option>
           </select>
         </div>
         <div style={fieldGroup}>
