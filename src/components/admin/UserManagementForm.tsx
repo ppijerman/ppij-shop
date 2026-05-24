@@ -1,16 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type React from 'react';
+import { updateUserRoleAction, deleteUserAction } from '@/lib/actions/users';
+import { useRouter } from 'next/navigation';
 
 export default function UserManagementForm({ initialUsers }: { initialUsers: any[] }) {
+  const router = useRouter();
   const [users, setUsers] = useState<any[]>(initialUsers);
-  
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (tableRef.current && !tableRef.current.contains(event.target as Node)) {
+        setEditingUserId(null);
+        setDeletingUserId(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const totalUsers = users.length;
   const adminItUsers = users.filter((user) => user.role === 'ADMIN_IT').length;
   const adminKkUsers = users.filter((user) => user.role === 'ADMIN_KK').length;
-  
-  const [editingUserId, setEditingUserId] = useState<string | null>(null);
 
   const changeRole = (userId: string, role: string) => {
     setUsers((currentUsers) =>
@@ -38,8 +54,32 @@ export default function UserManagementForm({ initialUsers }: { initialUsers: any
         Users
       </h2>
 
+      {actionError && (
+        <div style={{
+          background: '#fef2f2',
+          border: '1px solid #fecaca',
+          color: '#b91c1c',
+          padding: '12px 16px',
+          borderRadius: 8,
+          fontFamily: 'var(--font-mono)',
+          fontSize: 12,
+          marginBottom: 16,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <span>{actionError}</span>
+          <button 
+            onClick={() => setActionError(null)}
+            style={{ background: 'none', border: 'none', color: '#b91c1c', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+        <table ref={tableRef} style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--line)', background: 'var(--cream-2)' }}>
               <th style={tableHeadStyle}>Name</th>
@@ -74,10 +114,66 @@ export default function UserManagementForm({ initialUsers }: { initialUsers: any
                   <td style={tableCellStyle}>{new Date(user.created_at).toLocaleDateString()}</td>
                   <td style={{ ...tableCellStyle, minWidth: 280 }}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', whiteSpace: 'nowrap' }}>
-                      {isEditing ? (
+                      {deletingUserId === user.id ? (
                         <>
-                          <button onClick={() => setEditingUserId(null)} style={{ ...secondaryButtonStyle, minWidth: 130}}>Save Changes</button>
-                          <button onClick={() => { if (window.confirm(`Delete ${user.first_name}?`)) deleteUser(user.id); }} style={{ ...dangerButtonStyle, minWidth: 130 }}>Delete Account</button>
+                          <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', marginRight: 8, color: 'var(--black)' }}>Confirm?</span>
+                          <button 
+                            onClick={async () => {
+                                try {
+                                  setActionError(null);
+                                  await deleteUserAction(user.id);
+                                  deleteUser(user.id);
+                                  setDeletingUserId(null);
+                                  router.refresh();
+                                } catch (err) {
+                                  setActionError('Failed to delete user.');
+                                  setDeletingUserId(null);
+                                }
+                            }}
+                            style={{ ...dangerButtonStyle, minWidth: 60 }}
+                          >
+                            Yes
+                          </button>
+                          <button 
+                            onClick={() => setDeletingUserId(null)}
+                            style={{ ...secondaryButtonStyle, minWidth: 60 }}
+                          >
+                            No
+                          </button>
+                        </>
+                      ) : isEditing ? (
+                        <>
+                          <button 
+                          onClick={async () => {
+                            try {
+                              setActionError(null);
+                              await updateUserRoleAction(user.id, user.role);
+                              setEditingUserId(null);
+                              router.refresh();
+                            } catch (err) {
+                              setActionError('Failed to save changes. Please try again.');
+                            }
+                            
+                          }} 
+                          style={{ ...secondaryButtonStyle, minWidth: 80}}
+                          >
+                            Save
+                          </button>
+                          <button 
+                            onClick={() => {
+                                setEditingUserId(null);
+                                router.refresh();
+                            }}
+                            style={{ ...secondaryButtonStyle, minWidth: 80 }}
+                          >
+                            Discard
+                          </button>
+                          <button 
+                          onClick={() => setDeletingUserId(user.id)}
+                          style={{ ...dangerButtonStyle, minWidth: 80 }}
+                          >
+                            Delete
+                          </button>
                         </>
                       ) : (
                         <button onClick={() => setEditingUserId(user.id)} style={{ ...secondaryButtonStyle, minWidth: 130 }}>Edit Account</button>
