@@ -3,7 +3,7 @@
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { redirect, usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 
 const NAV_LINKS = [
@@ -83,52 +83,15 @@ interface AccountControlProps {
 }
 
 type AccountMenuItem =
-  | { id: 'account'; label: string; kind: 'placeholder' }
-  | { id: 'orders'; label: string; kind: 'placeholder' }
-  | { id: 'sign-out'; label: string; kind: 'action' };
+  | { id: 'account'; label: string; kind: 'account' }
+  | { id: 'orders'; label: string; kind: 'orders' }
+  | { id: 'sign-out'; label: string; kind: 'signout' };
 
 const ACCOUNT_MENU_ITEMS: AccountMenuItem[] = [
-  { id: 'account', label: 'Account', kind: 'placeholder' },
-  { id: 'orders', label: 'Orders', kind: 'placeholder' },
-  { id: 'sign-out', label: 'Sign out', kind: 'action' },
+  { id: 'account', label: 'Account', kind: 'account' },
+  { id: 'orders', label: 'Orders', kind: 'orders' },
+  { id: 'sign-out', label: 'Sign out', kind: 'signout' },
 ];
-
-function AccountPlaceholderItem({ label }: { label: string }) {
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <div
-      aria-disabled="true"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '11px 12px',
-        color: hovered ? 'var(--black)' : 'var(--muted)',
-        background: hovered ? 'rgba(243, 146, 0, 0.12)' : 'transparent',
-        fontFamily: 'var(--font-body)',
-        fontSize: 13,
-        opacity: hovered ? 1 : 0.72,
-        cursor: 'default',
-        transition: 'all 0.2s',
-      }}
-    >
-      <span>{label}</span>
-      <span
-        style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 9,
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-        }}
-      >
-        Soon
-      </span>
-    </div>
-  );
-}
 
 interface AccountActionItemProps {
   label: string;
@@ -325,15 +288,6 @@ function AccountControl({ authLoaded, isSignedIn, triggerName, signedInName, sig
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {ACCOUNT_MENU_ITEMS.map((item) => {
-              if (item.kind === 'placeholder') {
-                return (
-                  <AccountPlaceholderItem
-                    key={item.id}
-                    label={item.label}
-                  />
-                );
-              }
-
               return (
                 <div
                   key={item.id}
@@ -347,7 +301,13 @@ function AccountControl({ authLoaded, isSignedIn, triggerName, signedInName, sig
                     label={item.label}
                     onClick={() => {
                       setIsOpen(false);
-                      void signOut({ redirectUrl: '/' });
+                      if (item.kind === 'account') {
+                        redirect('/account')
+                      } else if (item.kind === 'orders') {
+                        redirect('/account/orders')
+                      } else if (item.kind === 'signout') {
+                        void signOut({ redirectUrl: '/' });
+                      }
                     }}
                   />
                 </div>
