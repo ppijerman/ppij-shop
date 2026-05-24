@@ -86,9 +86,6 @@ export default function Hero() {
               <span key={t} style={{ padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink)' }}>{t}</span>
             ))}
           </div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase', textAlign: 'right' }}>
-            ⚡ free shipping <span style={{ color: 'var(--orange-deep)' }}>EU</span>
-          </div>
         </div>
       </div>
     </section>

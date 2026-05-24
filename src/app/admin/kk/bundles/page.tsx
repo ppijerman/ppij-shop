@@ -1,10 +1,17 @@
-'use client';
-
-import { MOCK_BUNDLES } from '@/data/admin';
-import { PRODUCTS } from '@/data/products';
+import { getAllBundles, getAllBundleItems } from '@/lib/dal/bundles';
 import Link from 'next/link';
 
-export default function AdminBundles() {
+async function deleteBundle(formData: FormData) {
+  'use server';
+  const id = formData.get('id');
+  console.log('Deleting bundle:', id);
+  // Implement actual DB deletion here
+}
+
+export default async function AdminBundles() {
+  const bundles = await getAllBundles();
+  const bundleItems = await getAllBundleItems();
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
@@ -38,39 +45,42 @@ export default function AdminBundles() {
             </tr>
           </thead>
           <tbody>
-            {MOCK_BUNDLES.map(bundle => {
-              const includedProducts = PRODUCTS.filter(p => bundle.productIds.includes(p.id));
-              
+            {bundles.map((bundle: any) => {
               return (
                 <tr key={bundle.id} style={{ borderBottom: '1px solid var(--line)' }}>
                   <td style={tdStyle}>
                     <div style={{ fontWeight: 600 }}>{bundle.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{bundle.description}</div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{bundle.desc}</div>
                   </td>
                   <td style={tdStyle}>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {includedProducts.map(p => (
+                      {bundleItems
+                        .filter((p: any) => p.bundle_id === bundle.id)
+                        .map((p: any) => (
                         <span key={p.id} style={{ fontSize: 10, background: 'var(--cream)', padding: '2px 6px', borderRadius: 4, fontFamily: 'var(--font-mono)' }}>
                           {p.name}
                         </span>
                       ))}
                     </div>
                   </td>
-                  <td style={tdStyle}>€{bundle.price}</td>
+                  <td style={tdStyle}>€{Number(bundle.price).toFixed(2)}</td>
                   <td style={tdStyle}>
                     <div style={{ display: 'flex', gap: 12 }}>
                       <Link 
                         href={`/admin/kk/bundles/${bundle.id}`}
-                        style={{ color: 'var(--black)', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}
+                        style={{ color: 'var(--black)', fontSize: 12, fontWeight: 600, textDecoration: 'none', padding: 1 }}
                       >
                         EDIT
                       </Link>
-                      <button 
-                        style={{ background: 'none', border: 'none', color: '#f44336', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0 }}
-                        onClick={() => confirm('Are you sure you want to delete this bundle?')}
-                      >
-                        DELETE
-                      </button>
+                      <form action={deleteBundle}>
+                        <input type="hidden" name="id" value={bundle.id} />
+                        <button 
+                          type="submit"
+                          style={{ background: 'none', border: 'none', color: '#f44336', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0.5 }}
+                        >
+                          DELETE
+                        </button>
+                      </form>
                     </div>
                   </td>
                 </tr>

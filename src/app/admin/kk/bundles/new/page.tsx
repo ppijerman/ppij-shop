@@ -1,22 +1,21 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
-import { PRODUCTS } from '@/data/products';
+import { getAllProducts } from '@/lib/dal/products';
 import BundleForm from '@/components/admin/BundleForm';
+import { redirect } from 'next/navigation';
 
-export default function NewBundle() {
-  const router = useRouter();
+export default async function NewBundle() {
+  const products = await getAllProducts();
 
-  const handleSubmit = (data: any) => {
-    console.log('Creating bundle:', data);
-    alert('Bundle created successfully!');
-    router.push('/admin/kk/bundles');
-  };
+  async function handleSubmit(formData: FormData) {
+    'use server';
+    console.log('Creating bundle:', formData);
+    // TODO: Implement server action for creating bundle
+    redirect('/admin/kk/bundles');
+  }
 
   return (
     <div>
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 48, marginBottom: 40 }}>NEW BUNDLE</h1>
-      <BundleForm products={PRODUCTS} onSubmit={handleSubmit} />
+      <BundleForm products={products} action={handleSubmit} />
     </div>
   );
 }

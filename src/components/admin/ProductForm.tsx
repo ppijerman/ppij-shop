@@ -1,94 +1,96 @@
 'use client';
 
 import { useState } from 'react';
-import { Product, ProductCategory, Color } from '@/types';
 
 interface ProductFormProps {
-  initialData?: Product;
-  onSubmit: (data: any) => void;
+  initialData?: any;
+  action: (formData: FormData) => Promise<void>;
 }
 
-export default function ProductForm({ initialData, onSubmit }: ProductFormProps) {
-  const [formData, setFormData] = useState({
-    name: initialData?.name || '',
-    skuPrefix: initialData?.skuPrefix || '',
-    subtitle: initialData?.subtitle || '',
-    category: initialData?.category || 'T-SHIRT',
-    price: initialData?.price || 0,
-    originalPrice: initialData?.originalPrice || null,
-    tag: initialData?.tag || '',
-    desc: initialData?.desc || '',
-    fitType: initialData?.fitType || 'REGULAR',
-  });
+export default function ProductForm({ initialData, action }: ProductFormProps) {
+  const variants = initialData?.variants || [];
+  
+  const [sizes, setSizes] = useState<string[]>(
+    Array.from(new Set(variants.map((v: any) => v.size as string)))
+  );
+  
+  const [colors, setColors] = useState<{name: string, hex: string}[]>(
+    Array.from(new Set(variants.map((v: any) => JSON.stringify({ name: v.color_name, hex: v.color_hex }))))
+      .map(s => JSON.parse(s as string))
+  );
 
-  const [sizes, setSizes] = useState<string[]>(initialData?.sizes || []);
-  const [colors, setColors] = useState<Color[]>(initialData?.colors || []);
-  const [stock, setStock] = useState<Record<string, Record<string, number>>>(initialData?.stock || {});
-  const [primaryImage, setPrimaryImage] = useState<string | null>(initialData?.primaryImage || null);
+  const [stock, setStock] = useState<Record<string, Record<string, number>>>(
+    variants.reduce((acc: any, v: any) => {
+      acc[v.color_name] = acc[v.color_name] || {};
+      acc[v.color_name][v.size] = v.stock;
+      return acc;
+    }, {})
+  );
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const [primaryImage, setPrimaryImage] = useState<string | null>(initialData?.primary_image || null);
 
-  const handleStockChange = (color: string, size: string, value: number) => {
-    setStock(prev => ({
-      ...prev,
-      [color]: {
-        ...(prev[color] || {}),
-        [size]: value
-      }
+  const handleStockChange = (colorName: string, size: string, value: number) => {
+    setStock(prevStock => ({
+      ...prevStock,
+      [colorName]: {
+        ...(prevStock[colorName] || {}),
+        [size]: value,
+      },
     }));
   };
 
   return (
-    <div style={{ background: 'white', padding: 32, borderRadius: 12, border: '1px solid var(--line)', maxWidth: 800 }}>
+    <form action={action} style={{ background: 'white', padding: 32, borderRadius: 12, border: '1px solid var(--line)', maxWidth: 800 }}>
+      {initialData?.id && <input type="hidden" name="id" value={initialData.id} />}
+      <input type="hidden" name="sizes" value={JSON.stringify(sizes)} />
+      <input type="hidden" name="colors" value={JSON.stringify(colors)} />
+      <input type="hidden" name="stock" value={JSON.stringify(stock)} />
+      <input type="hidden" name="primaryImage" value={primaryImage || ''} />
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
         <div style={fieldGroup}>
           <label style={labelStyle}>Product Name</label>
-          <input name="name" value={formData.name} onChange={handleChange} style={inputStyle} placeholder="e.g. Fang & Horn" />
+          <input name="name" defaultValue={initialData?.name || ''} style={inputStyle} placeholder="e.g. Fang & Horn" />
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Subtitle</label>
-          <input name="subtitle" value={formData.subtitle} onChange={handleChange} style={inputStyle} placeholder="e.g. OVERSIZED TEE — WHITE" />
+          <input name="subtitle" defaultValue={initialData?.subtitle || ''} style={inputStyle} placeholder="e.g. OVERSIZED TEE — WHITE" />
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Category</label>
-          <select name="category" value={formData.category} onChange={handleChange} style={inputStyle}>
-            <option value="T-SHIRT">T-SHIRT</option>
-            <option value="TOTE BAG">TOTE BAG</option>
+          <select name="category" defaultValue={initialData?.category || 'TSHIRT'} style={inputStyle}>
+            <option value="TSHIRT">TSHIRT</option>
+            <option value="TOTEBAG">TOTE BAG</option>
           </select>
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Fit Type</label>
-          <select name="fitType" value={formData.fitType} onChange={handleChange} style={inputStyle}>
+          <select name="fitType" defaultValue={initialData?.fit_type || 'REGULAR'} style={inputStyle}>
             <option value="REGULAR">REGULAR</option>
             <option value="OVERSIZED">OVERSIZED</option>
-            <option value="SLIM">SLIM</option>
-            <option value="RELAXED">RELAXED</option>
           </select>
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Tag</label>
-          <input name="tag" value={formData.tag} onChange={handleChange} style={inputStyle} placeholder="e.g. NEW, BESTSELLER" />
+          <input name="tag" defaultValue={initialData?.tag || ''} style={inputStyle} placeholder="e.g. NEW, BESTSELLER" />
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>SKU Prefix</label>
-          <input name="skuPrefix" value={formData.skuPrefix} onChange={handleChange} style={inputStyle} placeholder="e.g. FH-TEE" />
+          <input name="skuPrefix" defaultValue={initialData?.sku_prefix || ''} style={inputStyle} placeholder="e.g. FH-TEE" />
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Price (€)</label>
-          <input name="price" type="number" value={formData.price} onChange={handleChange} style={inputStyle} />
+          <input name="price" type="number" defaultValue={variants[0]?.price || 0} style={inputStyle} />
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Original Price (€)</label>
-          <input name="originalPrice" type="number" value={formData.originalPrice || ''} onChange={handleChange} style={inputStyle} placeholder="Leave empty if no discount" />
+          <input name="originalPrice" type="number" defaultValue={variants[0]?.original_price || ''} style={inputStyle} />
         </div>
       </div>
 
       <div style={{ ...fieldGroup, marginBottom: 24 }}>
         <label style={labelStyle}>Description</label>
-        <textarea name="desc" value={formData.desc} onChange={handleChange} style={{ ...inputStyle, minHeight: 100, resize: 'vertical' }} />
+        <textarea name="desc" defaultValue={initialData?.desc || ''} style={{ ...inputStyle, minHeight: 100, resize: 'vertical' }} />
       </div>
 
       <div style={{ marginBottom: 32 }}>
@@ -96,6 +98,7 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
           {['S', 'M', 'L', 'XL', 'XXL', 'ONE SIZE'].map(s => (
             <button 
+              type='button'
               key={s}
               onClick={() => {
                 if (sizes.includes(s)) setSizes(sizes.filter(x => x !== s));
@@ -144,6 +147,7 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
                 style={{ width: 44, height: 44, padding: 0, border: 'none', cursor: 'pointer' }}
               />
               <button 
+                type='button'
                 onClick={() => setColors(colors.filter((_, idx) => idx !== i))}
                 style={{ background: 'none', border: 'none', color: '#f44336', cursor: 'pointer', fontSize: 20 }}
               >
@@ -152,6 +156,7 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
             </div>
           ))}
           <button 
+            type='button'
             onClick={() => setColors([...colors, { name: '', hex: '#000000' }])}
             style={{ 
               alignSelf: 'flex-start',
@@ -185,7 +190,7 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
               <tbody>
                 {colors.map(c => (
                   <tr key={c.name} style={{ borderBottom: '1px solid var(--line)' }}>
-                    <td style={{ padding: 12, fontWeight: 600 }}>{c.name || 'Unnamed Color'}</td>
+                    <td style={{ padding: 12, fontWeight: 600 }}>{c.name}</td>
                     {sizes.map(s => (
                       <td key={s} style={{ padding: 8 }}>
                         <input 
@@ -213,64 +218,21 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
 
       <div style={{ marginBottom: 40 }}>
         <label style={labelStyle}>Images</label>
-        <div style={{
-          marginTop: 8,
-          border: '2px dashed var(--line)',
-          padding: 40,
-          textAlign: 'center',
+        <div style={{ 
+          marginTop: 8, 
+          border: '2px dashed var(--line)', 
+          padding: 40, 
+          textAlign: 'center', 
           borderRadius: 8,
           color: 'var(--muted)',
-          fontSize: 13,
-          marginBottom: 16
+          fontSize: 13
         }}>
           Click or drag images to upload
-        </div>
-
-
-        <div>
-          <label style={{ ...labelStyle, display: 'block', marginBottom: 8 }}>Select Primary Image</label>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            {!initialData?.images?.length ? (
-              <p style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
-                No images uploaded yet.
-              </p>
-            ) : (
-              initialData?.images?.map((img, i) => (
-                <div
-                  key={i}
-                  onClick={() => setPrimaryImage(img)}
-                  style={{
-                    position: 'relative',
-                    width: 80,
-                    height: 80,
-                    borderRadius: 6,
-                    overflow: 'hidden',
-                    cursor: 'pointer',
-                    border: primaryImage === img
-                      ? '2px solid var(--black)'
-                      : '2px solid var(--line)',
-                  }}
-                >
-                  <img src={img} alt={`Image ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  {primaryImage === img && (
-                    <div style={{
-                      position: 'absolute', inset: 0,
-                      background: 'rgba(0,0,0,0.35)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'white', fontSize: 18
-                    }}>
-                      ★
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
         </div>
       </div>
 
       <button 
-        onClick={() => onSubmit({ ...formData, sizes, colors, stock, primaryImage })}
+        type="submit"
         style={{
           width: '100%',
           padding: '16px',
@@ -287,28 +249,10 @@ export default function ProductForm({ initialData, onSubmit }: ProductFormProps)
       >
         {initialData ? 'SAVE CHANGES' : 'CREATE PRODUCT'}
       </button>
-    </div>
+    </form>
   );
 }
 
-const fieldGroup: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 8
-};
-
-const labelStyle: React.CSSProperties = {
-  fontFamily: 'var(--font-mono)',
-  fontSize: 11,
-  textTransform: 'uppercase',
-  color: 'var(--muted)',
-  letterSpacing: '0.05em'
-};
-
-const inputStyle: React.CSSProperties = {
-  padding: '12px',
-  borderRadius: 6,
-  border: '1px solid var(--line)',
-  fontSize: 14,
-  fontFamily: 'inherit'
-};
+const fieldGroup: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 8 };
+const labelStyle: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '0.05em' };
+const inputStyle: React.CSSProperties = { padding: '12px', borderRadius: 6, border: '1px solid var(--line)', fontSize: 14, fontFamily: 'inherit' };
