@@ -7,12 +7,11 @@ import { useToast } from '@/context/ToastContext';
 import ProductCrop from './ProductCrop';
 
 interface QuickViewModalProps {
-  product: any; // Using 'any' until DB types are fully unified across the app
+  product: any;
   onClose: () => void;
 }
 
 export default function QuickViewModal({ product, onClose }: QuickViewModalProps) {
-  // Use product.variants for color/size logic
   const variants = product.variants || [];
   const [selColor, setSelColor] = useState(variants[0]?.color_name || 'Default');
   const [selSize, setSelSize] = useState(variants[0]?.size || 'ONE SIZE');

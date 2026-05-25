@@ -1,12 +1,5 @@
 import Image from 'next/image';
 
-const SPECS = [
-  ['220gsm', 'Premium combed cotton'],
-  ['Hand-drawn', 'Original illustrations'],
-  ['Eco print', 'Water-based ink'],
-  ['Made in EU', 'Local manufacturing'],
-];
-
 export default function PhotoStrip() {
   return (
     <section style={{ background: 'var(--cream)', padding: '80px 28px' }}>
@@ -30,14 +23,6 @@ export default function PhotoStrip() {
             <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, lineHeight: 1.7, color: 'var(--ink)' }}>
               Setiap drop kami adalah hasil kolaborasi pelajar Indonesia di Jerman — dari illustrator, fotografer, hingga model. Setiap produk membawa cerita yang sangat dekat dengan kami.
             </p>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-              {SPECS.map(([k, v]) => (
-                <li key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 14, paddingBottom: 8, borderBottom: '1px dashed var(--line)' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em', color: 'var(--black)', fontWeight: 600 }}>{k}</span>
-                  <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--muted)' }}>{v}</span>
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
       </div>
