@@ -8,7 +8,21 @@ interface BundleFormProps {
   action: (formData: FormData) => Promise<void>;
 }
 
+const getFieldStyle = (isChanged: boolean) => ({
+  ...inputStyle,
+  borderColor: isChanged ? 'var(--orange)' : 'var(--line)',
+  backgroundColor: isChanged ? '#fff7ed' : 'white',
+});
+
 export default function BundleForm({ initialData, products, action }: BundleFormProps) {
+  const [formData, setFormData] = useState({
+    name: initialData?.name || '',
+    description: initialData?.desc || '',
+    price: initialData?.price || 0,
+    originalPrice: initialData?.original_price || '',
+    skuPrefix: initialData?.sku || ''
+  });
+
   const [selectedProducts, setSelectedProducts] = useState<string[]>(
     initialData?.items?.map((item: any) => item.product_id) || []
   );
@@ -21,6 +35,9 @@ export default function BundleForm({ initialData, products, action }: BundleForm
     }
   };
 
+  const initialSelected = initialData?.items?.map((item: any) => item.product_id) || [];
+  const areProductsChanged = JSON.stringify(selectedProducts.sort()) !== JSON.stringify(initialSelected.sort());
+
   return (
     <form action={action} style={{ background: 'white', padding: 32, borderRadius: 12, border: '1px solid var(--line)', maxWidth: 800 }}>
       <input type="hidden" name="selectedProducts" value={JSON.stringify(selectedProducts)} />
@@ -28,32 +45,62 @@ export default function BundleForm({ initialData, products, action }: BundleForm
       
       <div style={fieldGroup}>
         <label style={labelStyle}>Bundle Name</label>
-        <input name="name" defaultValue={initialData?.name || ''} style={inputStyle} placeholder="e.g. Tote Duo" />
+        <input 
+          name="name" 
+          value={formData.name} 
+          onChange={e => setFormData({...formData, name: e.target.value})}
+          style={getFieldStyle(formData.name !== (initialData?.name || ''))}
+          placeholder="e.g. Tote Duo" 
+        />
       </div>
 
       <div style={{ ...fieldGroup, marginTop: 24 }}>
         <label style={labelStyle}>Description</label>
-        <textarea name="description" defaultValue={initialData?.desc || ''} style={{ ...inputStyle, minHeight: 100 }} />
+        <textarea 
+          name="description" 
+          value={formData.description} 
+          onChange={e => setFormData({...formData, description: e.target.value})}
+          style={{ ...getFieldStyle(formData.description !== (initialData?.desc || '')), minHeight: 100 }} 
+        />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 24 }}>
         <div style={fieldGroup}>
           <label style={labelStyle}>Price (€)</label>
-          <input name="price" type="number" defaultValue={initialData?.price || 0} style={inputStyle} />
+          <input 
+            name="price" 
+            type="number" 
+            value={formData.price} 
+            onChange={e => setFormData({...formData, price: parseFloat(e.target.value) || 0})}
+            style={getFieldStyle(Number(formData.price) !== Number(initialData?.price || 0))} 
+          />
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Original Price (€)</label>
-          <input name="originalPrice" type="number" defaultValue={initialData?.original_price || ''} style={inputStyle} placeholder="Leave empty if no discount" />
+          <input 
+            name="originalPrice" 
+            type="number" 
+            value={formData.originalPrice} 
+            onChange={e => setFormData({...formData, originalPrice: e.target.value})}
+            style={getFieldStyle(String(formData.originalPrice) !== String(initialData?.original_price || ''))} 
+            placeholder="Leave empty if no discount" 
+          />
         </div>
       </div>
 
       <div style={{ ...fieldGroup, marginTop: 24, width: '33%' }}>
         <label style={labelStyle}>SKU Prefix</label>
-        <input name="skuPrefix" defaultValue={initialData?.sku || ''} style={inputStyle} placeholder="e.g. BUNDLE-DUO" />
+        <input 
+          name="skuPrefix" 
+          value={formData.skuPrefix} 
+          onChange={e => setFormData({...formData, skuPrefix: e.target.value})}
+          style={getFieldStyle(formData.skuPrefix !== (initialData?.sku || ''))} 
+          placeholder="e.g. BUNDLE-DUO" 
+        />
       </div>
 
       <div style={{ marginTop: 32, marginBottom: 40 }}>
-        <label style={labelStyle}>Included Products</label>
+        <label style={{ ...labelStyle, color: areProductsChanged ? 'var(--orange)' : 'var(--muted)' }}>Included Products {areProductsChanged && '*'}</label>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
           {products.map(product => (
             <div 

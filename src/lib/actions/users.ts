@@ -2,17 +2,10 @@
 
 import { db } from '../db'
 import { clerkClient } from '@clerk/nextjs/server';
-import { getCurrentDbUserOrThrow } from '../users';
+import { requireAdmin } from '../auth';
 
 const ALLOWED_ROLES = ['BUYER', 'ADMIN_KK', 'ADMIN_IT'];
 type Role = typeof ALLOWED_ROLES[number];
-
-async function requireAdmin() {
-  const user = await getCurrentDbUserOrThrow();
-  if (user.role !== 'ADMIN_IT') {
-    throw new Error('Forbidden');
-  }
-}
 
 export async function updateUserRoleAction(userId: string, role: Role) {
   await requireAdmin();
