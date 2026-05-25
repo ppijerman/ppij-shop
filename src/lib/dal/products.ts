@@ -7,6 +7,17 @@ export async function getAllProducts() {
   return res.rows;
 }
 
+export async function getProductBySlug(slug: string) {
+  const res = await db.query(
+    `
+    SELECT * FROM products p
+    WHERE p.slug = $1
+    `,
+    [slug]
+  )
+  return res.rows[0] || null
+}
+
 export async function getProductBySlugWithVariants(slug: string) {
   const res = await db.query(
     `
