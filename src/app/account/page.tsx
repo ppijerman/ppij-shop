@@ -23,11 +23,30 @@ export default async function AccountPage() {
             <label style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Email Address</label>
             <p style={{ fontSize: 16, fontWeight: 500 }}>{user.email}</p>
           </div>
+          {(user.role === 'ADMIN_IT' || user.role === 'ADMIN_KK') && (
           <div>
             <label style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Account Role</label>
             <p style={{ fontSize: 16, fontWeight: 500 }}>{user.role}</p>
+            <Link
+              href={user.role === 'ADMIN_IT' ? '/admin/it' : '/admin/kk'}
+              style={{
+                display: 'inline-block',
+                marginTop: 12,
+                padding: '8px 16px',
+                background: 'var(--black)',
+                color: 'var(--cream)',
+                textDecoration: 'none',
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                fontFamily: 'var(--font-mono)',
+              }}
+            >
+              GO TO DASHBOARD →
+            </Link>
           </div>
-        </div>
+          )}
+          </div>
       </section>
 
       {/* Latest Order Section */}
