@@ -1,7 +1,6 @@
 import ProductForm from '@/components/admin/ProductForm';
 import { redirect } from 'next/navigation';
 import { createProductAction } from '@/lib/actions/products';
-import { generatePrimeSync } from 'crypto';
 import { generateSlug } from '@/lib/utils';
 
 export default async function NewProduct() {
@@ -16,7 +15,7 @@ export default async function NewProduct() {
       tag: formData.get('tag') as string,
       description: formData.get('desc') as string,
       primaryImage: formData.get('primaryImage') as string,
-      weightG: Number(formData.get('weightG')),
+      weightG: Number(formData.get('weight')),
       price: Number(formData.get('price')),
       originalPrice: Number(formData.get('originalPrice')),
       skuPrefix: formData.get('skuPrefix') as string,

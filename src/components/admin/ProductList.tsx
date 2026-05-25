@@ -3,8 +3,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { deleteProductAction } from '@/lib/actions/products';
 import Link from 'next/link';
+import { useToast } from '@/context/ToastContext';
 
 export default function ProductList({ initialProducts }: { initialProducts: any[] }) {
+  const { showToast } = useToast();
   const [products, setProducts] = useState<any[]>(initialProducts);
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -68,9 +70,16 @@ export default function ProductList({ initialProducts }: { initialProducts: any[
                       <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--black)' }}>Confirm?</span>
                       <button 
                         onClick={async () => {
-                          await deleteProductAction(product.id);
-                          deleteProduct(product.id);
-                          setDeletingProductId(null);
+                          try {
+                            await deleteProductAction(product.id);
+                            deleteProduct(product.id);
+
+                            showToast(`deleted · ${product.name}`);
+                            
+                            setDeletingProductId(null);
+                          } catch (err) {
+                            showToast(`error · failed to delete product`);
+                          }
                         }}
                         style={{ ...dangerButtonStyle, minWidth: 60, padding: '4px 8px' }}
                       >
