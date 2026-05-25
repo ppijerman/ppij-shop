@@ -48,6 +48,27 @@ export interface ProductVariant {
   updated_at: string;
 }
 
+export interface ProductData {
+  name: string
+  subtitle: string
+  category: string
+  fitType: string
+  tag: string
+  description: string
+  primaryImage: string
+  colors: {
+    name: string
+    hex: string
+  }[]
+  sizes: string[]
+  stock: Record<string, Record<string, number>>
+  price: number
+  originalPrice: number | null
+  skuPrefix: string
+  weightG: number
+  slug: string
+}
+
 export interface ProductImage {
   id: string;
   product_id: string;

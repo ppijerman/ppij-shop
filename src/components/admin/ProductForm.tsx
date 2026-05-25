@@ -7,8 +7,27 @@ interface ProductFormProps {
   action: (formData: FormData) => Promise<void>;
 }
 
+const getFieldStyle = (isChanged: boolean) => ({
+  ...inputStyle,
+  borderColor: isChanged ? 'var(--orange)' : 'var(--line)',
+  backgroundColor: isChanged ? '#fff7ed' : 'white',
+});
+
 export default function ProductForm({ initialData, action }: ProductFormProps) {
   const variants = initialData?.variants || [];
+  
+  const [formData, setFormData] = useState({
+    name: initialData?.name || '',
+    subtitle: initialData?.subtitle || '',
+    category: initialData?.category || 'TSHIRT',
+    fitType: initialData?.fit_type || 'REGULAR',
+    tag: initialData?.tag || '',
+    skuPrefix: initialData?.sku_prefix || '',
+    price: variants[0]?.price || 0,
+    weight: initialData?.weight_g || 0,
+    originalPrice: variants[0]?.original_price || '',
+    desc: initialData?.desc || ''
+  });
   
   const [sizes, setSizes] = useState<string[]>(
     Array.from(new Set(variants.map((v: any) => v.size as string)))
@@ -19,13 +38,16 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
       .map(s => JSON.parse(s as string))
   );
 
-  const [stock, setStock] = useState<Record<string, Record<string, number>>>(
-    variants.reduce((acc: any, v: any) => {
-      acc[v.color_name] = acc[v.color_name] || {};
-      acc[v.color_name][v.size] = v.stock;
-      return acc;
-    }, {})
-  );
+    const [stock, setStock] = useState<Record<string, Record<string, number>>>( () => {
+      if (variants.length > 0) {
+        return variants.reduce((acc: any, v: any) => {
+          acc[v.color_name] = acc[v.color_name] || {};
+          acc[v.color_name][v.size] = v.stock;
+          return acc;
+        }, {});
+      }
+      return {};
+    });
 
   const [primaryImage, setPrimaryImage] = useState<string | null>(initialData?.primary_image || null);
 
@@ -50,47 +72,110 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
         <div style={fieldGroup}>
           <label style={labelStyle}>Product Name</label>
-          <input name="name" defaultValue={initialData?.name || ''} style={inputStyle} placeholder="e.g. Fang & Horn" />
+          <input 
+            name="name" 
+            value={formData.name} 
+            onChange={e => setFormData({...formData, name: e.target.value})}
+            style={getFieldStyle(formData.name !== (initialData?.name || ''))} 
+            placeholder="e.g. Fang & Horn" 
+          />
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Subtitle</label>
-          <input name="subtitle" defaultValue={initialData?.subtitle || ''} style={inputStyle} placeholder="e.g. OVERSIZED TEE — WHITE" />
+          <input 
+            name="subtitle" 
+            value={formData.subtitle} 
+            onChange={e => setFormData({...formData, subtitle: e.target.value})}
+            style={getFieldStyle(formData.subtitle !== (initialData?.subtitle || ''))}
+            placeholder="e.g. OVERSIZED TEE — WHITE" 
+          />
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Category</label>
-          <select name="category" defaultValue={initialData?.category || 'TSHIRT'} style={inputStyle}>
+          <select 
+            name="category" 
+            value={formData.category} 
+            onChange={e => setFormData({...formData, category: e.target.value})}
+            style={{...getFieldStyle(formData.category !== (initialData?.category || 'TSHIRT')), height: '48px'}}
+          >
             <option value="TSHIRT">TSHIRT</option>
             <option value="TOTEBAG">TOTE BAG</option>
           </select>
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Fit Type</label>
-          <select name="fitType" defaultValue={initialData?.fit_type || 'REGULAR'} style={inputStyle}>
+          <select 
+            name="fitType" 
+            value={formData.fitType} 
+            onChange={e => setFormData({...formData, fitType: e.target.value})}
+            style={{...getFieldStyle(formData.fitType !== (initialData?.fit_type || 'REGULAR')), height: '48px' }}
+          >
             <option value="REGULAR">REGULAR</option>
             <option value="OVERSIZED">OVERSIZED</option>
           </select>
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Tag</label>
-          <input name="tag" defaultValue={initialData?.tag || ''} style={inputStyle} placeholder="e.g. NEW, BESTSELLER" />
+          <input 
+            name="tag" 
+            value={formData.tag} 
+            onChange={e => setFormData({...formData, tag: e.target.value})}
+            style={getFieldStyle(formData.tag !== (initialData?.tag || ''))}
+            placeholder="e.g. NEW, BESTSELLER" 
+          />
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>SKU Prefix</label>
-          <input name="skuPrefix" defaultValue={initialData?.sku_prefix || ''} style={inputStyle} placeholder="e.g. FH-TEE" />
+          <input 
+            name="skuPrefix" 
+            value={formData.skuPrefix} 
+            onChange={e => setFormData({...formData, skuPrefix: e.target.value})}
+            style={getFieldStyle(formData.skuPrefix !== (initialData?.sku_prefix || ''))}
+            placeholder="e.g. FH-TEE" 
+          />
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Price (€)</label>
-          <input name="price" type="number" defaultValue={variants[0]?.price || 0} style={inputStyle} />
+          <input 
+            name="price" 
+            type="number" 
+            value={formData.price} 
+            onChange={e => setFormData({...formData, price: parseFloat(e.target.value) || 0})}
+            style={getFieldStyle(formData.price !== (initialData?.price || variants[0]?.price || 0))}
+          />
+        </div>
+        <div style={fieldGroup}>
+          <label style={labelStyle}>Weight (kg)</label>
+          <input 
+            name="weight" 
+            type="number" 
+            step="0.01" 
+            value={formData.weight} 
+            onChange={e => setFormData({...formData, weight: parseFloat(e.target.value) || 0})}
+            style={getFieldStyle(formData.weight !== (initialData?.weight_g || 0))}
+            placeholder="e.g. 0.25" 
+          />
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Original Price (€)</label>
-          <input name="originalPrice" type="number" defaultValue={variants[0]?.original_price || ''} style={inputStyle} />
+          <input 
+            name="originalPrice" 
+            type="number" 
+            value={formData.originalPrice} 
+            onChange={e => setFormData({...formData, originalPrice: e.target.value})}
+            style={getFieldStyle(formData.originalPrice !== (initialData?.original_price || variants[0]?.original_price || ''))}
+          />
         </div>
       </div>
 
       <div style={{ ...fieldGroup, marginBottom: 24 }}>
         <label style={labelStyle}>Description</label>
-        <textarea name="desc" defaultValue={initialData?.desc || ''} style={{ ...inputStyle, minHeight: 100, resize: 'vertical' }} />
+        <textarea 
+          name="desc" 
+          value={formData.desc} 
+          onChange={e => setFormData({...formData, desc: e.target.value})}
+          style={{ ...getFieldStyle(formData.desc !== (initialData?.desc || '')), minHeight: 100, resize: 'vertical' }} 
+        />
       </div>
 
       <div style={{ marginBottom: 32 }}>
@@ -195,8 +280,9 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
                       <td key={s} style={{ padding: 8 }}>
                         <input 
                           type="number"
-                          value={stock[c.name]?.[s] || 0}
-                          onChange={(e) => handleStockChange(c.name, s, parseInt(e.target.value) || 0)}
+                          value={stock[c.name]?.[s] ?? 0}
+                          placeholder="0"
+                          onChange={(e) => handleStockChange(c.name, s, parseInt(e.target.value) || 0)}
                           style={{ 
                             width: '100%', 
                             padding: '6px', 

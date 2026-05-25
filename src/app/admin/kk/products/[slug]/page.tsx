@@ -1,10 +1,12 @@
-import { getProductBySlug } from '@/lib/dal/products';
+import { getProductBySlugWithVariants } from '@/lib/dal/products';
 import AdminProductEditForm from '@/components/admin/AdminProductEditForm';
-import { updateProduct } from '@/lib/dal/products'; // Assuming you have an updateProduct function in DAL
+import { updateProduct } from '@/lib/actions/products';
+import { generateSlug } from '@/lib/utils';
+import { extractSkuPrefix } from '@/lib/utils';
 
 export default async function EditProduct({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const product = await getProductBySlugWithVariants(slug);
 
   if (!product) return <div>Product not found</div>;
 
@@ -33,14 +35,21 @@ export default async function EditProduct({ params }: { params: Promise<{ slug: 
     const sizes = JSON.parse(formData.get('sizes') as string);
     const colors = JSON.parse(formData.get('colors') as string);
     const stock = JSON.parse(formData.get('stock') as string);
+    const newSlug = generateSlug(name);
+    const weightG = Number(formData.get('weightG'));
 
-    await updateProduct(id, { name, subtitle, category, fitType, tag, skuPrefix, price, originalPrice, description, primaryImage, sizes, colors, stock });
+    await updateProduct(id, { name, subtitle, category, fitType, tag, skuPrefix, price, originalPrice, description, primaryImage, sizes, colors, stock, slug: newSlug, weightG });
   };
+
+  const initialData = {
+    ...product,
+    sku_prefix: extractSkuPrefix(product.variants ?? []),
+  }
 
   return (
     <div>
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 48, marginBottom: 40 }}>EDIT PRODUCT</h1>
-      <AdminProductEditForm initialData={product} updateProduct={updateProductAction} />
+      <AdminProductEditForm initialData={initialData} updateProduct={updateProductAction} />
     </div>
   );
 }
