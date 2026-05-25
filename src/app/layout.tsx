@@ -10,7 +10,6 @@ import {
 import { CartProvider } from "@/context/CartContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { TweaksProvider } from "@/context/TweaksContext";
-import PromoBar from "@/components/layout/PromoBar";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Toast from "@/components/ui/Toast";
@@ -75,7 +74,6 @@ export default function RootLayout({
                 <div
                   style={{ position: "relative", zIndex: 2, minHeight: "100vh" }}
                 >
-                  <PromoBar />
                   <Navbar />
                   <main>{children}</main>
                   <Footer />

@@ -72,7 +72,10 @@ export async function getAllProductsWithVariants() {
         'size', trim(pv.size),
         'stock', pv.stock,
         'price', pv.price::float,
-        'color_name', pv.color_name
+        'original_price', pv.original_price::float,
+        'color_name', pv.color_name,
+        'color_hex', pv.color_hex,
+        'sku', pv.sku
       )) FILTER (WHERE pv.id IS NOT NULL) AS variants
       FROM products p
       LEFT JOIN product_variants pv ON pv.product_id = p.id

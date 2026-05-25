@@ -13,7 +13,7 @@ export default function AdminShell({
 
   //const currentAdminRole = 'ADMIN_IT'
   //const isItAdmin = currentAdminRole === 'ADMIN_IT';
-  const isItAdmin = pathname.startsWith('/admin/it'); 
+  const isItAdmin = pathname.startsWith('/admin'); 
   const basePath = isItAdmin ? '/admin/it' : '/admin/kk';
 
   return (
