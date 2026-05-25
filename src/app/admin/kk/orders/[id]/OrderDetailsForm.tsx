@@ -1,11 +1,29 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation'
+import { updateOrderStatusAction } from '@/lib/actions/orders';
 
 export default function OrderDetailsForm({ initialOrder, items }: { initialOrder: any, items: any[] }) {
+  const router = useRouter();
   const [status, setStatus] = useState<string>(initialOrder.status);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const statuses: string[] = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DONE'];
+
+  const handleUpdateStatus = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await updateOrderStatusAction(initialOrder.id, status);
+      router.refresh();
+    } catch (err) {
+      setError('Failed to update status. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 40 }}>
@@ -52,17 +70,87 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
             >
               {statuses.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-            <button style={{ width: '100%', padding: '12px', background: 'var(--black)', color: 'var(--cream)', border: 'none', borderRadius: 4, fontFamily: 'var(--font-mono)', fontSize: 12, cursor: 'pointer' }}>
-              UPDATE STATUS
-            </button>
+            {error && (
+            <div style={{
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              color: '#b91c1c',
+              padding: '8px 12px',
+              borderRadius: 4,
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              marginBottom: 12,
+            }}>
+              {error}
+            </div>
+          )}
+          <button
+            onClick={handleUpdateStatus}
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '12px',
+              background: loading ? 'var(--muted)' : 'var(--black)',
+              color: 'var(--cream)',
+              border: 'none',
+              borderRadius: 4,
+              fontFamily: 'var(--font-mono)',
+              fontSize: 12,
+              cursor: loading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {loading ? 'UPDATING...' : 'UPDATE STATUS'}
+          </button>
           </div>
         </section>
 
         <section style={sectionStyle}>
           <h2 style={h2Style}>Buyer Information</h2>
-          <div style={{ background: 'white', padding: 24, borderRadius: 8, border: '1px solid var(--line)' }}>
-            <p style={infoLabel}>Address</p>
-            <p style={infoValue}>{typeof initialOrder.delivery_address === 'string' ? initialOrder.delivery_address : JSON.stringify(initialOrder.delivery_address)}</p>
+          <div style={{ background: 'white', padding: 24, borderRadius: 8, border: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {initialOrder.delivery_type === 'PICKUP' ? (
+              <div>
+                <p style={infoLabel}>Delivery Type</p>
+                <p style={infoValue}>Pickup</p>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <p style={infoLabel}>Delivery Type</p>
+                  <p style={infoValue}>Delivery</p>
+                </div>
+                <div>
+                  <p style={infoLabel}>Street</p>
+                  <p style={infoValue}>{initialOrder.delivery_address?.street ?? '—'}</p>
+                </div>
+                <div>
+                  <p style={infoLabel}>City</p>
+                  <p style={infoValue}>{initialOrder.delivery_address?.city ?? '—'}</p>
+                </div>
+                <div>
+                  <p style={infoLabel}>Postcode</p>
+                  <p style={infoValue}>{initialOrder.delivery_address?.postcode ?? '—'}</p>
+                </div>
+                <div>
+                  <p style={infoLabel}>Country</p>
+                  <p style={infoValue}>{initialOrder.delivery_address?.country ?? '—'}</p>
+                </div>
+              </>
+            )}
+            <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}>
+              <p style={infoLabel}>Payment Proof</p>
+              {initialOrder.payment_proof_url ? (
+                <a
+                  href={initialOrder.payment_proof_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: 13, color: 'var(--black)', fontWeight: 600, textDecoration: 'underline' }}
+                >
+                  View Proof
+                </a>
+              ) : (
+                <p style={{ ...infoValue, color: 'var(--muted)' }}>Not uploaded yet</p>
+              )}
+            </div>
           </div>
         </section>
       </div>
