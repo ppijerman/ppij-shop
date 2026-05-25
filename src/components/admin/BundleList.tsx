@@ -2,8 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useToast } from '@/context/ToastContext';
 
 export default function BundleList({ initialBundles, bundleItems, deleteBundleAction }: { initialBundles: any[], bundleItems: any[], deleteBundleAction: (id: string) => Promise<void> }) {
+  const { showToast } = useToast();
   const [bundles, setBundles] = useState<any[]>(initialBundles);
   const [deletingBundleId, setDeletingBundleId] = useState<string | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -59,9 +61,14 @@ export default function BundleList({ initialBundles, bundleItems, deleteBundleAc
                       <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--black)' }}>Confirm?</span>
                       <button 
                         onClick={async () => {
-                          await deleteBundleAction(bundle.id);
-                          deleteBundle(bundle.id);
-                          setDeletingBundleId(null);
+                          try {
+                            await deleteBundleAction(bundle.id);
+                            deleteBundle(bundle.id);
+                            showToast(`deleted · ${bundle.name}`);
+                            setDeletingBundleId(null);
+                          } catch (err) {
+                            showToast(`error · failed to delete product`);
+                          }
                         }}
                         style={{ ...dangerButtonStyle, minWidth: 60, padding: '4px 8px' }}
                       >

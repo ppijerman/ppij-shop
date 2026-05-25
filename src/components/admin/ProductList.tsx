@@ -74,11 +74,11 @@ export default function ProductList({ initialProducts }: { initialProducts: any[
                             await deleteProductAction(product.id);
                             deleteProduct(product.id);
 
-                            showToast(`+ deleted · ${product.name}`);
+                            showToast(`deleted · ${product.name}`);
                             
                             setDeletingProductId(null);
                           } catch (err) {
-                            showToast(`+ error · failed to delete product`);
+                            showToast(`error · failed to delete product`);
                           }
                         }}
                         style={{ ...dangerButtonStyle, minWidth: 60, padding: '4px 8px' }}

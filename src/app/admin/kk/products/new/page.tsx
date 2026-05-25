@@ -1,7 +1,6 @@
 import ProductForm from '@/components/admin/ProductForm';
 import { redirect } from 'next/navigation';
 import { createProductAction } from '@/lib/actions/products';
-import { generatePrimeSync } from 'crypto';
 import { generateSlug } from '@/lib/utils';
 
 export default async function NewProduct() {
