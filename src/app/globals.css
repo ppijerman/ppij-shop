@@ -119,3 +119,19 @@ body::before {
   mix-blend-mode: multiply;
   opacity: 0.4;
 }
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 3000;
+  background: var(--black);
+  color: var(--cream);
+  padding: 12px 24px;   font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  animation: fadeUp 0.3s ease;
+  pointer-events: none;
+ }
