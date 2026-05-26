@@ -7,7 +7,7 @@ export default async function AdminBundles() {
   const bundles = await getAllBundles();
   const bundleItems = await getAllBundleItems();
 
-  async function deleteBundle(id: string) {
+  async function deleteBundleAction(id: string) {
     'use server';
     await deleteBundle(id);
   }
@@ -34,7 +34,7 @@ export default async function AdminBundles() {
         </Link>
       </div>
 
-      <BundleList initialBundles={bundles} bundleItems={bundleItems} deleteBundleAction={deleteBundle} />
+      <BundleList initialBundles={bundles} bundleItems={bundleItems} deleteBundleAction={deleteBundleAction} />
     </div>
   );
 }
