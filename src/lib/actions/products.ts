@@ -4,7 +4,7 @@ import { db, withTransaction } from '../db';
 import { ProductData } from '@/types';
 import { requireAdmin } from '../auth';
 
-export async function createProductAction(productData: ProductData) {
+export async function createProduct(productData: ProductData) {
   await requireAdmin();
   return withTransaction(async (query) => {
     const res = await query(
@@ -148,7 +148,7 @@ export async function updateProduct(id: string, productData: ProductData) {
 
 }
 
-export async function deleteProductAction(productId: string) {
+export async function deleteProduct(productId: string) {
   await requireAdmin();
   await db.query(
     `DELETE FROM products WHERE id = $1`,

@@ -1,21 +1,32 @@
-import { getAllProducts } from '@/lib/dal/products';
+import { getAllProductsWithVariants } from '@/lib/dal/products';
 import BundleForm from '@/components/admin/BundleForm';
 import { redirect } from 'next/navigation';
+import { createBundle } from '@/lib/actions/bundles';
+import { generateSlug } from '@/lib/utils';
 
 export default async function NewBundle() {
-  const products = await getAllProducts();
+  const products = await getAllProductsWithVariants();
 
-  async function handleSubmit(formData: FormData) {
+  async function createBundleAction(formData: FormData) {
     'use server';
-    console.log('Creating bundle:', formData);
-    // TODO: Implement server action for creating bundle
+    const name = formData.get('name') as string;
+
+    await createBundle({
+      name: formData.get('name') as string,
+      description: formData.get('description') as string,
+      price: Number(formData.get('price')),
+      originalPrice: formData.get('originalPrice') ? Number(formData.get('originalPrice')) : null,
+      skuPrefix: formData.get('skuPrefix') as string,
+      slug: generateSlug(name),
+      variantIds: JSON.parse(formData.get('selectedVariantIds') as string)
+    })
     redirect('/admin/kk/bundles');
   }
 
   return (
     <div>
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 48, marginBottom: 40 }}>NEW BUNDLE</h1>
-      <BundleForm products={products} action={handleSubmit} />
+      <BundleForm products={products} action={createBundleAction} />
     </div>
   );
 }

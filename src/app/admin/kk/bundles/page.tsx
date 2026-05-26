@@ -1,10 +1,7 @@
 import { getAllBundles, getAllBundleItems } from '@/lib/dal/bundles';
 import Link from 'next/link';
 import BundleList from '@/components/admin/BundleList';
-
-// NOTE: You should import your actual server action for deleting bundles here.
-// Assuming it exists as deleteBundleAction in '@/lib/actions/bundles' or similar.
-import { deleteBundleAction } from '@/lib/actions/bundles';
+import { deleteBundle } from '@/lib/actions/bundles';
 
 export default async function AdminBundles() {
   const bundles = await getAllBundles();
@@ -12,7 +9,7 @@ export default async function AdminBundles() {
 
   async function deleteBundle(id: string) {
     'use server';
-    await deleteBundleAction(id);
+    await deleteBundle(id);
   }
 
   return (
