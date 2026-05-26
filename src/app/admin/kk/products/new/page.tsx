@@ -1,13 +1,13 @@
 import ProductForm from '@/components/admin/ProductForm';
 import { redirect } from 'next/navigation';
-import { createProductAction } from '@/lib/actions/products';
+import { createProduct } from '@/lib/actions/products';
 import { generateSlug } from '@/lib/utils';
 
 export default async function NewProduct() {
   async function handleSubmit(formData: FormData) {
     'use server';
     const name = formData.get('name') as string;
-    await createProductAction({
+    await createProduct({
       name: formData.get('name') as string,
       subtitle: formData.get('subtitle') as string,
       category: formData.get('category') as string,
@@ -17,7 +17,7 @@ export default async function NewProduct() {
       primaryImage: formData.get('primaryImage') as string,
       weightG: Number(formData.get('weight')),
       price: Number(formData.get('price')),
-      originalPrice: Number(formData.get('originalPrice')),
+      originalPrice: formData.get('originalPrice') ? Number(formData.get('originalPrice')) : null,
       skuPrefix: formData.get('skuPrefix') as string,
       colors: JSON.parse(formData.get('colors') as string),
       sizes: JSON.parse(formData.get('sizes') as string),

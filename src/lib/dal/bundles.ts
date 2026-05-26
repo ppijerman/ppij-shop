@@ -6,7 +6,24 @@ export async function getAllBundles() {
 }
 
 export async function getBundleById(id: string) {
-  const res = await db.query("SELECT * FROM bundles WHERE id = $1", [id])
+  const res = await db.query(
+    `
+    SELECT
+      b.*, COALESCE(
+        json_agg(
+          json_build_object(
+            'variant_id', bi.variant_id
+          )
+        ) FILTER (WHERE bi.variant_id IS NOT NULL),
+        '[]'
+      ) AS items
+    FROM bundles b
+    LEFT JOIN bundle_items bi ON bi.bundle_id = b.id
+    WHERE b.id = $1
+    GROUP BY b.id
+    `,
+    [id]
+  );
   return res.rows[0]
 }
 

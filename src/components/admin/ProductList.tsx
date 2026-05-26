@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { deleteProductAction } from '@/lib/actions/products';
+import { deleteProduct } from '@/lib/actions/products';
 import Link from 'next/link';
 import { useToast } from '@/context/ToastContext';
 
@@ -71,7 +71,7 @@ export default function ProductList({ initialProducts }: { initialProducts: any[
                       <button 
                         onClick={async () => {
                           try {
-                            await deleteProductAction(product.id);
+                            await deleteProduct(product.id);
                             deleteProduct(product.id);
 
                             showToast(`deleted · ${product.name}`);

@@ -23,25 +23,28 @@ export default function BundleForm({ initialData, products, action }: BundleForm
     skuPrefix: initialData?.sku || ''
   });
 
-  const [selectedProducts, setSelectedProducts] = useState<string[]>(
-    initialData?.items?.map((item: any) => item.product_id) || []
+  const [selectedVariantIds, setSelectedVariantIds] = useState<string[]>(
+    initialData?.items?.map((item: any) => item.variant_id) || []
   );
 
-  const toggleProduct = (productId: string) => {
-    if (selectedProducts.includes(productId)) {
-      setSelectedProducts(selectedProducts.filter(id => id !== productId));
-    } else {
-      setSelectedProducts([...selectedProducts, productId]);
-    }
-  };
+  const toggleProduct = (product: any) => {
+    const productVariantIds = product.variants?.map((v: any) => v.id) || [];
+    const isSelected = productVariantIds.every((id: string) => selectedVariantIds.includes(id));
 
-  const initialSelected = initialData?.items?.map((item: any) => item.product_id) || [];
-  const areProductsChanged = JSON.stringify(selectedProducts.sort()) !== JSON.stringify(initialSelected.sort());
+    if (isSelected) {
+      setSelectedVariantIds(selectedVariantIds.filter(id => !productVariantIds.includes(id)));
+    } else {
+      setSelectedVariantIds([...new Set([...selectedVariantIds, ...productVariantIds])]);
+    }
+  }
+
+  const initialSelected = initialData?.items?.map((item: any) => item.variant_id) || [];
+  const areProductsChanged = JSON.stringify(selectedVariantIds.sort()) !== JSON.stringify(initialSelected.sort());
 
   return (
     <form action={action} style={{ background: 'white', padding: 32, borderRadius: 12, border: '1px solid var(--line)', maxWidth: 800 }}>
-      <input type="hidden" name="selectedProducts" value={JSON.stringify(selectedProducts)} />
-      {initialData?.id && <input type="hidden" name="id" value={initialData.id} />}
+      <input type="hidden" name="selectedVariantIds" value={JSON.stringify(selectedVariantIds)} />
+      {initialData?.id && <input type="hidden" name="bundleId" value={initialData.id} />}
       
       <div style={fieldGroup}>
         <label style={labelStyle}>Bundle Name</label>
@@ -102,15 +105,17 @@ export default function BundleForm({ initialData, products, action }: BundleForm
       <div style={{ marginTop: 32, marginBottom: 40 }}>
         <label style={{ ...labelStyle, color: areProductsChanged ? 'var(--orange)' : 'var(--muted)' }}>Included Products {areProductsChanged && '*'}</label>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
-          {products.map(product => (
+          {products.map(product => {
+            const isSelected = product.variants?.some((v: any) => selectedVariantIds.includes(v.id));
+            return (
             <div 
               key={product.id} 
-              onClick={() => toggleProduct(product.id)}
+              onClick={() => toggleProduct(product)}
               style={{
                 padding: '12px 16px',
                 borderRadius: 8,
                 border: '1px solid var(--line)',
-                background: selectedProducts.includes(product.id) ? 'var(--cream-2)' : 'white',
+                background: isSelected ? 'var(--cream-2)' : 'white',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -123,21 +128,22 @@ export default function BundleForm({ initialData, products, action }: BundleForm
                 height: 18,
                 borderRadius: 4,
                 border: '2px solid var(--black)',
-                background: selectedProducts.includes(product.id) ? 'var(--black)' : 'transparent',
+                background: isSelected ? 'var(--black)' : 'transparent',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'white',
                 fontSize: 12
               }}>
-                {selectedProducts.includes(product.id) && '✓'}
+                {isSelected && '✓'}
               </div>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{product.name}</div>
                 <div style={{ fontSize: 11, color: 'var(--muted)' }}>{product.category}</div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
