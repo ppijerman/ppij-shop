@@ -38,18 +38,19 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
       .map(s => JSON.parse(s as string))
   );
 
-    const [stock, setStock] = useState<Record<string, Record<string, number>>>( () => {
-      if (variants.length > 0) {
-        return variants.reduce((acc: any, v: any) => {
-          acc[v.color_name] = acc[v.color_name] || {};
-          acc[v.color_name][v.size] = v.stock;
-          return acc;
-        }, {});
-      }
-      return {};
-    });
+  const [stock, setStock] = useState<Record<string, Record<string, number>>>( () => {
+    if (variants.length > 0) {
+      return variants.reduce((acc: any, v: any) => {
+        acc[v.color_name] = acc[v.color_name] || {};
+        acc[v.color_name][v.size] = v.stock;
+        return acc;
+      }, {});
+    }
+    return {};
+  });
 
-  const [primaryImage, setPrimaryImage] = useState<string | null>(initialData?.primary_image || null);
+  const [images, setImages] = useState<{ url: string; is_primary: boolean; }[]>(initialData?.images || []);
+  const [fileInputKey, setFileInputKey] = useState(0);
 
   const handleStockChange = (colorName: string, size: string, value: number) => {
     setStock(prevStock => ({
@@ -61,13 +62,19 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
     }));
   };
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    formData.set('images', JSON.stringify(images));
+    action(formData);
+  };
+
   return (
-    <form action={action} style={{ background: 'white', padding: 32, borderRadius: 12, border: '1px solid var(--line)', maxWidth: 800 }}>
+    <form onSubmit={handleSubmit} style={{ background: 'white', padding: 32, borderRadius: 12, border: '1px solid var(--line)', maxWidth: 800 }}>
       {initialData?.id && <input type="hidden" name="id" value={initialData.id} />}
       <input type="hidden" name="sizes" value={JSON.stringify(sizes)} />
       <input type="hidden" name="colors" value={JSON.stringify(colors)} />
       <input type="hidden" name="stock" value={JSON.stringify(stock)} />
-      <input type="hidden" name="primaryImage" value={primaryImage || ''} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
         <div style={fieldGroup}>
@@ -304,16 +311,97 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
 
       <div style={{ marginBottom: 40 }}>
         <label style={labelStyle}>Images</label>
-        <div style={{ 
-          marginTop: 8, 
-          border: '2px dashed var(--line)', 
-          padding: 40, 
-          textAlign: 'center', 
-          borderRadius: 8,
-          color: 'var(--muted)',
-          fontSize: 13
-        }}>
-          Click or drag images to upload
+        <input 
+          type="file" 
+          multiple 
+          accept="image/*" 
+          onChange={async (e) => {
+            if (!e.target.files || e.target.files.length === 0) return;
+            const newImages: { url: string; is_primary: boolean; }[] = [...images];
+            for (const file of Array.from(e.target.files)) {
+              const url = URL.createObjectURL(file);
+              newImages.push({ url, is_primary: newImages.length === 0 });
+            }
+            setImages(newImages);
+            setFileInputKey(prevKey => prevKey + 1);
+          }}
+          style={{ marginBottom: 20, display: 'block' }}
+          key={fileInputKey}
+        />
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 16 }}>
+          {images.map((image, index) => (
+            <div 
+              key={image.url} 
+              style={{
+                border: `2px solid ${image.is_primary ? 'var(--black)' : 'var(--line)'}`, 
+                borderRadius: 8, 
+                overflow: 'hidden', 
+                position: 'relative',
+                padding: 8
+              }}
+            >
+              <img src={image.url} alt="Product preview" style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4 }} />
+              {image.is_primary && (
+                <span 
+                  style={{
+                    position: 'absolute', 
+                    top: 4, 
+                    right: 4, 
+                    background: 'var(--black)', 
+                    color: 'white', 
+                    padding: '2px 6px', 
+                    borderRadius: 4, 
+                    fontSize: 10
+                  }}
+                >
+                  PRIMARY
+                </span>
+              )}
+              <button 
+                type="button" 
+                onClick={() => {
+                  setImages(images.map((img, i) => ({
+                    ...img,
+                    is_primary: i === index
+                  })));
+                }}
+                style={{
+                  marginTop: 8, 
+                  width: '100%', 
+                  padding: '6px', 
+                  background: image.is_primary ? 'var(--orange)' : 'var(--cream)', 
+                  color: image.is_primary ? 'white' : 'var(--black)', 
+                  border: 'none', 
+                  borderRadius: 4, 
+                  cursor: 'pointer',
+                  fontSize: 11
+                }}
+              >
+                Set as Primary
+              </button>
+              <button 
+                type="button" 
+                onClick={() => {
+                  setImages(images.filter((_, i) => i !== index));
+                  setFileInputKey(prevKey => prevKey + 1);
+                }}
+                style={{
+                  marginTop: 4, 
+                  width: '100%', 
+                  padding: '6px', 
+                  background: '#f44336', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: 4, 
+                  cursor: 'pointer',
+                  fontSize: 11
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 

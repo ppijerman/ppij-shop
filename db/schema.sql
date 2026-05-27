@@ -181,7 +181,8 @@ CREATE TABLE public.orders (
 CREATE TABLE public.product_images (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     product_id uuid NOT NULL,
-    url text NOT NULL
+    url text NOT NULL,
+    is_primary boolean DEFAULT false NOT NULL
 );
 
 
@@ -217,7 +218,6 @@ CREATE TABLE public.products (
     name character varying(255) NOT NULL,
     subtitle character varying(255) NOT NULL,
     fit_type character varying(255) NOT NULL,
-    primary_image text NOT NULL,
     slug character varying(255) NOT NULL,
     category public.product_category NOT NULL,
     "desc" text NOT NULL,
@@ -448,6 +448,13 @@ CREATE INDEX idx_orders_user_id ON public.orders USING btree (user_id);
 
 
 --
+-- Name: idx_product_images_only_one_primary; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_product_images_only_one_primary ON public.product_images USING btree (product_id) WHERE (is_primary = true);
+
+
+--
 -- Name: idx_product_images_product_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -640,4 +647,5 @@ ALTER TABLE ONLY public.product_variants
 
 INSERT INTO public.schema_migrations (version) VALUES
     ('20260518190445'),
-    ('20260520002041');
+    ('20260520002041'),
+    ('20260526233645');

@@ -9,8 +9,8 @@ export async function createProduct(productData: ProductData) {
   return withTransaction(async (query) => {
     const res = await query(
       `
-      INSERT INTO products (name, subtitle, category, fit_type, tag, "desc", primary_image, weight_g, slug)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO products (name, subtitle, category, fit_type, tag, "desc", weight_g, slug)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id
       `,
       [
@@ -20,13 +20,20 @@ export async function createProduct(productData: ProductData) {
         productData.fitType,
         productData.tag,
         productData.description,
-        productData.primaryImage,
         productData.weightG,
         productData.slug,
       ]
     );
   
     const productId = res.rows[0].id;
+
+    for (const image of productData.images) {
+      await query(
+        `INSERT INTO product_images (product_id, url, is_primary)
+        VALUES ($1, $2, $3)`,
+        [productId, image.url, image.is_primary]
+      );
+    }
     
     for (const color of productData.colors) {
       for (const size of productData.sizes) {
@@ -68,9 +75,8 @@ export async function updateProduct(id: string, productData: ProductData) {
         fit_type = $5,
         tag = $6,
         "desc" = $7,
-        primary_image = $8,
-        slug = $9,
-        weight_g = $10
+        slug = $8,
+        weight_g = $9
       WHERE id = $1
       `,
       [
@@ -81,11 +87,19 @@ export async function updateProduct(id: string, productData: ProductData) {
         productData.fitType,
         productData.tag,
         productData.description,
-        productData.primaryImage,
         productData.slug,
         productData.weightG
       ]
     );
+
+    // Sync Images
+    await query('DELETE FROM product_images WHERE product_id = $1', [id]);
+    for (const image of productData.images) {
+      await query(
+        `INSERT INTO product_images (product_id, url, is_primary) VALUES ($1, $2, $3)`,
+        [id, image.url, image.is_primary]
+      );
+    }
 
     // Get existing variants
     const existingVariants = await query(

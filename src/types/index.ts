@@ -16,13 +16,13 @@ export interface User {
   created_at: string;
   updated_at: string;
 }
-
 export interface Product {
   id: string;
   name: string;
   subtitle: string;
   fit_type: string;
-  primary_image: string;
+  primary_image?: string; // Derived from images array or join
+  images?: ProductImage[];
   slug: string;
   category: ProductCategory;
   desc: string;
@@ -55,7 +55,10 @@ export interface ProductData {
   fitType: string
   tag: string
   description: string
-  primaryImage: string
+  images: {
+    url: string
+    is_primary: boolean
+  }[]
   colors: {
     name: string
     hex: string
@@ -73,6 +76,7 @@ export interface ProductImage {
   id: string;
   product_id: string;
   url: string;
+  is_primary: boolean;
 }
 
 export interface CartItem {

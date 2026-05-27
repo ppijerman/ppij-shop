@@ -39,7 +39,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         qty: qty,
         size: variant.size.trim(),
         color: { name: variant.color_name, hex: variant.color_hex },
-        image: product.primary_image,
+        image: 
+          product.images?.find((img: any) => img.is_primary)?.url ?? 
+          product.images?.[0]?.url ??
+          'editorial-color.jpeg'
       };
       
       return [...prev, newItem];

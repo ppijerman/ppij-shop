@@ -41,7 +41,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
       >
         <div style={{ display: 'grid', gridTemplateColumns: '1.05fr 0.95fr' }}>
           <div style={{ background: 'var(--cream-2)', position: 'relative', minHeight: 520 }}>
-            <ProductCrop src={product.primary_image} height={560} scale={2.4} />
+            <ProductCrop src={product.primary_image ?? 'editorial-color.jpeg'} height={560} scale={2.4} />
             {product.tag && <div style={{ position: 'absolute', top: 18, right: 18, background: 'var(--orange)', color: 'var(--black)', padding: '5px 12px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase' }}>{product.tag}</div>}
           </div>
 
