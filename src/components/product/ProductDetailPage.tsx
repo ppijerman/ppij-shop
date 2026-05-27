@@ -864,7 +864,7 @@ export default function ProductDetailPage({
                 style={{ textDecoration: 'none', cursor: 'pointer' }}
               >
                 <div style={{ background: 'var(--cream-2)', overflow: 'hidden' }}>
-                  <ProductCrop src={p.primary_image} height={300} scale={2.4} />
+                  <ProductCrop src={p.primary_image ?? 'editorial-color.jpeg'} height={300} scale={2.4} />
                 </div>
                 <div style={{ padding: '12px 4px 0', textAlign: 'center' }}>
                   <div

@@ -2,7 +2,12 @@ import { db } from "../db"
 
 export async function getAllProducts() {
   const res = await db.query(
-    "SELECT * FROM products WHERE is_active = true"
+    `
+    SELECT p.*, pi.url as primary_image
+    FROM products p
+    LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
+    WHERE p.is_active = true
+    `
   )
   return res.rows;
 }
@@ -10,7 +15,9 @@ export async function getAllProducts() {
 export async function getProductBySlug(slug: string) {
   const res = await db.query(
     `
-    SELECT * FROM products p
+    SELECT p.*, pi.url as primary_image
+    FROM products p
+    LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
     WHERE p.slug = $1
     `,
     [slug]
@@ -23,20 +30,33 @@ export async function getProductBySlugWithVariants(slug: string) {
     `
     SELECT
       p.*,
-      json_agg(json_build_object(
-        'id', pv.id,
-        'size', trim(pv.size),
-        'stock', pv.stock,
-        'price', pv.price::float,
-        'original_price', pv.original_price::float,
-        'color_name', pv.color_name,
-        'color_hex', pv.color_hex,
-        'sku', pv.sku
-      )) FILTER (WHERE pv.id IS NOT NULL) AS variants
+      pi.url AS primary_image,
+      (
+        SELECT json_agg(json_build_object(
+          'id', pv.id,
+          'size', trim(pv.size),
+          'stock', pv.stock,
+          'price', pv.price::float,
+          'original_price', pv.original_price::float,
+          'color_name', pv.color_name,
+          'color_hex', pv.color_hex,
+          'sku', pv.sku
+        ))
+        FROM product_variants pv
+        WHERE pv.product_id = p.id
+      ) AS variants,
+      (
+        SELECT json_agg(json_build_object(
+          'id', pimg.id,
+          'url', pimg.url,
+          'is_primary', pimg.is_primary
+        ) ORDER BY pimg.is_primary DESC, pimg.id ASC)
+        FROM product_images pimg
+        WHERE pimg.product_id = p.id
+      ) AS images
     FROM products p
-    LEFT JOIN product_variants pv ON pv.product_id = p.id
+    LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
     WHERE p.slug = $1
-    GROUP BY p.id
     `,
     [slug]
   )
@@ -48,6 +68,7 @@ export async function getProductImages(productId: string) {
     `
       SELECT * FROM product_images
       WHERE product_id = $1
+      ORDER BY is_primary DESC, id ASC
     `,
     [productId]
   )
@@ -67,19 +88,33 @@ export async function getAllProductsWithVariants() {
     `
     SELECT
       p.*,
-      json_agg(json_build_object(
-        'id', pv.id,
-        'size', trim(pv.size),
-        'stock', pv.stock,
-        'price', pv.price::float,
-        'original_price', pv.original_price::float,
-        'color_name', pv.color_name,
-        'color_hex', pv.color_hex,
-        'sku', pv.sku
-      )) FILTER (WHERE pv.id IS NOT NULL) AS variants
-      FROM products p
-      LEFT JOIN product_variants pv ON pv.product_id = p.id
-      GROUP BY p.id
+      pi.url AS primary_image,
+      (
+        SELECT json_agg(json_build_object(
+          'id', pv.id,
+          'size', trim(pv.size),
+          'stock', pv.stock,
+          'price', pv.price::float,
+          'original_price', pv.original_price::float,
+          'color_name', pv.color_name,
+          'color_hex', pv.color_hex,
+          'sku', pv.sku
+        ))
+        FROM product_variants pv
+        WHERE pv.product_id = p.id
+      ) AS variants,
+      (
+        SELECT json_agg(json_build_object(
+          'id', pimg.id,
+          'url', pimg.url,
+          'is_primary', pimg.is_primary
+        ) ORDER BY pimg.is_primary DESC, pimg.id ASC)
+        FROM product_images pimg
+        WHERE pimg.product_id = p.id
+      ) AS images
+    FROM products p
+    LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
+    WHERE p.is_active = true
     `
   );
   return res.rows;

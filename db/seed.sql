@@ -6,18 +6,28 @@ INSERT INTO "users" (clerk_user_id, first_name, last_name, email, role, created_
 ('user_2NNEqL2nrIRdJ194ndJiSCjFMnP', 'Mulyono', NULL, 'mulyono@gmail.com', 'BUYER', NOW(), NOW()),
 ('user_2NNEqL2nrIRdJ194ndJiSCjFMnQ', 'John', 'Pork', 'john@pork.com', 'BUYER', NOW(), NOW()),
 ('user_2NNEqL2nrIRdJ194ndJiSCjFMnR', 'Budi', 'Santoso', 'budi@ppij.org', 'ADMIN_KK', NOW(), NOW()),
-('user_4GGFEqLgargergegrfndJiSCj76R', 'Siti', NULL, 'it@ppij.org', 'ADMIN_IT', NOW(), NOW());
+('9a4d3d94-27e1-4534-90f6-9bcdcf1b7fdb', 'navy', 'hanan', 'navyhanan00@gmail.com', 'ADMIN_IT', NOW(), NOW());
 
-INSERT INTO "products" (name, subtitle, category, weight_g, fit_type, "desc", tag, primary_image, slug, created_at, updated_at) 
-VALUES 
-  ('Fang & Horn', 'OVERSIZED TEE — WHITE', 'TSHIRT', 220, 'normal', 'Kaos oversized 220gsm dengan hand-drawn graphic.', 'BESTSELLER', '/assets/v4/tshirt-grid.jpeg', 'fang-and-horn', NOW(), NOW()),
-  ('Trio Komodores', 'GRAPHIC TEE — BLACK', 'TSHIRT', 250, 'normal', 'Graphic tee dengan illustrasi.', 'NEW', '/assets/v4/tshirt-grid.jpeg', 'trio-komodores', NOW(), NOW()),
-  ('Elle the Elephant', 'BACK PRINT TEE — GREY', 'TSHIRT', 220, 'oversized', 'Tee abu dengan POV back print.', 'LIMITED', '/assets/v4/tshirt-grid.jpeg', 'elle-the-elephant', NOW(), NOW()),
-  ('"Einkaufen 101"', 'HEAVY CANVAS TOTE — BLUE PRINT', 'TOTEBAG', 400, 'none', 'Tote canvas dengan blue print.', 'NEW', '/assets/v4/totebag-grid.jpeg', 'einkaufen-101', NOW(), NOW()),
-  ('"Mit Karte Bitte"', 'HEAVY CANVAS TOTE — GREEN PRINT', 'TOTEBAG', 400, 'none', 'Tote canvas dengan green print.', 'BESTSELLER', '/assets/v4/totebag-grid.jpeg', 'mit-karte-bitte', NOW(), NOW());
+INSERT INTO "products" (name, subtitle, category, weight_g, fit_type, "desc", tag, slug, created_at, updated_at)
+VALUES
+  ('Fang & Horn', 'OVERSIZED TEE — WHITE', 'TSHIRT', 220, 'normal', 'Kaos oversized 220gsm dengan hand-drawn graphic.', 'BESTSELLER', 'fang-and-horn', NOW(), NOW()),
+  ('Trio Komodores', 'GRAPHIC TEE — BLACK', 'TSHIRT', 250, 'normal', 'Graphic tee dengan illustrasi.', 'NEW', 'trio-komodores', NOW(), NOW()),
+  ('Elle the Elephant', 'BACK PRINT TEE — GREY', 'TSHIRT', 220, 'oversized', 'Tee abu dengan POV back print.', 'LIMITED', 'elle-the-elephant', NOW(), NOW()),
+  ('"Einkaufen 101"', 'HEAVY CANVAS TOTE — BLUE PRINT', 'TOTEBAG', 400, 'none', 'Tote canvas dengan blue print.', 'NEW', 'einkaufen-101', NOW(), NOW()),
+  ('"Mit Karte Bitte"', 'HEAVY CANVAS TOTE — GREEN PRINT', 'TOTEBAG', 400, 'none', 'Tote canvas dengan green print.', 'BESTSELLER', 'mit-karte-bitte', NOW(), NOW());
 
-INSERT INTO "product_variants" (product_id, size, fit_type, price, original_price, sku, color_name, color_hex, stock, created_at, updated_at)
-SELECT p.id, v.size, v.fit_type, v.price, v.original_price, v.sku, v.color_name, v.color_hex, v.stock, NOW(), NOW()
+INSERT INTO "product_images" (product_id, url, is_primary)
+SELECT p.id, v.url, v.is_primary
+FROM (
+  SELECT 'fang-and-horn' as slug, '/assets/v4/tshirt-grid.jpeg' as url, TRUE as is_primary
+  UNION ALL SELECT 'trio-komodores', '/assets/v4/tshirt-grid.jpeg', TRUE
+  UNION ALL SELECT 'elle-the-elephant', '/assets/v4/tshirt-grid.jpeg', TRUE
+  UNION ALL SELECT 'einkaufen-101', '/assets/v4/totebag-grid.jpeg', TRUE
+  UNION ALL SELECT 'mit-karte-bitte', '/assets/v4/totebag-grid.jpeg', TRUE
+) v
+JOIN "products" p ON p.slug = v.slug;
+
+INSERT INTO "product_variants" (product_id, size, fit_type, price, original_price, sku, color_name, color_hex, stock, created_at, updated_at)SELECT p.id, v.size, v.fit_type, v.price, v.original_price, v.sku, v.color_name, v.color_hex, v.stock, NOW(), NOW()
 FROM (
   SELECT 'fang-and-horn' as slug, 'S' as size, 'OVERSIZED' as fit_type, 25 as price, 30 as original_price, 'FH-S-WHITE' as sku, 'White' as color_name, '#F5F1E6' as color_hex, 10 as stock
   UNION ALL SELECT 'fang-and-horn', 'M', 'OVERSIZED', 25, 30, 'FH-M-WHITE', 'White', '#F5F1E6', 8

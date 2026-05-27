@@ -14,7 +14,7 @@ export default async function NewProduct() {
       fitType: formData.get('fitType') as string,
       tag: formData.get('tag') as string,
       description: formData.get('desc') as string,
-      primaryImage: formData.get('primaryImage') as string,
+      images: JSON.parse(formData.get('images') as string),
       weightG: Number(formData.get('weight')),
       price: Number(formData.get('price')),
       originalPrice: formData.get('originalPrice') ? Number(formData.get('originalPrice')) : null,
