@@ -4,7 +4,7 @@ import { useAuth, useSignIn } from "@clerk/nextjs";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AuthError, AuthInput, AuthShell, AuthSubmitButton } from "@/components/auth/AuthUi";
+import { AuthError, AuthInput, AuthNotice, AuthShell, AuthSubmitButton } from "@/components/auth/AuthUi";
 import { getClerkErrorMessage } from "@/lib/clerkErrors";
 
 function getRequiredStringValue(formData: FormData, fieldName: string): string {
@@ -23,12 +23,55 @@ export default function LoginPage() {
   const { fetchStatus, signIn } = useSignIn();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingSecondFactor, setPendingSecondFactor] = useState(false);
+  const [secondFactorIdentifier, setSecondFactorIdentifier] = useState("");
 
   useEffect(() => {
     if (authLoaded && isSignedIn) {
       router.replace("/");
     }
   }, [authLoaded, isSignedIn, router]);
+
+  async function finalizeSignIn() {
+    if (signIn === null) {
+      throw new Error("Sign-in resource is unavailable.");
+    }
+
+    if (signIn.status !== "complete") {
+      throw new Error("Login could not be completed.");
+    }
+
+    const finalizeResult = await signIn.finalize();
+
+    if (finalizeResult.error !== null) {
+      throw finalizeResult.error;
+    }
+
+    router.replace("/");
+  }
+
+  async function prepareEmailSecondFactor() {
+    if (signIn === null) {
+      throw new Error("Sign-in resource is unavailable.");
+    }
+
+    const emailCodeFactor = signIn.supportedSecondFactors.find((factor) => {
+      return factor.strategy === "email_code";
+    });
+
+    if (emailCodeFactor === undefined || emailCodeFactor.strategy !== "email_code") {
+      throw new Error("This account requires a second factor that this login form does not support yet.");
+    }
+
+    const prepareResult = await signIn.mfa.sendEmailCode();
+
+    if (prepareResult.error !== null) {
+      throw prepareResult.error;
+    }
+
+    setSecondFactorIdentifier(emailCodeFactor.safeIdentifier);
+    setPendingSecondFactor(true);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,16 +96,41 @@ export default function LoginPage() {
         throw createResult.error;
       }
 
-      if (signIn.status !== "complete") {
-        throw new Error("Login could not be completed.");
+      if (signIn.status === "needs_second_factor" || signIn.status === "needs_client_trust") {
+        await prepareEmailSecondFactor();
+        return;
       }
 
-      const finalizeResult = await signIn.finalize();
-      if (finalizeResult.error !== null) {
-        throw finalizeResult.error;
+      await finalizeSignIn();
+    } catch (caughtError: unknown) {
+      setError(getClerkErrorMessage(caughtError));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSecondFactorSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (signIn === null) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData(event.currentTarget);
+      const code = getRequiredStringValue(formData, "code");
+      const attemptResult = await signIn.mfa.verifyEmailCode({
+        code,
+      });
+
+      if (attemptResult.error !== null) {
+        throw attemptResult.error;
       }
 
-      router.replace("/");
+      await finalizeSignIn();
     } catch (caughtError: unknown) {
       setError(getClerkErrorMessage(caughtError));
     } finally {
@@ -76,8 +144,8 @@ export default function LoginPage() {
 
   return (
     <AuthShell
-      eyebrow="Welcome Back"
-      title="LOG IN"
+      eyebrow={pendingSecondFactor ? "Extra Security" : "Welcome Back"}
+      title={pendingSecondFactor ? "VERIFY LOGIN" : "LOG IN"}
       footer={
         <div
           style={{
@@ -113,59 +181,79 @@ export default function LoginPage() {
       }
     >
       <AuthError message={error} />
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        <AuthInput
-          label="Email Address"
-          name="email"
-          type="email"
-          placeholder="your@email.com"
-          autoComplete="email"
-        />
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <label
-              htmlFor="password"
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: 10,
-                color: "var(--muted)",
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-              }}
-            >
-              Password
-            </label>
-            <Link
-              href="/auth/forgot-password"
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: 9,
-                color: "var(--muted)",
-                textDecoration: "none",
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                borderBottom: "1px solid transparent",
-                transition: "border-color 0.2s",
-              }}
-            >
-              Forgot?
-            </Link>
-          </div>
+      {pendingSecondFactor ? (
+        <>
+          <AuthNotice message={`Enter the verification code sent to ${secondFactorIdentifier}.`} />
+          <form onSubmit={handleSecondFactorSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            <AuthInput
+              label="Verification Code"
+              name="code"
+              type="text"
+              placeholder="123456"
+              autoComplete="one-time-code"
+            />
+            <AuthSubmitButton
+              loading={loading || fetchStatus === "fetching"}
+              loadingLabel="Verifying..."
+              idleLabel="Verify Login"
+            />
+          </form>
+        </>
+      ) : (
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           <AuthInput
-            label=""
-            name="password"
-            type="password"
-            placeholder="••••••"
-            autoComplete="current-password"
-            allowVisibilityToggle
+            label="Email Address"
+            name="email"
+            type="email"
+            placeholder="your@email.com"
+            autoComplete="email"
           />
-        </div>
-        <AuthSubmitButton
-          loading={loading || fetchStatus === "fetching"}
-          loadingLabel="Processing..."
-          idleLabel="Login"
-        />
-      </form>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <label
+                htmlFor="password"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 10,
+                  color: "var(--muted)",
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Password
+              </label>
+              <Link
+                href="/auth/forgot-password"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 9,
+                  color: "var(--muted)",
+                  textDecoration: "none",
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                  borderBottom: "1px solid transparent",
+                  transition: "border-color 0.2s",
+                }}
+              >
+                Forgot?
+              </Link>
+            </div>
+            <AuthInput
+              label=""
+              name="password"
+              type="password"
+              placeholder="your password"
+              autoComplete="current-password"
+              allowVisibilityToggle
+            />
+          </div>
+          <AuthSubmitButton
+            loading={loading || fetchStatus === "fetching"}
+            loadingLabel="Processing..."
+            idleLabel="Login"
+          />
+        </form>
+      )}
     </AuthShell>
   );
 }

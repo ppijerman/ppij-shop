@@ -283,13 +283,15 @@ function AccountControl({ authLoaded, isSignedIn, triggerName, signedInName, sig
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {ACCOUNT_MENU_ITEMS.map((item) => {
+              const isSignOutItem = item.kind === 'signout';
+
               return (
                 <div
                   key={item.id}
                   style={{
-                    borderTop: '1px solid var(--line)',
-                    marginTop: 6,
-                    paddingTop: 6,
+                    borderTop: isSignOutItem ? '1px solid var(--line)' : 'none',
+                    marginTop: isSignOutItem ? 6 : 0,
+                    paddingTop: isSignOutItem ? 6 : 0,
                   }}
                 >
                   <AccountActionItem
