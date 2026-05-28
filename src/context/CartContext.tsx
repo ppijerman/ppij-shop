@@ -1,11 +1,11 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, ReactNode, useMemo } from 'react';
-import { Product, ProductVariant, CartItem } from '@/types';
+import { Product, ProductVariant, CartItem, Bundle } from '@/types';
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (product: Product, variant: ProductVariant, qty?: number) => void;
+  addToCart: (product: Product | Bundle, variant?: ProductVariant, qty?: number) => void;
   updateCart: (cartId: string, delta: number) => void;
   removeFromCart: (cartId: string) => void;
   cartCount: number;
@@ -18,31 +18,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
 
   const addToCart = useCallback((
-    product: Product,
-    variant: ProductVariant,
+    product: Product | Bundle,
+    variant?: ProductVariant,
     qty = 1
   ) => {
     setCart(prev => {
-      const existing = prev.find(i => i.variantId === variant.id);
+      const isBundle = 'slug' in product && !('category' in product);
+      const bundleId = isBundle ? (product as Bundle).id : null;
+      const variantId = variant?.id ?? null;
+      
+      const existing = prev.find(i => bundleId ? i.bundleId === bundleId : i.variantId === variantId);
+
       if (existing) {
-        return prev.map(i => i.variantId === variant.id ? { ...i, qty: i.qty + qty } : i);
+        return prev.map(i => 
+          (bundleId ? i.bundleId === bundleId : i.variantId === variantId) 
+          ? { ...i, qty: i.qty + qty } : i);
       }
       
       const newItem: CartItem = {
         cartId: `${Date.now()}-${Math.random()}`,
-        variantId: variant.id,
-        productId: product.id,
-        bundleId: null,
+        variantId: variantId,
+        productId: bundleId ? null : (product as Product).id,
+        bundleId: bundleId,
         name: product.name,
-        category: product.category === 'TOTEBAG' ? 'TOTE BAG' : 'T-SHIRT',
-        price: variant.price,
+        category: bundleId ? 'BUNDLE' : (product as Product).category,
+        price: bundleId ? (product as Bundle).price : variant!.price,
         qty: qty,
-        size: variant.size.trim(),
-        color: { name: variant.color_name, hex: variant.color_hex },
-        image: 
-          product.images?.find((img: any) => img.is_primary)?.url ?? 
-          product.images?.[0]?.url ??
-          'editorial-color.jpeg'
+        size: variant?.size.trim() ?? null,
+        color: variant ? { name: variant.color_name, hex: variant.color_hex } : null,
+        image: bundleId ? 'editorial-color.jpeg' :
+          ((product as Product).images?.find((img: any) => img.is_primary)?.url ?? 'editorial-color.jepg')
       };
       
       return [...prev, newItem];
