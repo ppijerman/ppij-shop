@@ -1,6 +1,6 @@
 \restrict dbmate
 
--- Dumped from database version 18.3 (Homebrew)
+-- Dumped from database version 16.14 (Debian 16.14-1.pgdg13+1)
 -- Dumped by pg_dump version 18.3 (Homebrew)
 
 SET statement_timeout = 0;
@@ -30,11 +30,22 @@ CREATE TYPE public.delivery_type AS ENUM (
 --
 
 CREATE TYPE public.order_status AS ENUM (
-    'PENDING',
-    'CONFIRMED',
+    'PENDING_PAYMENT',
+    'PAYMENT_CONFIRMATION',
     'PROCESSING',
     'SHIPPED',
-    'DONE'
+    'COMPLETED',
+    'CANCELLED'
+);
+
+
+--
+-- Name: payment_method; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.payment_method AS ENUM (
+    'PAYPAL',
+    'IBAN'
 );
 
 
@@ -169,6 +180,7 @@ CREATE TABLE public.orders (
     payment_proof_url character varying(255),
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    payment_method public.payment_method NOT NULL,
     CONSTRAINT chk_delivery_address_logic CHECK (((delivery_type = 'PICKUP'::public.delivery_type) OR ((delivery_type = 'DELIVERY'::public.delivery_type) AND (delivery_address ? 'street'::text) AND (delivery_address ? 'city'::text) AND (delivery_address ? 'postcode'::text) AND (delivery_address ? 'country'::text)))),
     CONSTRAINT chk_order_total_price CHECK ((total_price >= (0)::numeric))
 );
@@ -441,6 +453,20 @@ CREATE INDEX idx_order_status_logs_order_id ON public.order_status_logs USING bt
 
 
 --
+-- Name: idx_orders_payment_method; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_orders_payment_method ON public.orders USING btree (payment_method);
+
+
+--
+-- Name: idx_orders_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_orders_status ON public.orders USING btree (status);
+
+
+--
 -- Name: idx_orders_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -648,4 +674,6 @@ ALTER TABLE ONLY public.product_variants
 INSERT INTO public.schema_migrations (version) VALUES
     ('20260518190445'),
     ('20260520002041'),
-    ('20260526233645');
+    ('20260523004721'),
+    ('20260526233645'),
+    ('20260527000100');

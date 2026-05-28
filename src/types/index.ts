@@ -79,6 +79,8 @@ export interface ProductImage {
   is_primary: boolean;
 }
 
+export type PaymentMethod = 'PAYPAL' | 'IBAN';
+
 export interface CartItem {
   cartId: string;
   variantId: string | null;
@@ -93,11 +95,11 @@ export interface CartItem {
   image: string;
 }
 
-export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DONE';
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DONE' | 'CANCELLED';
 export interface DeliveryAddress {
   street: string,
   city: string,
-  postcode: number,
+  postcode: string,
   country: string
 }
 
@@ -119,6 +121,7 @@ export interface Order {
   total_price: number;
   delivery_address: DeliveryAddress | null;
   delivery_type: 'PICKUP' | 'DELIVERY';
+  payment_method: PaymentMethod;
   payment_proof_url: string | null;
   created_at: string;
   updated_at: string;
