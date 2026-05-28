@@ -25,10 +25,14 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
   const currentPrice = currentVariant?.price || 0;
   const currentOriginalPrice = currentVariant?.original_price || null;
 
-  const handleAdd = () => {
-    addToCart(product, currentVariant, qty);
-    showToast(`✦ added · ${product.name}`);
-    onClose();
+  const handleAdd = async () => {
+    try {
+      await addToCart(product, currentVariant, qty);
+      showToast(`✦ added · ${product.name}`);
+      onClose();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to add item');
+    }
   };
 
   return (

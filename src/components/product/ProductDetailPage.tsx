@@ -91,10 +91,14 @@ export default function ProductDetailPage({
   const currentPrice = currentVariant?.price ?? 0;
   const currentOriginalPrice = currentVariant?.original_price;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (currentVariant) {
-      addToCart(product, currentVariant, qty);
-      showToast(`✦ added · ${product.name}`);
+      try {
+        await addToCart(product, currentVariant, qty);
+        showToast(`✦ added · ${product.name}`);
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : 'Failed to add item');
+      }
     }
   };
 
