@@ -340,18 +340,43 @@ export async function uploadPaymentProofAction(formData: FormData): Promise<Simp
   });
 }
 
-export async function updateOrderStatusAction(orderId: string, status: string): Promise<void> {
+export async function updateOrderStatusAction(orderId: string, status: string): Promise<SimpleActionResult> {
   await requireOrderAdmin();
 
   if (!isOrderStatus(status)) {
-    throw new Error('Invalid order status.');
+    return { ok: false, message: 'Invalid order status.' };
   }
 
-  await withTransaction(async (query) => {
-    await query(
-      `UPDATE orders SET status = $2::order_status WHERE id = $1`,
+  const result = await withTransaction(async (query) => {
+    if (status === 'SHIPPED') {
+      const orderResult = await query(
+        `
+        SELECT shipping_tracking_number
+        FROM orders
+        WHERE id = $1
+        FOR UPDATE
+        `,
+        [orderId],
+      );
+      const order = orderResult.rows[0];
+
+      if (!order) {
+        return { ok: false, message: 'Order not found.' };
+      }
+
+      if (!order.shipping_tracking_number) {
+        return { ok: false, message: 'Add a shipping number before marking the order as shipped.' };
+      }
+    }
+
+    const updateResult = await query(
+      `UPDATE orders SET status = $2::order_status WHERE id = $1 RETURNING id`,
       [orderId, status],
     );
+
+    if (updateResult.rowCount === 0) {
+      return { ok: false, message: 'Order not found.' };
+    }
 
     await query(
       `
@@ -360,10 +385,64 @@ export async function updateOrderStatusAction(orderId: string, status: string): 
       `,
       [orderId, status, `Status manually changed to ${status}.`],
     );
+
+    return { ok: true, message: 'Status updated.' };
   });
 
-  revalidatePath(`/admin/kk/orders/${orderId}`);
-  revalidatePath(`/admin/it/orders/${orderId}`);
+  if (result.ok) {
+    revalidatePath(`/admin/kk/orders/${orderId}`);
+    revalidatePath(`/admin/it/orders/${orderId}`);
+    revalidatePath(`/account/orders/${orderId}`);
+  }
+
+  return result;
+}
+
+export async function updateShippingTrackingNumberAction(
+  orderId: string,
+  trackingNumberInput: string,
+): Promise<SimpleActionResult> {
+  await requireOrderAdmin();
+
+  const trackingNumber = trackingNumberInput.trim();
+
+  if (!trackingNumber) {
+    return { ok: false, message: 'Enter a shipping number before marking the order as shipped.' };
+  }
+
+  if (trackingNumber.length > 120) {
+    return { ok: false, message: 'Shipping number must be 120 characters or fewer.' };
+  }
+
+  return withTransaction(async (query) => {
+    const result = await query(
+      `
+      UPDATE orders
+      SET shipping_tracking_number = $2, status = 'SHIPPED'
+      WHERE id = $1 AND status IN ('PROCESSING', 'SHIPPED')
+      RETURNING id
+      `,
+      [orderId, trackingNumber],
+    );
+
+    if (result.rowCount === 0) {
+      return { ok: false, message: 'Only processing or shipped orders can receive a shipping number.' };
+    }
+
+    await query(
+      `
+      INSERT INTO order_status_logs (order_id, status, note)
+      VALUES ($1, 'SHIPPED', $2)
+      `,
+      [orderId, `Shipping number saved: ${trackingNumber}`],
+    );
+
+    revalidatePath(`/admin/kk/orders/${orderId}`);
+    revalidatePath(`/admin/it/orders/${orderId}`);
+    revalidatePath(`/account/orders/${orderId}`);
+
+    return { ok: true, message: 'Shipping number saved.' };
+  });
 }
 
 export async function approvePaymentAction(orderId: string): Promise<SimpleActionResult> {

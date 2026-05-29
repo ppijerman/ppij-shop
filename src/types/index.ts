@@ -90,6 +90,7 @@ export interface CartItem {
   category: string;
   price: number;
   qty: number;
+  stock: number;
   size: string | null;
   color: Color | null;
   image: string;
@@ -123,6 +124,7 @@ export interface Order {
   delivery_type: 'PICKUP' | 'DELIVERY';
   payment_method: PaymentMethod;
   payment_proof_url: string | null;
+  shipping_tracking_number: string | null;
   created_at: string;
   updated_at: string;
   items: OrderItem[];
