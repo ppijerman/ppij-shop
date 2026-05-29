@@ -6,6 +6,7 @@ import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import ProductCrop from './ProductCrop';
 import { Product, ProductImage, ProductVariant, Color } from '@/types';
+import { useUser } from '@clerk/nextjs';
 
 interface ProductDetailPageProps {
   product: Product;
@@ -28,6 +29,10 @@ export default function ProductDetailPage({
   products,
   variants,
 }: ProductDetailPageProps) {
+  const { user } = useUser();
+  const role = user?.publicMetadata?.role;
+  const isAdmin = role === 'ADMIN_IT' || role === 'ADMIN_KK';
+
   // Derive unique colors from variants
   const uniqueColors = useMemo(() => {
     const map = new Map<string, Color>();
@@ -598,7 +603,11 @@ export default function ProductDetailPage({
                 +
               </button>
             </div>
-            <AddToCartBtn price={currentPrice * qty} onClick={handleAddToCart} />
+            {isAdmin ? (
+              <div style={{ display: 'flex', alignItems: 'center', padding: '15px', background: 'var(--cream-2)', color: 'var(--muted)', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 12 }}>VIEW ONLY MODE (ADMIN)</div>
+            ) : (
+              <AddToCartBtn price={currentPrice * qty} onClick={handleAddToCart} />
+            )}
           </div>
         </div>
       </div>

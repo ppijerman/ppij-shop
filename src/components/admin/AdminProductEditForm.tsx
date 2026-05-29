@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import ProductForm from './ProductForm';
 
 interface AdminProductEditFormProps {
@@ -10,11 +10,12 @@ interface AdminProductEditFormProps {
 
 export default function AdminProductEditForm({ initialData, updateProduct }: AdminProductEditFormProps) {
   const router = useRouter();
+  const { role } = useParams();
 
   const handleSubmit = async (formData: FormData) => {
     await updateProduct(formData);
     alert('Product updated successfully!');
-    router.push('/admin/kk/products');
+    router.push(`/admin/${role}/products`);
   };
 
   return (

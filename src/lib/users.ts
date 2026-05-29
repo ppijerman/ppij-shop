@@ -1,5 +1,7 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, createClerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
+
+const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
 export type UserRole = "BUYER" | "ADMIN_KK" | "ADMIN_IT";
 
@@ -133,17 +135,27 @@ export async function syncClerkUser(input: SyncClerkUserInput): Promise<DbUser> 
   const normalizedInput = normalizeSyncClerkUserInput(input);
   const existingUserByClerkUserId = await getUserByClerkUserId(normalizedInput.clerkUserId);
 
+  let user: DbUser;
+
   if (existingUserByClerkUserId !== null) {
-    return updateUserById(existingUserByClerkUserId.id, normalizedInput);
+    user = await updateUserById(existingUserByClerkUserId.id, normalizedInput);
+  } else {
+    const existingUserByEmail = await getUserByEmail(normalizedInput.email);
+    if (existingUserByEmail !== null) {
+      user = await updateUserById(existingUserByEmail.id, normalizedInput);
+    } else {
+      user = await createUser(normalizedInput);
+    }
   }
 
-  const existingUserByEmail = await getUserByEmail(normalizedInput.email);
+  // UPDATE CLERK METADATA HERE
+  await clerkClient.users.updateUserMetadata(user.clerk_user_id, {
+    publicMetadata: {
+      role: user.role,
+    },
+  });
 
-  if (existingUserByEmail !== null) {
-    return updateUserById(existingUserByEmail.id, normalizedInput);
-  }
-
-  return createUser(normalizedInput);
+  return user;
 }
 
 export async function getCurrentDbUserOrThrow(): Promise<DbUser> {

@@ -6,7 +6,6 @@ INSERT INTO "users" (clerk_user_id, first_name, last_name, email, role, created_
 ('user_2NNEqL2nrIRdJ194ndJiSCjFMnP', 'Mulyono', NULL, 'mulyono@gmail.com', 'BUYER', NOW(), NOW()),
 ('user_2NNEqL2nrIRdJ194ndJiSCjFMnQ', 'John', 'Pork', 'john@pork.com', 'BUYER', NOW(), NOW()),
 ('user_2NNEqL2nrIRdJ194ndJiSCjFMnR', 'Budi', 'Santoso', 'budi@ppij.org', 'ADMIN_KK', NOW(), NOW()),
-('9a4d3d94-27e1-4534-90f6-9bcdcf1b7fdb', 'navy', 'hanan', 'navyhanan00@gmail.com', 'ADMIN_IT', NOW(), NOW());
 
 INSERT INTO "products" (name, subtitle, category, weight_g, fit_type, "desc", tag, slug, created_at, updated_at)
 VALUES

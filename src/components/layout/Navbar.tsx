@@ -20,6 +20,9 @@ export default function Navbar() {
   const { cartCount } = useCart();
   const { isLoaded: authLoaded, isSignedIn, signOut } = useAuth();
   const { user } = useUser();
+  const role = user?.publicMetadata?.role;
+  const isAdmin = role === 'ADMIN_IT' || role === 'ADMIN_KK';
+  const adminPrefix = role === 'ADMIN_IT' ? 'it' : 'kk';
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
@@ -27,7 +30,11 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  if (pathname.startsWith('/admin')) return null;
+
   const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href);
+
+  const displayLinks = isAdmin ? [{href: `/admin/${adminPrefix}`, label: 'Dashboard'}, ...NAV_LINKS] : NAV_LINKS;
 
   return (
     <nav style={{
@@ -49,9 +56,12 @@ export default function Navbar() {
         </Link>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-          {NAV_LINKS.map(l => (
-            <NavLink key={l.href} href={l.href} active={isActive(l.href)}>{l.label}</NavLink>
-          ))}
+          {displayLinks.map(l => (
+              <NavLink key={l.href} href={l.href} active={isActive(l.href)}>
+                {l.label}
+              </NavLink>
+            ))
+          }
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, justifySelf: 'end' }}>
@@ -61,8 +71,9 @@ export default function Navbar() {
             triggerName={user?.firstName ?? user?.username ?? "Member"}
             signedInName={user?.fullName ?? user?.firstName ?? user?.username ?? "Member"}
             signOut={signOut}
+            role={role as string}
           />
-          <CartPill count={cartCount} />
+          {!isAdmin && <CartPill count={cartCount} />}
         </div>
       </div>
     </nav>
@@ -75,6 +86,7 @@ interface AccountControlProps {
   triggerName: string;
   signedInName: string;
   signOut: ReturnType<typeof useAuth>["signOut"];
+  role: string
 }
 
 type AccountMenuItem =
@@ -125,9 +137,17 @@ function AccountActionItem({ label, onClick }: AccountActionItemProps) {
   );
 }
 
-function AccountControl({ authLoaded, isSignedIn, triggerName, signedInName, signOut }: AccountControlProps) {
+function AccountControl({ authLoaded, isSignedIn, triggerName, signedInName, signOut, role }: AccountControlProps) {
+  const isAdmin = role === 'ADMIN_IT' || role === 'ADMIN_KK';
+  const adminPrefix = role === 'ADMIN_IT' ? 'it' : 'kk';
+
   const [isOpen, setIsOpen] = useState(false);
   const accountControlRef = useRef<HTMLDivElement | null>(null);
+
+  const filteredMenuItems = ACCOUNT_MENU_ITEMS.filter(item => {
+    if (isAdmin && item.kind === 'orders') return false;
+    return true;
+  })
 
   useEffect(() => {
     if (!isSignedIn) {
@@ -282,7 +302,7 @@ function AccountControl({ authLoaded, isSignedIn, triggerName, signedInName, sig
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {ACCOUNT_MENU_ITEMS.map((item) => {
+            {filteredMenuItems.map((item) => {
               const isSignOutItem = item.kind === 'signout';
 
               return (
@@ -299,7 +319,7 @@ function AccountControl({ authLoaded, isSignedIn, triggerName, signedInName, sig
                     onClick={() => {
                       setIsOpen(false);
                       if (item.kind === 'account') {
-                        redirect('/account')
+                        redirect(isAdmin ? `/admin/${adminPrefix}/settings` : '/account')
                       } else if (item.kind === 'orders') {
                         redirect('/account/orders')
                       } else if (item.kind === 'signout') {
