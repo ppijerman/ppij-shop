@@ -1,5 +1,7 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, createClerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
+
+const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
 export type UserRole = "BUYER" | "ADMIN_KK" | "ADMIN_IT";
 
@@ -158,6 +160,12 @@ export async function getCurrentDbUserOrThrow(): Promise<DbUser> {
   if (user === null) {
     throw new Error(`Local user record not found for Clerk user: ${authState.userId}`);
   }
+
+  await clerkClient.users.updateUserMetadata(user.clerk_user_id, {
+    publicMetadata: {
+      role: user.role,
+    }
+  })
 
   return user;
 }
