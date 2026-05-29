@@ -52,9 +52,32 @@ export default async function OrderDetailPage({ params }: { params: { id: string
             <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 20, opacity: 0.6 }}>
               {order.delivery_type === 'PICKUP' ? 'PICKUP LOCATION' : 'DELIVERY ADDRESS'}
             </h3>
-            <p style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.6 }}>
-              {typeof order.delivery_address === 'string' ? order.delivery_address : JSON.stringify(order.delivery_address)}
-            </p>
+            <div style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.6 }}>
+                {order.delivery_type === 'PICKUP' ? (
+                  <div>
+                    <p style={infoValue}>U-Bahn Tierpark, Berlin</p>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <p style={infoLabel}>Street</p>
+                      <p style={infoValue}>{order.delivery_address?.street ?? '—'}</p>
+                    </div>
+                    <div>
+                      <p style={infoLabel}>City</p>
+                      <p style={infoValue}>{order.delivery_address?.city ?? '—'}</p>
+                    </div>
+                    <div>
+                      <p style={infoLabel}>Postcode</p>
+                      <p style={infoValue}>{order.delivery_address?.postcode ?? '—'}</p>
+                    </div>
+                    <div>
+                      <p style={infoLabel}>Country</p>
+                      <p style={infoValue}>{order.delivery_address?.country ?? '—'}</p>
+                    </div>
+                  </>
+                )}
+            </div>
           </section>
 
           <section style={{ background: 'var(--cream-2)', padding: 32 }}>
@@ -77,3 +100,6 @@ export default async function OrderDetailPage({ params }: { params: { id: string
     </div>
   );
 }
+
+const infoLabel: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 4 };
+const infoValue: React.CSSProperties = { fontSize: 15, marginBottom: 16, fontWeight: 500 };
