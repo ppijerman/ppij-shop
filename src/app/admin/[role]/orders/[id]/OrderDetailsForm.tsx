@@ -16,6 +16,7 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [proofPreviewOpen, setProofPreviewOpen] = useState(false);
 
   const statuses: string[] = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'];
   const canEditShippingNumber = initialOrder.status === 'PROCESSING' || initialOrder.status === 'SHIPPED';
@@ -218,14 +219,13 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
             <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}>
               <p style={infoLabel}>Payment Proof</p>
               {initialOrder.payment_proof_url ? (
-                <a
-                  href={initialOrder.payment_proof_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ fontSize: 13, color: 'var(--black)', fontWeight: 600, textDecoration: 'underline' }}
+                <button
+                  type="button"
+                  onClick={() => setProofPreviewOpen(true)}
+                  style={{ background: 'none', border: 'none', padding: 0, fontSize: 13, color: 'var(--black)', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}
                 >
                   View Proof
-                </a>
+                </button>
               ) : (
                 <p style={{ ...infoValue, color: 'var(--muted)' }}>Not uploaded yet</p>
               )}
@@ -296,6 +296,72 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
           </div>
         </section>
       </div>
+
+      {proofPreviewOpen && initialOrder.payment_proof_url && (
+        <div
+          onClick={() => setProofPreviewOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 2000,
+            background: 'rgba(14,14,14,0.62)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+          }}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              position: 'relative',
+              width: 'min(760px, 92vw)',
+              maxHeight: '88vh',
+              background: 'var(--cream)',
+              border: '1px solid var(--line)',
+              overflow: 'hidden',
+              boxShadow: '0 22px 70px rgba(0,0,0,0.28)',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setProofPreviewOpen(false)}
+              aria-label="Close proof preview"
+              style={{
+                position: 'absolute',
+                top: 14,
+                right: 14,
+                zIndex: 1,
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: 'rgba(239,234,224,0.88)',
+                border: '1px solid var(--line)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              ×
+            </button>
+            <div style={{ padding: 18, borderBottom: '1px solid var(--line)' }}>
+              <p style={{ ...infoLabel, marginBottom: 0 }}>Payment Proof</p>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: 26, marginTop: 4 }}>
+                ORDER #{initialOrder.id.substring(0, 8)}
+              </p>
+            </div>
+            <div style={{ background: 'var(--cream-2)', padding: 18, maxHeight: 'calc(88vh - 92px)', overflow: 'auto' }}>
+              <img
+                src={initialOrder.payment_proof_url}
+                alt="Payment proof"
+                style={{ display: 'block', width: '100%', height: 'auto', objectFit: 'contain', background: 'white' }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
