@@ -17,12 +17,13 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
   return (
     <section id="catalog" style={{ background: 'var(--cream)', padding: '60px 28px 40px' }}>
       <div style={{ maxWidth: 1440, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 12 }}>—— shop the drop ——</div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(48px, 6.5vw, 96px)', letterSpacing: '0.02em', color: 'var(--black)', lineHeight: 0.95 }}>
-            THE PPI CAPSULE
+        <div style={{ textAlign: 'left', marginBottom: 32 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.3em', textTransform: 'uppercase',marginBottom: 8 }}>
+            —— essentials ——
+          </div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 48, color: 'var(--black)' }}>
+            INDIVIDUAL PIECES<span style={{ color: 'var(--orange)' }}>.</span>
           </h2>
-          <div style={{ fontFamily: 'var(--font-script)', fontSize: 38, color: 'var(--orange)', marginTop: -12 }}>vol. 01</div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: tweaks.gridGap }}>

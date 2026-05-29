@@ -28,8 +28,45 @@ export async function getBundleById(id: string) {
 }
 
 export async function getBundleBySlug(slug: string) {
-  const res = await db.query("SELECT * FROM bundles WHERE slug = $1", [slug])
-  return res.rows[0]
+  const res = await db.query(
+    `
+    SELECT 
+      b.*,
+      (
+        SELECT json_agg(json_build_object(
+          'id', p.id,
+          'name', p.name,
+          'category',p.category,
+          'images', (
+            SELECT json_agg(json_build_object('url', pimg.url, 'is_primary', pimg.is_primary))
+            FROM product_images pimg WHERE pimg.product_id = p.id
+          ),
+          'variants', (
+            SELECT json_agg(json_build_object(
+              'id', pv.id,
+              'size', trim(pv.size),
+              'stock', pv.stock,
+              'price', pv.price::float,
+              'color_name', pv.color_name,
+              'color_hex', pv.color_hex
+            ))
+            FROM product_variants pv WHERE pv.product_id = p.id
+          )
+        ))
+        FROM (
+          SELECT DISTINCT p.id, p.name, p.category
+          FROM bundle_items bi
+          JOIN product_variants pv ON bi.variant_id = pv.id
+          JOIN products p ON pv.product_id = p.id
+          WHERE bi.bundle_id = b.id
+        ) p
+      ) AS products
+      FROM bundles b
+      WHERE b.slug = $1
+    `,
+    [slug]
+  )
+  return res.rows[0] || null
 }
 
 export async function getAllBundleItems() {

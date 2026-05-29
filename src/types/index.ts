@@ -134,4 +134,5 @@ export interface Bundle {
   original_price: number | null;
   slug: string;
   sku: string;
+  category: string;
 }

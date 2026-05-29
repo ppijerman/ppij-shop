@@ -4,14 +4,18 @@ import PhotoStrip from "@/components/home/PhotoStrip";
 import CtaStrip from "@/components/home/CtaStrip";
 import CatalogWrapper from "@/components/catalog/CatalogWrapper";
 import { getAllProductsWithVariants } from "@/lib/dal/products";
+import { getAllBundles } from "@/lib/dal/bundles";
 
 export default async function HomePage() {
-  const products = await getAllProductsWithVariants();
+  const [products, bundles] = await Promise.all([
+    getAllProductsWithVariants(),
+    getAllBundles()
+  ]);
 
   return (
     <>
       <Hero />
-      <CatalogWrapper products={products} />
+      <CatalogWrapper products={products} bundles={bundles}/>
       <Editorial />
       <PhotoStrip />
       <CtaStrip />
