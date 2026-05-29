@@ -15,6 +15,34 @@ function normalizeQuantity(value: number): number {
   return Math.max(1, Math.floor(value));
 }
 
+async function getCartItemStockLimit(cartItemId: string, userId: string): Promise<number | null> {
+  const result = await db.query(
+    `
+    SELECT
+      CASE
+        WHEN ci.variant_id IS NOT NULL THEN pv.stock
+        ELSE (
+          SELECT MIN(bpv.stock)
+          FROM bundle_items bi
+          JOIN product_variants bpv ON bpv.id = bi.variant_id
+          WHERE bi.bundle_id = ci.bundle_id
+        )
+      END AS stock
+    FROM cart_items ci
+    LEFT JOIN product_variants pv ON pv.id = ci.variant_id
+    WHERE ci.id = $1 AND ci.user_id = $2
+    LIMIT 1
+    `,
+    [cartItemId, userId],
+  );
+
+  if (result.rowCount === 0) {
+    return null;
+  }
+
+  return Math.max(0, Number(result.rows[0].stock ?? 0));
+}
+
 export async function getCartItemsAction(): Promise<CartItem[]> {
   const user = await getCurrentDbUserOrThrow();
 
@@ -29,6 +57,15 @@ export async function getCartItemsAction(): Promise<CartItem[]> {
       COALESCE(p.name, b.name) AS name,
       CASE WHEN ci.bundle_id IS NOT NULL THEN 'BUNDLE' ELSE p.category::text END AS category,
       COALESCE(pv.price, b.price) AS price,
+      CASE
+        WHEN ci.variant_id IS NOT NULL THEN pv.stock
+        ELSE (
+          SELECT MIN(bpv.stock)
+          FROM bundle_items bi
+          JOIN product_variants bpv ON bpv.id = bi.variant_id
+          WHERE bi.bundle_id = ci.bundle_id
+        )
+      END AS stock,
       trim(pv.size) AS size,
       pv.color_name,
       pv.color_hex,
@@ -65,6 +102,7 @@ export async function getCartItemsAction(): Promise<CartItem[]> {
     category: row.category === 'TOTEBAG' ? 'TOTE BAG' : row.category,
     price: toNumber(row.price),
     qty: normalizeQuantity(Number(row.quantity)),
+    stock: Math.max(0, Number(row.stock ?? 0)),
     size: row.size,
     color: row.color_name && row.color_hex ? { name: row.color_name, hex: row.color_hex } : null,
     image: row.image,
@@ -77,17 +115,29 @@ export async function addVariantToCartAction(variantId: string, quantity = 1): P
 
   const variant = await db.query(
     `
-    SELECT pv.id
+    SELECT pv.id, pv.stock, COALESCE(ci.quantity, 0) AS cart_quantity
     FROM product_variants pv
     JOIN products p ON p.id = pv.product_id
+    LEFT JOIN cart_items ci ON ci.variant_id = pv.id AND ci.user_id = $2
     WHERE pv.id = $1 AND p.is_active = true
     LIMIT 1
     `,
-    [variantId],
+    [variantId, user.id],
   );
 
   if (variant.rowCount === 0) {
     throw new Error('Product variant is unavailable.');
+  }
+
+  const stock = Math.max(0, Number(variant.rows[0].stock));
+  const currentQuantity = Math.max(0, Number(variant.rows[0].cart_quantity));
+
+  if (stock <= 0) {
+    throw new Error('This item is sold out.');
+  }
+
+  if (currentQuantity + safeQuantity > stock) {
+    throw new Error(`Only ${stock} item${stock === 1 ? '' : 's'} available.`);
   }
 
   await db.query(
@@ -108,6 +158,23 @@ export async function updateCartItemQuantityAction(cartItemId: string, delta: nu
   const safeDelta = Math.trunc(delta);
 
   if (safeDelta === 0) return;
+
+  if (safeDelta > 0) {
+    const stockLimit = await getCartItemStockLimit(cartItemId, user.id);
+    if (stockLimit === null) {
+      throw new Error('Cart item not found.');
+    }
+
+    const current = await db.query(
+      `SELECT quantity FROM cart_items WHERE id = $1 AND user_id = $2 LIMIT 1`,
+      [cartItemId, user.id],
+    );
+    const currentQuantity = Number(current.rows[0]?.quantity ?? 0);
+
+    if (currentQuantity + safeDelta > stockLimit) {
+      throw new Error(`Only ${stockLimit} item${stockLimit === 1 ? '' : 's'} available.`);
+    }
+  }
 
   await db.query(
     `

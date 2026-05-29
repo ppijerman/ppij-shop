@@ -78,7 +78,7 @@ export default function ProductDetailPage({
   const [qty, setQty] = useState(1);
   const [activeTab, setActiveTab] = useState<Tab>('description');
   const [activeImg, setActiveImg] = useState(0);
-  const { addToCart } = useCart();
+  const { addToCart, cart } = useCart();
   const { showToast } = useToast();
 
   const currentVariant = useMemo(() => {
@@ -90,12 +90,27 @@ export default function ProductDetailPage({
 
   const currentPrice = currentVariant?.price ?? 0;
   const currentOriginalPrice = currentVariant?.original_price;
+  const currentStock = currentVariant?.stock ?? 0;
+  const quantityInCart = currentVariant
+    ? cart.find((item) => item.variantId === currentVariant.id)?.qty ?? 0
+    : 0;
+  const remainingStock = Math.max(0, currentStock - quantityInCart);
+  const isSoldOut = currentStock <= 0;
+  const cannotAddMore = remainingStock <= 0;
+  const isAtStockLimit = qty >= remainingStock;
+
+  useEffect(() => {
+    if (remainingStock > 0) {
+      setQty((currentQty) => Math.min(Math.max(1, currentQty), remainingStock));
+    }
+  }, [remainingStock]);
 
   const handleAddToCart = async () => {
-    if (currentVariant) {
+    if (currentVariant && !isSoldOut && !cannotAddMore) {
       try {
         await addToCart(product, currentVariant, qty);
         showToast(`✦ added · ${product.name}`);
+        setQty(1);
       } catch (err) {
         showToast(err instanceof Error ? err.message : 'Failed to add item');
       }
@@ -372,7 +387,7 @@ export default function ProductDetailPage({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 11,
-                color: '#1F8A5B',
+                color: isSoldOut ? '#b91c1c' : '#1F8A5B',
                 letterSpacing: '0.18em',
                 textTransform: 'uppercase',
                 display: 'flex',
@@ -385,11 +400,24 @@ export default function ProductDetailPage({
                   width: 6,
                   height: 6,
                   borderRadius: '50%',
-                  background: '#1F8A5B',
+                  background: isSoldOut ? '#b91c1c' : '#1F8A5B',
                 }}
               />{' '}
-              in stock
+              {isSoldOut ? 'sold out' : `${currentStock} in stock`}
             </span>
+            {!isSoldOut && quantityInCart > 0 && (
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  color: cannotAddMore ? '#b91c1c' : 'var(--muted)',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {cannotAddMore ? 'max in cart' : `${remainingStock} left to add`}
+              </span>
+            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginTop: 18 }}>
@@ -575,13 +603,15 @@ export default function ProductDetailPage({
             >
               <button
                 onClick={() => setQty((q) => Math.max(1, q - 1))}
+                disabled={isSoldOut}
                 style={{
                   width: 46,
                   height: 54,
                   background: 'none',
                   border: 'none',
-                  cursor: 'pointer',
+                  cursor: isSoldOut ? 'not-allowed' : 'pointer',
                   fontSize: 18,
+                  opacity: isSoldOut ? 0.45 : 1,
                 }}
               >
                 −
@@ -597,24 +627,23 @@ export default function ProductDetailPage({
                 {qty}
               </span>
               <button
-                onClick={() => setQty((q) => q + 1)}
+                onClick={() => setQty((q) => Math.min(remainingStock, q + 1))}
+                disabled={isSoldOut || cannotAddMore || isAtStockLimit}
                 style={{
                   width: 46,
                   height: 54,
                   background: 'none',
                   border: 'none',
-                  cursor: 'pointer',
+                  cursor: isSoldOut || cannotAddMore || isAtStockLimit ? 'not-allowed' : 'pointer',
                   fontSize: 18,
+                  color: isSoldOut || cannotAddMore || isAtStockLimit ? 'var(--muted)' : 'var(--black)',
+                  opacity: isSoldOut || cannotAddMore || isAtStockLimit ? 0.45 : 1,
                 }}
               >
                 +
               </button>
             </div>
-            {isAdmin ? (
-              <div style={{ display: 'flex', alignItems: 'center', padding: '15px', background: 'var(--cream-2)', color: 'var(--muted)', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 12 }}>VIEW ONLY MODE (ADMIN)</div>
-            ) : (
-              <AddToCartBtn price={currentPrice * qty} onClick={handleAddToCart} />
-            )}
+            <AddToCartBtn price={currentPrice * qty} onClick={handleAddToCart} disabled={isSoldOut || cannotAddMore || !currentVariant} soldOut={isSoldOut} />
           </div>
         </div>
       </div>
@@ -960,30 +989,41 @@ export default function ProductDetailPage({
   );
 }
 
-function AddToCartBtn({ price, onClick }: { price: number; onClick: () => void }) {
+function AddToCartBtn({
+  price,
+  onClick,
+  disabled = false,
+  soldOut = false,
+}: {
+  price: number;
+  onClick: () => void;
+  disabled?: boolean;
+  soldOut?: boolean;
+}) {
   const [hovered, setHovered] = useState(false);
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
         flex: 1,
-        background: hovered ? 'var(--orange)' : 'var(--black)',
-        color: hovered ? 'var(--black)' : 'var(--cream)',
+        background: disabled ? 'var(--muted)' : hovered ? 'var(--orange)' : 'var(--black)',
+        color: disabled ? 'var(--cream)' : hovered ? 'var(--black)' : 'var(--cream)',
         border: 'none',
         padding: '15px',
         fontFamily: 'var(--font-mono)',
         fontSize: 12,
         letterSpacing: '0.22em',
         textTransform: 'uppercase',
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
         borderRadius: 999,
         fontWeight: 600,
         transition: 'all 0.2s',
       }}
     >
-      add to cart — €{price.toFixed(2)} ↗
+      {disabled ? (soldOut ? 'sold out' : 'max in cart') : `add to cart — €${price.toFixed(2)} ↗`}
     </button>
   );
 }

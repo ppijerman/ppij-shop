@@ -73,7 +73,11 @@ export default function CartView() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
               <div>
-                {cart.map(item => (
+                {cart.map(item => {
+                  const atStockLimit = item.qty >= item.stock;
+                  const isSoldOut = item.stock <= 0;
+
+                  return (
                   <div key={item.cartId} style={{ display: 'flex', gap: 16, alignItems: 'center', padding: '18px 0', borderBottom: '1px solid var(--line)' }}>
                     {!item.bundleId && (
                       <div style={{ width: 84, height: 84, background: 'var(--cream-2)', flexShrink: 0, overflow: 'hidden' }}>
@@ -86,18 +90,22 @@ export default function CartView() {
                       {!item.bundleId && (
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', marginTop: 4 }}>{item.color?.name} · size {item.size}</div>
                       )}
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: isSoldOut ? '#b91c1c' : 'var(--muted)', marginTop: 5, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                        {isSoldOut ? 'sold out' : `${item.stock} available`}
+                      </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--line)', borderRadius: 999 }}>
                       <button type="button" disabled={loading} onClick={() => void handleCartChange(() => updateCart(item.cartId, -1))} style={{ width: 32, height: 32, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>−</button>
                       <span style={{ width: 30, fontFamily: 'var(--font-mono)', fontSize: 13, textAlign: 'center' }}>{item.qty}</span>
-                      <button type="button" disabled={loading} onClick={() => void handleCartChange(() => updateCart(item.cartId, 1))} style={{ width: 32, height: 32, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>+</button>
+                      <button type="button" disabled={loading || atStockLimit || isSoldOut} onClick={() => void handleCartChange(() => updateCart(item.cartId, 1))} style={{ width: 32, height: 32, background: 'none', border: 'none', cursor: loading || atStockLimit || isSoldOut ? 'not-allowed' : 'pointer', fontSize: 14, color: atStockLimit || isSoldOut ? 'var(--muted)' : 'var(--black)', opacity: atStockLimit || isSoldOut ? 0.45 : 1 }}>+</button>
                     </div>
                     <div style={{ minWidth: 80, textAlign: 'right' }}>
                       <div style={{ fontFamily: 'var(--font-display)', fontSize: 20 }}>€{(item.price * item.qty).toFixed(2)}</div>
                       <button type="button" disabled={loading} onClick={() => void handleCartChange(() => removeFromCart(item.cartId))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', marginTop: 4 }}>remove</button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               <section style={{ borderTop: '1px solid var(--line)', paddingTop: 28 }}>
@@ -123,11 +131,18 @@ export default function CartView() {
 
               <section style={{ borderTop: '1px solid var(--line)', paddingTop: 28 }}>
                 <h2 style={sectionTitleStyle}>PAYMENT</h2>
-                <div style={{ background: 'var(--cream-2)', padding: 18, border: '1px solid var(--line)' }}>
-                  <div style={{ fontWeight: 800, marginBottom: 8 }}>{paymentInstruction.title}</div>
-                  {paymentInstruction.lines.map((line) => (
-                    <p key={line} style={{ color: 'var(--ink)', fontSize: 13, lineHeight: 1.55, marginBottom: 4 }}>{line}</p>
-                  ))}
+                <div style={{ background: 'rgba(255,255,255,0.42)', padding: 20, border: '1px solid var(--line)' }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, letterSpacing: '0.02em', marginBottom: 10 }}>{paymentInstruction.title.toUpperCase()}</div>
+                  <p style={{ fontSize: 14, color: 'var(--ink)', marginBottom: 12 }}>{paymentInstruction.intro}</p>
+                  <div style={{ display: 'grid', gap: 7 }}>
+                    {paymentInstruction.details.map((detail) => (
+                      <div key={detail.label} style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: 12, alignItems: 'baseline' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)' }}>{detail.label}</span>
+                        <span style={{ fontSize: 14, fontWeight: detail.strong ? 800 : 500, color: 'var(--black)', wordBreak: 'break-word' }}>{detail.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p style={{ color: 'var(--muted)', fontSize: 13, lineHeight: 1.6, marginTop: 14 }}>{paymentInstruction.note}</p>
                 </div>
               </section>
             </div>
