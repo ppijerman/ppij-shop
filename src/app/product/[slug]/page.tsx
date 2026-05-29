@@ -3,7 +3,7 @@ import ProductDetailPage from "@/components/product/ProductDetailPage";
 import { getProductBySlug, getAllProducts, getProductImages } from "@/lib/dal/products";
 import { getVariantsByProductId } from "@/lib/dal/variants";
 
-export default async function ProductPage({ params }: { params: { slug: string } }) {
+export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   
