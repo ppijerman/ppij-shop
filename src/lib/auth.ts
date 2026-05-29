@@ -5,4 +5,15 @@ export async function requireAdmin() {
   if (user.role !== 'ADMIN_IT') {
     throw new Error('Forbidden');
   }
+
+  return user;
+}
+
+export async function requireOrderAdmin() {
+  const user = await getCurrentDbUserOrThrow();
+  if (user.role !== 'ADMIN_IT' && user.role !== 'ADMIN_KK') {
+    throw new Error('Forbidden');
+  }
+
+  return user;
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation'
-import { updateOrderStatusAction } from '@/lib/actions/orders';
+import { approvePaymentAction, rejectPaymentAction, updateOrderStatusAction } from '@/lib/actions/orders';
 
 export default function OrderDetailsForm({ initialOrder, items }: { initialOrder: any, items: any[] }) {
   const router = useRouter();
@@ -10,7 +10,7 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const statuses: string[] = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DONE'];
+  const statuses: string[] = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'];
 
   const handleUpdateStatus = async () => {
     try {
@@ -20,6 +20,27 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
       router.refresh();
     } catch (err) {
       setError('Failed to update status. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handlePaymentReview = async (action: 'approve' | 'reject') => {
+    try {
+      setLoading(true);
+      setError(null);
+      const result = action === 'approve'
+        ? await approvePaymentAction(initialOrder.id)
+        : await rejectPaymentAction(initialOrder.id);
+
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+
+      router.refresh();
+    } catch (err) {
+      setError('Failed to review payment. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -137,6 +158,10 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
               </>
             )}
             <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}>
+              <p style={infoLabel}>Payment Method</p>
+              <p style={infoValue}>{initialOrder.payment_method ?? '—'}</p>
+            </div>
+            <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}>
               <p style={infoLabel}>Payment Proof</p>
               {initialOrder.payment_proof_url ? (
                 <a
@@ -149,6 +174,24 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
                 </a>
               ) : (
                 <p style={{ ...infoValue, color: 'var(--muted)' }}>Not uploaded yet</p>
+              )}
+              {initialOrder.status === 'CONFIRMED' && initialOrder.payment_proof_url && (
+                <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                  <button
+                    onClick={() => void handlePaymentReview('approve')}
+                    disabled={loading}
+                    style={{ flex: 1, border: 'none', borderRadius: 4, padding: 10, background: '#4caf50', color: 'white', fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' }}
+                  >
+                    APPROVE
+                  </button>
+                  <button
+                    onClick={() => void handlePaymentReview('reject')}
+                    disabled={loading}
+                    style={{ flex: 1, border: 'none', borderRadius: 4, padding: 10, background: '#f44336', color: 'white', fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' }}
+                  >
+                    REJECT
+                  </button>
+                </div>
               )}
             </div>
           </div>

@@ -4,7 +4,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ rol
   const { role } = await params;
   const orders = await getAllOrders();
   const totalOrders = orders.length;
-  const pendingPayments = orders.filter(o => o.status === 'CONFIRMED').length; // Adjust logic based on schema
+  const pendingPayments = orders.filter(o => o.status === 'CONFIRMED' && o.payment_proof_url).length;
   
   const statusCounts = orders.reduce<Record<string, number>>((acc, order) => {
     acc[order.status] = (acc[order.status] || 0) + 1;

@@ -1,13 +1,18 @@
-import { getOrderById, getOrderItems } from '@/lib/dal/orders';
+import { getOrderByIdForUser, getOrderItems } from '@/lib/dal/orders';
+import { getCurrentDbUserOrThrow } from '@/lib/users';
+import { getPaymentInstruction } from '@/lib/payment';
+import PaymentProofUploadForm from '@/components/account/PaymentProofUploadForm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
-export default async function OrderDetailPage({ params }: { params: { id: string } }) {
+export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const order = await getOrderById(id);
-  
+  const user = await getCurrentDbUserOrThrow();
+  const order = await getOrderByIdForUser(id, user.id);
+
   if (!order) notFound();
   const items = await getOrderItems(id);
+  const paymentInstruction = getPaymentInstruction(order.payment_method);
 
   return (
     <div>
@@ -23,9 +28,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 40 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
           <section>
-            <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 20, borderBottom: '1px solid var(--line)', paddingBottom: 10 }}>
-              ORDERED ITEMS
-            </h3>
+            <h3 style={sectionHeadingStyle}>ORDERED ITEMS</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {items.map((item: any) => (
                 <div key={item.id} style={{ display: 'flex', gap: 20, background: 'var(--cream-2)', padding: 16 }}>
@@ -45,6 +48,42 @@ export default async function OrderDetailPage({ params }: { params: { id: string
               ))}
             </div>
           </section>
+
+          <section>
+            <h3 style={sectionHeadingStyle}>PAYMENT</h3>
+            <div style={{ background: 'var(--cream-2)', padding: 24, border: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, marginBottom: 18 }}>
+                <div>
+                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 5 }}>Method</p>
+                  <p style={{ fontWeight: 800 }}>{paymentInstruction.title}</p>
+                </div>
+                <span style={{ alignSelf: 'start', background: 'var(--black)', color: 'var(--cream)', padding: '5px 9px', borderRadius: 4, fontSize: 10, fontWeight: 800 }}>
+                  {order.status}
+                </span>
+              </div>
+              {paymentInstruction.lines.map((line) => (
+                <p key={line} style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 5 }}>{line}</p>
+              ))}
+              <p style={{ fontSize: 13, lineHeight: 1.6, marginTop: 10, fontWeight: 700 }}>
+                Reference: {order.id.substring(0, 8)}
+              </p>
+
+              <div style={{ borderTop: '1px solid var(--line)', paddingTop: 18, marginTop: 18 }}>
+                {order.status === 'PENDING' ? (
+                  <PaymentProofUploadForm orderId={order.id} />
+                ) : order.status === 'CONFIRMED' ? (
+                  <p style={{ fontSize: 13, color: 'var(--muted)' }}>Payment proof uploaded. Waiting for admin review.</p>
+                ) : (
+                  <p style={{ fontSize: 13, color: 'var(--muted)' }}>Payment review is complete or no longer editable.</p>
+                )}
+                {order.payment_proof_url && (
+                  <a href={order.payment_proof_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 12, fontSize: 13, color: 'var(--black)', fontWeight: 700, textDecoration: 'underline' }}>
+                    View uploaded proof
+                  </a>
+                )}
+              </div>
+            </div>
+          </section>
         </div>
 
         <aside style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
@@ -52,38 +91,19 @@ export default async function OrderDetailPage({ params }: { params: { id: string
             <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 20, opacity: 0.6 }}>
               {order.delivery_type === 'PICKUP' ? 'PICKUP LOCATION' : 'DELIVERY ADDRESS'}
             </h3>
-            <div style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.6 }}>
-                {order.delivery_type === 'PICKUP' ? (
-                  <div>
-                    <p style={infoValue}>U-Bahn Tierpark, Berlin</p>
-                  </div>
-                ) : (
-                  <>
-                    <div>
-                      <p style={infoLabel}>Street</p>
-                      <p style={infoValue}>{order.delivery_address?.street ?? '—'}</p>
-                    </div>
-                    <div>
-                      <p style={infoLabel}>City</p>
-                      <p style={infoValue}>{order.delivery_address?.city ?? '—'}</p>
-                    </div>
-                    <div>
-                      <p style={infoLabel}>Postcode</p>
-                      <p style={infoValue}>{order.delivery_address?.postcode ?? '—'}</p>
-                    </div>
-                    <div>
-                      <p style={infoLabel}>Country</p>
-                      <p style={infoValue}>{order.delivery_address?.country ?? '—'}</p>
-                    </div>
-                  </>
-                )}
-            </div>
+            {order.delivery_type === 'PICKUP' ? (
+              <p style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.6 }}>Pickup details will be confirmed after payment review.</p>
+            ) : (
+              <div style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.6 }}>
+                <p>{order.delivery_address?.street}</p>
+                <p>{order.delivery_address?.postcode} {order.delivery_address?.city}</p>
+                <p>{order.delivery_address?.country}</p>
+              </div>
+            )}
           </section>
 
           <section style={{ background: 'var(--cream-2)', padding: 32 }}>
-            <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 20, borderBottom: '1px solid var(--line)', paddingBottom: 10 }}>
-              ORDER SUMMARY
-            </h3>
+            <h3 style={sectionHeadingStyle}>ORDER SUMMARY</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
                 <span>Subtotal</span>
@@ -101,5 +121,12 @@ export default async function OrderDetailPage({ params }: { params: { id: string
   );
 }
 
-const infoLabel: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 4 };
-const infoValue: React.CSSProperties = { fontSize: 15, marginBottom: 16, fontWeight: 500 };
+const sectionHeadingStyle: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 700,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+  marginBottom: 20,
+  borderBottom: '1px solid var(--line)',
+  paddingBottom: 10,
+};
