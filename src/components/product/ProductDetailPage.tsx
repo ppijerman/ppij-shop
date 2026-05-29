@@ -33,6 +33,8 @@ export default function ProductDetailPage({
   const role = user?.publicMetadata?.role;
   const isAdmin = role === 'ADMIN_IT' || role === 'ADMIN_KK';
 
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
+
   // Derive unique colors from variants
   const uniqueColors = useMemo(() => {
     const map = new Map<string, Color>();
@@ -499,6 +501,7 @@ export default function ProductDetailPage({
                   size · <span style={{ color: 'var(--black)' }}>{selSize}</span>
                 </span>
                 <button
+                  onClick={() => setShowSizeGuide(true)}
                   style={{
                     background: 'none',
                     border: 'none',
@@ -892,6 +895,63 @@ export default function ProductDetailPage({
           })}
         </div>
       </div>
+
+      {showSizeGuide && (
+        <div
+          onClick={() => setShowSizeGuide(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.72)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              maxWidth: 900,
+              width: '100%',
+              background: 'var(--cream)',
+              padding: 16,
+            }}
+          >
+            <button
+              onClick={() => setShowSizeGuide(false)}
+              style={{
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                border: 'none',
+                background: 'var(--black)',
+                color: 'var(--cream)',
+                cursor: 'pointer',
+                fontSize: 18,
+              }}
+            >
+              ×
+            </button>
+
+            <img
+              src="/assets/v4/size-guide.jpeg"
+              alt="Size Guide"
+              style={{
+                width: '100%',
+                height: 'auto',
+                display: 'block',
+              }}
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 }
