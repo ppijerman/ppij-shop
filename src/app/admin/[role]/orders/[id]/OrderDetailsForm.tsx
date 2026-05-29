@@ -2,24 +2,40 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation'
-import { approvePaymentAction, rejectPaymentAction, updateOrderStatusAction } from '@/lib/actions/orders';
+import {
+  approvePaymentAction,
+  rejectPaymentAction,
+  updateOrderStatusAction,
+  updateShippingTrackingNumberAction,
+} from '@/lib/actions/orders';
 
 export default function OrderDetailsForm({ initialOrder, items }: { initialOrder: any, items: any[] }) {
   const router = useRouter();
   const [status, setStatus] = useState<string>(initialOrder.status);
+  const [shippingNumber, setShippingNumber] = useState<string>(initialOrder.shipping_tracking_number ?? '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const statuses: string[] = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'];
+  const canEditShippingNumber = initialOrder.status === 'PROCESSING' || initialOrder.status === 'SHIPPED';
 
   const handleUpdateStatus = async () => {
     try {
       setLoading(true);
       setError(null);
-      await updateOrderStatusAction(initialOrder.id, status);
+      setSuccess(null);
+      const result = await updateOrderStatusAction(initialOrder.id, status);
+
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+
+      setSuccess(result.message ?? 'Status updated.');
       router.refresh();
     } catch (err) {
-      setError('Failed to update status. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to update status. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -29,6 +45,7 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
     try {
       setLoading(true);
       setError(null);
+      setSuccess(null);
       const result = action === 'approve'
         ? await approvePaymentAction(initialOrder.id)
         : await rejectPaymentAction(initialOrder.id);
@@ -38,9 +55,32 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
         return;
       }
 
+      setSuccess(result.message ?? 'Payment review saved.');
       router.refresh();
     } catch (err) {
       setError('Failed to review payment. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleSaveShippingNumber = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setSuccess(null);
+      const result = await updateShippingTrackingNumberAction(initialOrder.id, shippingNumber);
+
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+
+      setStatus('SHIPPED');
+      setSuccess(result.message ?? 'Shipping number saved.');
+      router.refresh();
+    } catch (err) {
+      setError('Failed to save shipping number. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -105,6 +145,20 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
               {error}
             </div>
           )}
+            {success && (
+              <div style={{
+                background: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                color: '#166534',
+                padding: '8px 12px',
+                borderRadius: 4,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                marginBottom: 12,
+              }}>
+                {success}
+              </div>
+            )}
           <button
             onClick={handleUpdateStatus}
             disabled={loading}
@@ -194,6 +248,51 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
                 </div>
               )}
             </div>
+          </div>
+        </section>
+
+        <section style={sectionStyle}>
+          <h2 style={h2Style}>Shipping</h2>
+          <div style={{ background: 'white', padding: 24, borderRadius: 8, border: '1px solid var(--line)' }}>
+            <label htmlFor="shipping-number" style={infoLabel}>Shipping Number</label>
+            <input
+              id="shipping-number"
+              value={shippingNumber}
+              onChange={(event) => setShippingNumber(event.target.value)}
+              disabled={loading || !canEditShippingNumber}
+              placeholder="DHL / Hermes / tracking number"
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: 4,
+                border: '1px solid var(--line)',
+                fontSize: 14,
+                marginBottom: 12,
+                background: canEditShippingNumber ? 'white' : 'var(--cream-2)',
+              }}
+            />
+            <p style={{ fontSize: 12, lineHeight: 1.5, color: 'var(--muted)', marginBottom: 14 }}>
+              {canEditShippingNumber
+                ? 'Saving this number marks the order as shipped.'
+                : 'Available after payment approval moves the order to processing.'}
+            </p>
+            <button
+              onClick={handleSaveShippingNumber}
+              disabled={loading || !canEditShippingNumber}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: loading || !canEditShippingNumber ? 'var(--muted)' : 'var(--black)',
+                color: 'var(--cream)',
+                border: 'none',
+                borderRadius: 4,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 12,
+                cursor: loading || !canEditShippingNumber ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {initialOrder.status === 'SHIPPED' ? 'UPDATE SHIPPING NUMBER' : 'SAVE & MARK SHIPPED'}
+            </button>
           </div>
         </section>
       </div>

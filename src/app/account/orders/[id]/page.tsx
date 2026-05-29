@@ -12,7 +12,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   if (!order) notFound();
   const items = await getOrderItems(id);
-  const paymentInstruction = getPaymentInstruction(order.payment_method);
+  const buyerName = [user.first_name, user.last_name].filter(Boolean).join(' ');
+  const paymentInstruction = getPaymentInstruction(order.payment_method, order.id.substring(0, 8), buyerName);
 
   return (
     <div>
@@ -55,18 +56,22 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, marginBottom: 18 }}>
                 <div>
                   <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 5 }}>Method</p>
-                  <p style={{ fontWeight: 800 }}>{paymentInstruction.title}</p>
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 24, letterSpacing: '0.02em' }}>{paymentInstruction.title.toUpperCase()}</p>
                 </div>
                 <span style={{ alignSelf: 'start', background: 'var(--black)', color: 'var(--cream)', padding: '5px 9px', borderRadius: 4, fontSize: 10, fontWeight: 800 }}>
                   {order.status}
                 </span>
               </div>
-              {paymentInstruction.lines.map((line) => (
-                <p key={line} style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 5 }}>{line}</p>
-              ))}
-              <p style={{ fontSize: 13, lineHeight: 1.6, marginTop: 10, fontWeight: 700 }}>
-                Reference: {order.id.substring(0, 8)}
-              </p>
+              <p style={{ fontSize: 14, color: 'var(--ink)', marginBottom: 12 }}>{paymentInstruction.intro}</p>
+              <div style={{ display: 'grid', gap: 7 }}>
+                {paymentInstruction.details.map((detail) => (
+                  <div key={detail.label} style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: 12, alignItems: 'baseline' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)' }}>{detail.label}</span>
+                    <span style={{ fontSize: 14, fontWeight: detail.strong ? 800 : 500, color: 'var(--black)', wordBreak: 'break-word' }}>{detail.value}</span>
+                  </div>
+                ))}
+              </div>
+              <p style={{ color: 'var(--muted)', fontSize: 13, lineHeight: 1.6, marginTop: 14 }}>{paymentInstruction.note}</p>
 
               <div style={{ borderTop: '1px solid var(--line)', paddingTop: 18, marginTop: 18 }}>
                 {order.status === 'PENDING' ? (
@@ -98,6 +103,16 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 <p>{order.delivery_address?.street}</p>
                 <p>{order.delivery_address?.postcode} {order.delivery_address?.city}</p>
                 <p>{order.delivery_address?.country}</p>
+              </div>
+            )}
+            {order.shipping_tracking_number && (
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', marginTop: 22, paddingTop: 18 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8, opacity: 0.6 }}>
+                  SHIPPING NUMBER
+                </p>
+                <p style={{ fontSize: 16, fontWeight: 700, wordBreak: 'break-word' }}>
+                  {order.shipping_tracking_number}
+                </p>
               </div>
             )}
           </section>
