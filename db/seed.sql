@@ -56,7 +56,7 @@ SELECT
   38, 
   '{"street": "Eupenerstraße", "number": "70", "postcode": "52072", "city": "Aachen", "country": "Germany"}'::JSONB, 
   'DELIVERY', 
-  'PAYPAL',
+  'IBAN',
   NOW(), NOW() 
 FROM "users" WHERE email = 'mulyono@gmail.com';
 

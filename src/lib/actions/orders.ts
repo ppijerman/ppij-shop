@@ -10,7 +10,7 @@ import { getCurrentDbUserOrThrow } from '@/lib/users';
 import type { PaymentMethod } from '@/types';
 
 const ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'] as const;
-const PAYMENT_METHODS = ['PAYPAL', 'IBAN'] as const;
+const PAYMENT_METHODS = ['IBAN'] as const;
 const DELIVERY_TYPES = ['PICKUP', 'DELIVERY'] as const;
 const MAX_PROOF_SIZE_BYTES = 5 * 1024 * 1024;
 const PROOF_MIME_TO_EXT: Record<string, string> = {
@@ -78,7 +78,7 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
   }
 
   if (!isPaymentMethod(paymentMethodInput)) {
-    return { ok: false, code: 'VALIDATION_ERROR', message: 'Choose PayPal or IBAN transfer.' };
+    return { ok: false, code: 'VALIDATION_ERROR', message: 'IBAN bank transfer is required.' };
   }
 
   const deliveryAddress = parseDeliveryAddress(formData, deliveryTypeInput);

@@ -79,7 +79,7 @@ export interface ProductImage {
   is_primary: boolean;
 }
 
-export type PaymentMethod = 'PAYPAL' | 'IBAN';
+export type PaymentMethod = 'IBAN';
 
 export interface CartItem {
   cartId: string;

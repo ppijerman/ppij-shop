@@ -1,5 +1,14 @@
 import type { PaymentMethod } from '@/types';
 
+const IBAN_PAYMENT_DETAILS = {
+  accountName: 'Vereinigung Indonesischer Studenten (V.I.S.) e.V.',
+  iban: 'DE85 1005 0000 0190 3325 06',
+  bic: 'BELADEBEXXX',
+  bankName: 'Berliner Sparkasse',
+  purposeTemplate: 'Merch 26 - {nama lengkap pemesan}',
+  purposeExample: 'Merch 26 - Max Mustermann',
+};
+
 export interface PaymentInstruction {
   method: PaymentMethod;
   title: string;
@@ -7,41 +16,20 @@ export interface PaymentInstruction {
   isConfigured: boolean;
 }
 
-export function getPaymentInstruction(method: PaymentMethod): PaymentInstruction {
-  if (method === 'PAYPAL') {
-    const email = process.env.NEXT_PUBLIC_PPIJ_PAYPAL_EMAIL?.trim();
-
-    return {
-      method,
-      title: 'PayPal transfer',
-      isConfigured: Boolean(email),
-      lines: email
-        ? [
-            `Send the total to ${email}.`,
-            'Use your order ID as the transfer note.',
-            'Upload a screenshot or receipt after the transfer.',
-          ]
-        : ['Payment details are not configured yet. Please contact the PPIJ admin team.'],
-    };
-  }
-
-  const iban = process.env.NEXT_PUBLIC_PPIJ_IBAN?.trim();
-  const bankName = process.env.NEXT_PUBLIC_PPIJ_BANK_NAME?.trim();
-  const accountName = process.env.NEXT_PUBLIC_PPIJ_BANK_ACCOUNT_NAME?.trim();
-  const configuredLines = [
-    accountName ? `Account name: ${accountName}` : null,
-    bankName ? `Bank: ${bankName}` : null,
-    iban ? `IBAN: ${iban}` : null,
-    'Use your order ID as the transfer reference.',
-    'Upload a screenshot or receipt after the transfer.',
-  ].filter((line): line is string => Boolean(line));
-
+export function getPaymentInstruction(_method: PaymentMethod = 'IBAN'): PaymentInstruction {
   return {
-    method,
+    method: 'IBAN',
     title: 'IBAN bank transfer',
-    isConfigured: Boolean(iban),
-    lines: iban
-      ? configuredLines
-      : ['Bank transfer details are not configured yet. Please contact the PPIJ admin team.'],
+    isConfigured: true,
+    lines: [
+      'Rekening PPI Jerman',
+      `Nama: ${IBAN_PAYMENT_DETAILS.accountName}`,
+      `IBAN: ${IBAN_PAYMENT_DETAILS.iban}`,
+      `BIC: ${IBAN_PAYMENT_DETAILS.bic}`,
+      `Bank: ${IBAN_PAYMENT_DETAILS.bankName}`,
+      `Verwendungszweck: ${IBAN_PAYMENT_DETAILS.purposeTemplate}`,
+      `Contoh: ${IBAN_PAYMENT_DETAILS.purposeExample}`,
+      'Upload a screenshot or receipt after the transfer.',
+    ],
   };
 }

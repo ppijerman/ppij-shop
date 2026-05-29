@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
@@ -8,7 +8,6 @@ import { useToast } from '@/context/ToastContext';
 import ProductCrop from '@/components/product/ProductCrop';
 import { createOrder } from '@/lib/actions/orders';
 import { getPaymentInstruction } from '@/lib/payment';
-import type { PaymentMethod } from '@/types';
 
 type DeliveryType = 'PICKUP' | 'DELIVERY';
 
@@ -17,10 +16,9 @@ export default function CartView() {
   const { showToast } = useToast();
   const router = useRouter();
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('PICKUP');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('PAYPAL');
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const paymentInstruction = useMemo(() => getPaymentInstruction(paymentMethod), [paymentMethod]);
+  const paymentInstruction = getPaymentInstruction('IBAN');
 
   async function handleCheckout(formData: FormData) {
     setSubmitting(true);
@@ -71,7 +69,7 @@ export default function CartView() {
         ) : (
           <form action={handleCheckout} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 360px', gap: 50, alignItems: 'start' }}>
             <input type="hidden" name="deliveryType" value={deliveryType} />
-            <input type="hidden" name="paymentMethod" value={paymentMethod} />
+            <input type="hidden" name="paymentMethod" value="IBAN" />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
               <div>
@@ -124,11 +122,7 @@ export default function CartView() {
               </section>
 
               <section style={{ borderTop: '1px solid var(--line)', paddingTop: 28 }}>
-                <h2 style={sectionTitleStyle}>PAYMENT METHOD</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
-                  <ChoiceButton active={paymentMethod === 'PAYPAL'} onClick={() => setPaymentMethod('PAYPAL')} label="PayPal" />
-                  <ChoiceButton active={paymentMethod === 'IBAN'} onClick={() => setPaymentMethod('IBAN')} label="IBAN" />
-                </div>
+                <h2 style={sectionTitleStyle}>PAYMENT</h2>
                 <div style={{ background: 'var(--cream-2)', padding: 18, border: '1px solid var(--line)' }}>
                   <div style={{ fontWeight: 800, marginBottom: 8 }}>{paymentInstruction.title}</div>
                   {paymentInstruction.lines.map((line) => (
