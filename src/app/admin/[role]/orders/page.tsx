@@ -15,7 +15,8 @@ export default async function AdminOrders({ params }: { params: Promise<{ role: 
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--line)', background: 'var(--cream-2)' }}>
-              <th style={thStyle}>ID</th>
+              <th style={thStyle}>Customer</th>
+              <th style={thStyle}>Order Id</th>
               <th style={thStyle}>Total</th>
               <th style={thStyle}>Date</th>
               <th style={thStyle}>Status</th>
@@ -25,7 +26,8 @@ export default async function AdminOrders({ params }: { params: Promise<{ role: 
           <tbody>
             {orders.map((order: any) => (
               <tr key={order.id} style={{ borderBottom: '1px solid var(--line)' }}>
-                <td style={tdStyle}>{order.id.substring(0, 8)}</td>
+                <td style={tdStyle}>{order.first_name} {order.last_name}</td>
+                <td style={tdStyle}>{order.id}</td>
                 <td style={tdStyle}>€{Number(order.total_price).toFixed(2)}</td>
                 <td style={tdStyle}>{new Date(order.created_at).toLocaleDateString()}</td>
                 <td style={tdStyle}>
