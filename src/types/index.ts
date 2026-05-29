@@ -124,6 +124,8 @@ export interface Order {
   delivery_type: 'PICKUP' | 'DELIVERY';
   payment_method: PaymentMethod;
   payment_proof_url: string | null;
+  payment_proof_content_type: string | null;
+  payment_proof_data?: unknown;
   shipping_tracking_number: string | null;
   created_at: string;
   updated_at: string;

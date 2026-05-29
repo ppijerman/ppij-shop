@@ -1,8 +1,5 @@
 'use server';
 
-import { randomUUID } from 'crypto';
-import path from 'path';
-import { mkdir, writeFile } from 'fs/promises';
 import { revalidatePath } from 'next/cache';
 import { db, withTransaction } from '@/lib/db';
 import { requireOrderAdmin } from '@/lib/auth';
@@ -62,10 +59,6 @@ function parseDeliveryAddress(formData: FormData, deliveryType: DeliveryType) {
   }
 
   return address;
-}
-
-function normalizeUuidForFilename(value: string): string {
-  return value.replace(/[^a-zA-Z0-9-]/g, '');
 }
 
 export async function createOrder(formData: FormData): Promise<CreateOrderResult> {
@@ -304,24 +297,20 @@ export async function uploadPaymentProofAction(formData: FormData): Promise<Simp
       return { ok: false, message: 'Payment proof can only be uploaded while the order is pending.' };
     }
 
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'payment-proofs');
-    await mkdir(uploadDir, { recursive: true });
-
-    const safeOrderId = normalizeUuidForFilename(orderId);
-    const filename = `${safeOrderId}-${randomUUID()}.${extension}`;
-    const filePath = path.join(uploadDir, filename);
-    const publicPath = `/uploads/payment-proofs/${filename}`;
+    const proofUrl = `/api/orders/${orderId}/payment-proof`;
     const buffer = Buffer.from(await proofFile.arrayBuffer());
-
-    await writeFile(filePath, buffer);
 
     await query(
       `
       UPDATE orders
-      SET payment_proof_url = $2, status = 'CONFIRMED'
+      SET
+        payment_proof_url = $2,
+        payment_proof_data = $3,
+        payment_proof_content_type = $4,
+        status = 'CONFIRMED'
       WHERE id = $1
       `,
-      [orderId, publicPath],
+      [orderId, proofUrl, buffer, proofFile.type],
     );
 
     await query(
@@ -453,7 +442,7 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
       `
       UPDATE orders
       SET status = 'PROCESSING'
-      WHERE id = $1 AND status = 'CONFIRMED' AND payment_proof_url IS NOT NULL
+      WHERE id = $1 AND status = 'CONFIRMED' AND payment_proof_data IS NOT NULL
       RETURNING id
       `,
       [orderId],
@@ -487,7 +476,11 @@ export async function rejectPaymentAction(orderId: string): Promise<SimpleAction
     const result = await query(
       `
       UPDATE orders
-      SET status = 'PENDING', payment_proof_url = NULL
+      SET
+        status = 'PENDING',
+        payment_proof_url = NULL,
+        payment_proof_data = NULL,
+        payment_proof_content_type = NULL
       WHERE id = $1 AND status = 'CONFIRMED'
       RETURNING id
       `,
