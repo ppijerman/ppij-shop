@@ -3,8 +3,10 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/context/ToastContext';
+import { useParams } from 'next/navigation';
 
 export default function BundleList({ initialBundles, bundleItems, deleteBundleAction }: { initialBundles: any[], bundleItems: any[], deleteBundleAction: (id: string) => Promise<void> }) {
+  const { role } = useParams();
   const { showToast } = useToast();
   const [bundles, setBundles] = useState<any[]>(initialBundles);
   const [deletingBundleId, setDeletingBundleId] = useState<string | null>(null);
@@ -84,7 +86,7 @@ export default function BundleList({ initialBundles, bundleItems, deleteBundleAc
                   ) : (
                     <>
                       <Link 
-                        href={`/admin/kk/bundles/${bundle.id}`}
+                        href={`/admin/${role}/bundles/${bundle.id}`}
                         style={{ color: 'var(--black)', fontSize: 12, fontWeight: 600, textDecoration: 'none', padding: 1 }}
                       >
                         EDIT

@@ -2,9 +2,11 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ClerkUserSync() {
   const { isLoaded, isSignedIn, user } = useUser();
+  const router = useRouter();
   const lastSyncedUserIdRef = useRef<string | null>(null);
   const syncInFlightRef = useRef(false);
 
@@ -34,6 +36,16 @@ export default function ClerkUserSync() {
           throw new Error(`Bootstrap user sync failed with status ${response.status}: ${responseBody}`);
         }
 
+        const data = await response.json();
+        const role = data.user?.role;
+
+        // Redirect admins to their dashboard immediately after sync
+        if (role === 'ADMIN_IT') {
+          router.push('/admin/it');
+        } else if (role === 'ADMIN_KK') {
+          router.push('/admin/kk');
+        }
+
         lastSyncedUserIdRef.current = user.id;
       })
       .catch((error: unknown) => {
@@ -45,7 +57,7 @@ export default function ClerkUserSync() {
       .finally(() => {
         syncInFlightRef.current = false;
       });
-  }, [isLoaded, isSignedIn, user]);
+  }, [isLoaded, isSignedIn, user, router]);
 
   return null;
 }

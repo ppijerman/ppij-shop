@@ -5,6 +5,7 @@ import { useToast } from "@/context/ToastContext";
 import { Product, ProductVariant, Bundle, Color } from "@/types";
 import { useState, useMemo, useEffect } from "react";
 import ProductCrop from "@/components/product/ProductCrop";
+import { useUser } from "@clerk/nextjs";
 
 interface BundleWithProducts extends Bundle {
   products: (Product & { variants: ProductVariant[] })[];
@@ -13,6 +14,10 @@ interface BundleWithProducts extends Bundle {
 const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'ONE SIZE'];
 
 export default function BundleDetailClient({ bundle }: { bundle: BundleWithProducts }) {
+  const { user } = useUser(); 
+  const role = user?.publicMetadata?.role;
+  const isAdmin = role === 'ADMIN_IT' || role === 'ADMIN_KK';
+
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const { addToCart } = useCart();
   const { showToast } = useToast();
@@ -105,6 +110,12 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
       </div>
 
       {/* Add to Cart Bar */}
+      {isAdmin ? (
+        <div style={{ marginTop: 60, padding: '24px', background: 'var(--line)', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 12,
+          textAlign: 'center' }}>
+          ADMINISTRATIVE PREVIEW MODE — CHECKOUT DISABLED
+        </div>
+      ) : (
       <div style={{ 
         marginTop: 60, 
         padding: '60px 40px', 
@@ -113,31 +124,32 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
         textAlign: 'center',
         border: '1px solid #222'
       }}>
-        <button
-          onClick={handleAdd}
-          disabled={!isComplete}
-          style={{
-            width: '100%',
-            maxWidth: 800,
-            padding: '24px',
-            background: isComplete ? 'var(--orange)' : '#333',
-            color: isComplete ? 'var(--black)' : '#666',
-            border: 'none',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 14,
-            letterSpacing: '0.25em',
-            cursor: isComplete ? 'pointer' : 'not-allowed',
-            textTransform: 'uppercase',
-            fontWeight: 700,
-            transition: 'all 0.3s'
-          }}
-        >
-          {isComplete 
-            ? `CONFIRM BUNDLE & ADD TO CART — €${Number(bundle.price).toFixed(2)} ↗` 
-            : 'SELECT ALL PRODUCT VARIANTS TO UNLOCK'
-          }
-        </button>
+          <button
+            onClick={handleAdd}
+            disabled={!isComplete}
+            style={{
+              width: '100%',
+              maxWidth: 800,
+              padding: '24px',
+              background: isComplete ? 'var(--orange)' : '#333',
+              color: isComplete ? 'var(--black)' : '#666',
+              border: 'none',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 14,
+              letterSpacing: '0.25em',
+              cursor: isComplete ? 'pointer' : 'not-allowed',
+              textTransform: 'uppercase',
+              fontWeight: 700,
+              transition: 'all 0.3s'
+            }}
+          >
+            {isComplete 
+              ? `CONFIRM BUNDLE & ADD TO CART — €${Number(bundle.price).toFixed(2)} ↗` 
+              : 'SELECT ALL PRODUCT VARIANTS TO UNLOCK'
+            }
+          </button>
       </div>
+        )}
     </div>
   )
 }

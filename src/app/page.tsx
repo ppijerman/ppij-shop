@@ -15,6 +15,7 @@ export default async function HomePage() {
   return (
     <>
       <Hero />
+      
       <CatalogWrapper products={products} bundles={bundles}/>
       <Editorial />
       <PhotoStrip />

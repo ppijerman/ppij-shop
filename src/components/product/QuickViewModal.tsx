@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import ProductCrop from './ProductCrop';
+import { useUser } from '@clerk/nextjs';
 
 interface QuickViewModalProps {
   product: any;
@@ -94,7 +95,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto' }}>
               <AddBtn price={Number(currentPrice) * qty} onClick={handleAdd} />
               <Link
-                href={`/product/${product.id}`}
+                href={`/product/${product.slug}`}
                 onClick={onClose}
                 style={{ display: 'block', textAlign: 'center', textDecoration: 'none', background: 'transparent', color: 'var(--ink)', border: '1px solid var(--line)', padding: '12px', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', borderRadius: 999 }}
               >
@@ -110,14 +111,25 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
 
 function AddBtn({ price, onClick }: { price: number; onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
+  const { user } = useUser();
+  const role = user?.publicMetadata?.role;
+  const isAdmin = role === 'ADMIN_IT' || role === 'ADMIN_KK';
   return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{ background: hovered ? 'var(--orange)' : 'var(--black)', color: hovered ? 'var(--black)' : 'var(--cream)', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: 'pointer', borderRadius: 999, transition: 'background 0.2s, color 0.2s' }}
-    >
-      add to cart — €{price.toFixed(2)} ↗
-    </button>
+    <>
+     {isAdmin ? (
+     <div style={{ padding: '12px', border: '1px solid var(--line)', textAlign: 'center', borderRadius: 999, fontSize: 11, fontFamily: 'var(--font-mono)' }}>
+       ADD TO CART DISABLED FOR ADMIN
+     </div>
+    ) : (
+      <button
+        onClick={onClick}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{ background: hovered ? 'var(--orange)' : 'var(--black)', color: hovered ? 'var(--black)' : 'var(--cream)', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: 'pointer', borderRadius: 999, transition: 'background 0.2s, color 0.2s' }}
+      >
+        add to cart — €{price.toFixed(2)} ↗
+      </button>
+    )}
+    </>
   );
 }

@@ -4,8 +4,10 @@ import { useState, useRef, useEffect } from 'react';
 import { deleteProduct } from '@/lib/actions/products';
 import Link from 'next/link';
 import { useToast } from '@/context/ToastContext';
+import { useParams } from 'next/navigation';
 
 export default function ProductList({ initialProducts }: { initialProducts: any[] }) {
+  const { role } = useParams();
   const { showToast } = useToast();
   const [products, setProducts] = useState<any[]>(initialProducts);
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
@@ -95,7 +97,7 @@ export default function ProductList({ initialProducts }: { initialProducts: any[
                   ) : (
                     <>
                       <Link 
-                        href={`/admin/kk/products/${product.slug}`}
+                        href={`/admin/${role}/products/${product.slug}`}
                         style={{ color: 'var(--black)', fontSize: 12, fontWeight: 600, textDecoration: 'none', padding: 1 }}
                       >
                         EDIT
