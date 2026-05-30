@@ -5,7 +5,7 @@ TRUNCATE TABLE "users", "products", "bundles", "cart_items", "product_variants",
 INSERT INTO "users" (clerk_user_id, first_name, last_name, email, role, created_at, updated_at) VALUES 
 ('user_2NNEqL2nrIRdJ194ndJiSCjFMnP', 'Mulyono', NULL, 'mulyono@gmail.com', 'BUYER', NOW(), NOW()),
 ('user_2NNEqL2nrIRdJ194ndJiSCjFMnQ', 'John', 'Pork', 'john@pork.com', 'BUYER', NOW(), NOW()),
-('user_2NNEqL2nrIRdJ194ndJiSCjFMnR', 'Budi', 'Santoso', 'budi@ppij.org', 'ADMIN_KK', NOW(), NOW()),
+('user_2NNEqL2nrIRdJ194ndJiSCjFMnR', 'Budi', 'Santoso', 'budi@ppij.org', 'ADMIN_KK', NOW(), NOW());
 
 INSERT INTO "products" (name, subtitle, category, weight_g, fit_type, "desc", tag, slug, created_at, updated_at)
 VALUES

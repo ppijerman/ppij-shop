@@ -45,7 +45,6 @@ export default async function OrdersPage() {
                 fontSize: 14
               }}
             >
-              <span style={{ fontWeight: 600 }}>{order.first_name} {order.last_name}</span>
               <span style={{ fontSize: 11, color: 'var(--muted)' }}>#{order.id.substring(0, 8)}</span>
               <span>{new Date(order.created_at).toLocaleDateString()}</span>
               <span style={{ fontWeight: 600 }}>€{Number(order.total_price).toFixed(2)}</span>
