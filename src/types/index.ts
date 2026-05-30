@@ -52,7 +52,6 @@ export interface ProductData {
   name: string
   subtitle: string
   category: string
-  fitType: string
   tag: string
   description: string
   images: {
@@ -63,13 +62,10 @@ export interface ProductData {
     name: string
     hex: string
   }[]
-  sizes: string[]
-  stock: Record<string, Record<string, number>>
-  price: number
-  originalPrice: number | null
   skuPrefix: string
   weightG: number
   slug: string
+  fits: Record<FitType, FitConfig>
 }
 
 export interface ProductImage {
@@ -77,6 +73,16 @@ export interface ProductImage {
   product_id: string;
   url: string;
   is_primary: boolean;
+}
+
+export type FitType = 'REGULAR' | 'OVERSIZED';
+
+export interface FitConfig {
+  enabled: boolean;
+  price: number;
+  originalPrice: number | null;
+  sizes: string[];
+  stock: Record<string, Record<string, number>>;
 }
 
 export type PaymentMethod = 'IBAN';
