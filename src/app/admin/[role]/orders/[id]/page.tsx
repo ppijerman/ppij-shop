@@ -5,7 +5,7 @@ import OrderDetailsForm from './OrderDetailsForm';
 export default async function OrderDetail({ params }: { params: Promise<{ id: string, role: string }> }) {
   const { id } = await params;
   const order = await getOrderById(id);
-  
+
   if (!order) notFound();
 
   const items = await getOrderItems(id);

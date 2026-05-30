@@ -1,10 +1,11 @@
 import { getAllOrders } from '@/lib/dal/orders';
+import { getOrderStatusLabel } from '@/lib/orderStatus';
 
 export default async function AdminDashboard({ params }: { params: Promise<{ role: string }> }) {
   const { role } = await params;
   const orders = await getAllOrders();
   const totalOrders = orders.length;
-  const pendingPayments = orders.filter(o => o.status === 'CONFIRMED').length; // Adjust logic based on schema
+  const pendingPayments = orders.filter(o => o.status === 'PAYMENT_REVIEW' && o.payment_proof_url).length;
   
   const statusCounts = orders.reduce<Record<string, number>>((acc, order) => {
     acc[order.status] = (acc[order.status] || 0) + 1;
@@ -24,7 +25,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ rol
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {Object.entries(statusCounts).map(([status, count]) => (
           <div key={status} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px', background: 'white', borderRadius: 8, border: '1px solid var(--line)' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, textTransform: 'uppercase' }}>{status}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{getOrderStatusLabel(status)}</span>
             <span style={{ fontWeight: 600 }}>{count}</span>
           </div>
         ))}

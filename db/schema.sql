@@ -1,6 +1,6 @@
 \restrict dbmate
 
--- Dumped from database version 18.3 (Homebrew)
+-- Dumped from database version 16.14 (Debian 16.14-1.pgdg13+1)
 -- Dumped by pg_dump version 18.3 (Homebrew)
 
 SET statement_timeout = 0;
@@ -30,11 +30,21 @@ CREATE TYPE public.delivery_type AS ENUM (
 --
 
 CREATE TYPE public.order_status AS ENUM (
-    'PENDING',
-    'CONFIRMED',
+    'AWAITING_PAYMENT',
+    'PAYMENT_REVIEW',
     'PROCESSING',
     'SHIPPED',
-    'DONE'
+    'DONE',
+    'CANCELLED'
+);
+
+
+--
+-- Name: payment_method; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.payment_method AS ENUM (
+    'IBAN'
 );
 
 
@@ -169,8 +179,15 @@ CREATE TABLE public.orders (
     payment_proof_url character varying(255),
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    payment_method public.payment_method NOT NULL,
+    shipping_tracking_number character varying(255),
+    shipping_provider character varying(100),
+    payment_proof_data bytea,
+    payment_proof_content_type character varying(100),
+    pickup_details text,
     CONSTRAINT chk_delivery_address_logic CHECK (((delivery_type = 'PICKUP'::public.delivery_type) OR ((delivery_type = 'DELIVERY'::public.delivery_type) AND (delivery_address ? 'street'::text) AND (delivery_address ? 'city'::text) AND (delivery_address ? 'postcode'::text) AND (delivery_address ? 'country'::text)))),
-    CONSTRAINT chk_order_total_price CHECK ((total_price >= (0)::numeric))
+    CONSTRAINT chk_order_total_price CHECK ((total_price >= (0)::numeric)),
+    CONSTRAINT orders_payment_method_iban_only CHECK ((payment_method = 'IBAN'::public.payment_method))
 );
 
 
@@ -648,4 +665,5 @@ ALTER TABLE ONLY public.product_variants
 INSERT INTO public.schema_migrations (version) VALUES
     ('20260518190445'),
     ('20260520002041'),
-    ('20260526233645');
+    ('20260526233645'),
+    ('20260527000100');

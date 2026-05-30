@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
@@ -17,18 +17,42 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
   const [selColor, setSelColor] = useState(variants[0]?.color_name || 'Default');
   const [selSize, setSelSize] = useState(variants[0]?.size || 'ONE SIZE');
   const [qty, setQty] = useState(1);
-  const { addToCart } = useCart();
+  const { addToCart, cart } = useCart();
   const { showToast } = useToast();
   
   const categoryLabel = product.category === 'TOTEBAG' ? 'TOTE BAG' : 'T-SHIRT';
   const currentVariant = variants.find((v: any) => v.size === selSize && v.color_name === selColor) || variants[0];
   const currentPrice = currentVariant?.price || 0;
   const currentOriginalPrice = currentVariant?.original_price || null;
+  const currentStock = Number(currentVariant?.stock ?? 0);
+  const quantityInCart = currentVariant
+    ? cart.find((item) => item.variantId === currentVariant.id)?.qty ?? 0
+    : 0;
+  const remainingStock = Math.max(0, currentStock - quantityInCart);
+  const isSoldOut = currentStock <= 0;
+  const cannotAddMore = remainingStock <= 0;
+  const isAtStockLimit = qty >= remainingStock;
 
-  const handleAdd = () => {
-    addToCart(product, currentVariant, qty);
-    showToast(`✦ added · ${product.name}`);
-    onClose();
+  useEffect(() => {
+    if (remainingStock > 0) {
+      setQty((currentQty) => Math.min(Math.max(1, currentQty), remainingStock));
+    }
+  }, [remainingStock]);
+
+  const handleAdd = async () => {
+    if (!currentVariant || isSoldOut || cannotAddMore) {
+      showToast(isSoldOut ? 'This item is sold out.' : 'You already have all available stock in your cart.');
+      return;
+    }
+
+    try {
+      await addToCart(product, currentVariant, qty);
+      showToast(`✦ added · ${product.name}`);
+      setQty(1);
+      onClose();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to add item');
+    }
   };
 
   return (
@@ -62,6 +86,14 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
               <span style={{ fontFamily: 'var(--font-display)', fontSize: 38, color: 'var(--black)' }}>€{Number(currentPrice).toFixed(2)}</span>
               {currentOriginalPrice && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--muted)', textDecoration: 'line-through' }}>€{Number(currentOriginalPrice).toFixed(2)}</span>}
             </div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: isSoldOut ? '#b91c1c' : '#1F8A5B', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+              {isSoldOut ? 'sold out' : `${currentStock} in stock`}
+            </div>
+            {!isSoldOut && quantityInCart > 0 && (
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: cannotAddMore ? '#b91c1c' : 'var(--muted)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+                {cannotAddMore ? 'max in cart' : `${remainingStock} left to add`}
+              </div>
+            )}
 
             <div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 8 }}>warna · {selColor}</div>
@@ -86,14 +118,14 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase' }}>qty</div>
               <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--line)', borderRadius: 999, overflow: 'hidden' }}>
-                <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: 38, height: 38, background: 'none', border: 'none', cursor: 'pointer', fontSize: 16 }}>−</button>
+                <button disabled={isSoldOut} onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: 38, height: 38, background: 'none', border: 'none', cursor: isSoldOut ? 'not-allowed' : 'pointer', fontSize: 16, opacity: isSoldOut ? 0.45 : 1 }}>−</button>
                 <span style={{ width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)', fontSize: 14 }}>{qty}</span>
-                <button onClick={() => setQty(q => q + 1)} style={{ width: 38, height: 38, background: 'none', border: 'none', cursor: 'pointer', fontSize: 16 }}>+</button>
+                <button disabled={isSoldOut || cannotAddMore || isAtStockLimit} onClick={() => setQty(q => Math.min(remainingStock, q + 1))} style={{ width: 38, height: 38, background: 'none', border: 'none', cursor: isSoldOut || cannotAddMore || isAtStockLimit ? 'not-allowed' : 'pointer', fontSize: 16, color: isSoldOut || cannotAddMore || isAtStockLimit ? 'var(--muted)' : 'var(--black)', opacity: isSoldOut || cannotAddMore || isAtStockLimit ? 0.45 : 1 }}>+</button>
               </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto' }}>
-              <AddBtn price={Number(currentPrice) * qty} onClick={handleAdd} />
+              <AddBtn price={Number(currentPrice) * qty} onClick={handleAdd} disabled={isSoldOut || cannotAddMore || !currentVariant} soldOut={isSoldOut} />
               <Link
                 href={`/product/${product.slug}`}
                 onClick={onClose}
@@ -109,27 +141,30 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
   );
 }
 
-function AddBtn({ price, onClick }: { price: number; onClick: () => void }) {
+function AddBtn({
+  price,
+  onClick,
+  disabled = false,
+  soldOut = false,
+}: {
+  price: number;
+  onClick: () => void;
+  disabled?: boolean;
+  soldOut?: boolean;
+}) {
   const [hovered, setHovered] = useState(false);
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
   const isAdmin = role === 'ADMIN_IT' || role === 'ADMIN_KK';
   return (
-    <>
-     {isAdmin ? (
-     <div style={{ padding: '12px', border: '1px solid var(--line)', textAlign: 'center', borderRadius: 999, fontSize: 11, fontFamily: 'var(--font-mono)' }}>
-       ADD TO CART DISABLED FOR ADMIN
-     </div>
-    ) : (
-      <button
-        onClick={onClick}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{ background: hovered ? 'var(--orange)' : 'var(--black)', color: hovered ? 'var(--black)' : 'var(--cream)', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: 'pointer', borderRadius: 999, transition: 'background 0.2s, color 0.2s' }}
-      >
-        add to cart — €{price.toFixed(2)} ↗
-      </button>
-    )}
-    </>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ background: disabled ? 'var(--muted)' : hovered ? 'var(--orange)' : 'var(--black)', color: disabled ? 'var(--cream)' : hovered ? 'var(--black)' : 'var(--cream)', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: disabled ? 'not-allowed' : 'pointer', borderRadius: 999, transition: 'background 0.2s, color 0.2s' }}
+    >
+      {disabled ? (soldOut ? 'sold out' : 'max in cart') : `add to cart — €${price.toFixed(2)} ↗`}
+    </button>
   );
 }

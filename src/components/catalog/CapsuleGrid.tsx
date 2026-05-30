@@ -32,6 +32,7 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
             const categoryLabel = product.category === 'TOTEBAG' ? 'TOTE BAG' : 'T-SHIRT';
             const price = product.variants?.[0]?.price || 0;
             const originalPrice = product.variants?.[0]?.original_price || null;
+            const isSoldOut = !product.variants?.some((variant: any) => Number(variant.stock) > 0);
 
             return (
               <div
@@ -46,6 +47,11 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
                     {tweaks.showBadges && product.tag && (
                       <div style={{ position: 'absolute', top: 10, left: 10, background: 'var(--cream)', padding: '4px 9px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--orange-deep)', border: '1px solid var(--orange-deep)' }}>
                         {product.tag}
+                      </div>
+                    )}
+                    {isSoldOut && (
+                      <div style={{ position: 'absolute', top: 10, right: 10, background: 'var(--black)', color: 'var(--cream)', padding: '5px 10px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 700 }}>
+                        sold out
                       </div>
                     )}
                     <div style={{ position: 'absolute', inset: 0, background: 'rgba(14,14,14,0.55)', backdropFilter: 'blur(2px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, opacity: isHovered ? 1 : 0, transition: 'opacity 0.25s' }}>

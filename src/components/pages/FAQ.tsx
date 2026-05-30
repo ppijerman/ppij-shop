@@ -6,7 +6,7 @@ const FAQ_ITEMS = [
   { q: 'Berapa lama pengiriman ke Jerman?', a: '3–5 hari kerja via DHL Express untuk dalam Jerman. Negara Eropa lainnya 5–10 hari kerja. Gratis ongkir untuk semua pesanan.' },
   { q: 'Apakah ukuran sesuai standar Eropa?', a: 'Ya, semua produk mengikuti standar ukuran Eropa. Panduan ukuran detail tersedia di setiap halaman produk.' },
   { q: 'Bagaimana cara mengembalikan produk?', a: 'Jika produk cacat atau tidak sesuai, hubungi kami dalam 7 hari setelah terima. Kami akan kirim pengganti gratis.' },
-  { q: 'Metode pembayaran apa yang diterima?', a: 'PayPal dan kartu kredit/debit (Visa, Mastercard). Semua transaksi terenkripsi dan aman.' },
+  { q: 'Metode pembayaran apa yang diterima?', a: 'Pembayaran dilakukan melalui transfer IBAN ke rekening PPI Jerman, lalu unggah bukti pembayaran di detail pesanan.' },
   { q: 'Bagaimana melacak pesanan?', a: 'Setelah diproses, Anda menerima email konfirmasi dengan nomor tracking DHL.' },
   { q: 'Ada diskon untuk pemesanan massal?', a: 'Ya! Untuk lebih dari 10 item, hubungi kami untuk harga khusus grup, fakultas, atau event PPI cabang.' },
 ];

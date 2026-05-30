@@ -1,4 +1,5 @@
 import { getAllOrders } from '@/lib/dal/orders';
+import { getOrderStatusColor, getOrderStatusLabel } from '@/lib/orderStatus';
 import Link from 'next/link';
 
 export default async function AdminOrders({ params }: { params: Promise<{ role: string }> }) {
@@ -36,10 +37,10 @@ export default async function AdminOrders({ params }: { params: Promise<{ role: 
                     borderRadius: 4, 
                     fontSize: 10, 
                     fontWeight: 600, 
-                    background: getStatusColor(order.status),
+                    background: getOrderStatusColor(order.status),
                     color: 'white'
                   }}>
-                    {order.status}
+                    {getOrderStatusLabel(order.status)}
                   </span>
                 </td>
                 <td style={tdStyle}>
@@ -72,14 +73,3 @@ const tdStyle: React.CSSProperties = {
   padding: '20px 24px',
   fontSize: 14
 };
-
-function getStatusColor(status: string) {
-  switch (status) {
-    case 'PENDING': return '#f39200';
-    case 'CONFIRMED': return '#2196f3';
-    case 'PROCESSING': return '#9c27b0';
-    case 'SHIPPED': return '#3f51b5';
-    case 'DONE': return '#4caf50';
-    default: return '#9e9e9e';
-  }
-}

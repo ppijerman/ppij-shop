@@ -79,6 +79,8 @@ export interface ProductImage {
   is_primary: boolean;
 }
 
+export type PaymentMethod = 'IBAN';
+
 export interface CartItem {
   cartId: string;
   variantId: string | null;
@@ -88,16 +90,17 @@ export interface CartItem {
   category: string;
   price: number;
   qty: number;
+  stock: number;
   size: string | null;
   color: Color | null;
   image: string;
 }
 
-export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DONE';
+export type OrderStatus = 'AWAITING_PAYMENT' | 'PAYMENT_REVIEW' | 'PROCESSING' | 'SHIPPED' | 'DONE' | 'CANCELLED';
 export interface DeliveryAddress {
   street: string,
   city: string,
-  postcode: number,
+  postcode: string,
   country: string
 }
 
@@ -119,7 +122,13 @@ export interface Order {
   total_price: number;
   delivery_address: DeliveryAddress | null;
   delivery_type: 'PICKUP' | 'DELIVERY';
+  payment_method: PaymentMethod;
   payment_proof_url: string | null;
+  payment_proof_content_type: string | null;
+  payment_proof_data?: unknown;
+  shipping_tracking_number: string | null;
+  shipping_provider: string | null;
+  pickup_details: string | null;
   created_at: string;
   updated_at: string;
   items: OrderItem[];
