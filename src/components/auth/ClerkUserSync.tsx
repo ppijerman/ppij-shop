@@ -2,11 +2,12 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function ClerkUserSync() {
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
   const lastSyncedUserIdRef = useRef<string | null>(null);
   const syncInFlightRef = useRef(false);
 
@@ -38,11 +39,12 @@ export default function ClerkUserSync() {
 
         const data = await response.json();
         const role = data.user?.role;
+        const isAdminPage = pathname.startsWith('/admin');
+        const isAuthPage = pathname.startsWith('/auth');
 
-        // Redirect admins to their dashboard immediately after sync
-        if (role === 'ADMIN_IT') {
+        if (role === 'ADMIN_IT' && !isAdminPage && !isAuthPage) {
           router.push('/admin/it');
-        } else if (role === 'ADMIN_KK') {
+        } else if (role === 'ADMIN_KK' && !isAdminPage && !isAuthPage) {
           router.push('/admin/kk');
         }
 
@@ -57,7 +59,7 @@ export default function ClerkUserSync() {
       .finally(() => {
         syncInFlightRef.current = false;
       });
-  }, [isLoaded, isSignedIn, user, router]);
+  }, [isLoaded, isSignedIn, pathname, user, router]);
 
   return null;
 }

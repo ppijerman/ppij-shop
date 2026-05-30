@@ -111,7 +111,7 @@ export default function UserManagementForm({ initialUsers }: { initialUsers: any
                       <span>{user.role}</span>
                     )}
                   </td>
-                  <td style={tableCellStyle}>{new Date(user.created_at).toLocaleDateString()}</td>
+                  <td style={tableCellStyle}>{new Date(user.created_at).toLocaleDateString('en-GB')}</td>
                   <td style={{ ...tableCellStyle, minWidth: 280 }}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', whiteSpace: 'nowrap' }}>
                       {deletingUserId === user.id ? (
