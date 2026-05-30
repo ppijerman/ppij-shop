@@ -8,7 +8,7 @@ import { approvePaymentAction, rejectPaymentAction } from '@/lib/actions/orders'
 export default function AdminPaymentsForm({ orders }: { orders: any[] }) {
   const router = useRouter();
   const { role } = useParams();
-  const pendingPayments = orders.filter(o => o.status === 'CONFIRMED' && o.payment_proof_url);
+  const pendingPayments = orders.filter(o => o.status === 'PAYMENT_REVIEW' && o.payment_proof_url);
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 

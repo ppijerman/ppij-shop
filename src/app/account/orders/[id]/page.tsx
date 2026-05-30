@@ -1,6 +1,7 @@
 import { getOrderByIdForUser, getOrderItems } from '@/lib/dal/orders';
 import { getCurrentDbUserOrThrow } from '@/lib/users';
 import { getPaymentInstruction } from '@/lib/payment';
+import { getOrderStatusLabel } from '@/lib/orderStatus';
 import PaymentProofUploadForm from '@/components/account/PaymentProofUploadForm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -59,7 +60,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   <p style={{ fontFamily: 'var(--font-display)', fontSize: 24, letterSpacing: '0.02em' }}>{paymentInstruction.title.toUpperCase()}</p>
                 </div>
                 <span style={{ alignSelf: 'start', background: 'var(--black)', color: 'var(--cream)', padding: '5px 9px', borderRadius: 4, fontSize: 10, fontWeight: 800 }}>
-                  {order.status}
+                  {getOrderStatusLabel(order.status)}
                 </span>
               </div>
               <p style={{ fontSize: 14, color: 'var(--ink)', marginBottom: 12 }}>{paymentInstruction.intro}</p>
@@ -74,9 +75,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <p style={{ color: 'var(--muted)', fontSize: 13, lineHeight: 1.6, marginTop: 14 }}>{paymentInstruction.note}</p>
 
               <div style={{ borderTop: '1px solid var(--line)', paddingTop: 18, marginTop: 18 }}>
-                {order.status === 'PENDING' ? (
+                {order.status === 'AWAITING_PAYMENT' ? (
                   <PaymentProofUploadForm orderId={order.id} />
-                ) : order.status === 'CONFIRMED' ? (
+                ) : order.status === 'PAYMENT_REVIEW' ? (
                   <p style={{ fontSize: 13, color: 'var(--muted)' }}>Payment proof uploaded. Waiting for admin review.</p>
                 ) : (
                   <p style={{ fontSize: 13, color: 'var(--muted)' }}>Payment review is complete or no longer editable.</p>
@@ -97,7 +98,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               {order.delivery_type === 'PICKUP' ? 'PICKUP LOCATION' : 'DELIVERY ADDRESS'}
             </h3>
             {order.delivery_type === 'PICKUP' ? (
-              <p style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.6 }}>Pickup details will be confirmed after payment review.</p>
+              <p style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+                {order.pickup_details ?? 'Pickup details will be confirmed after payment review.'}
+              </p>
             ) : (
               <div style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.6 }}>
                 <p>{order.delivery_address?.street}</p>
@@ -105,11 +108,16 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 <p>{order.delivery_address?.country}</p>
               </div>
             )}
-            {order.shipping_tracking_number && (
+            {(order.shipping_provider || order.shipping_tracking_number) && (
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', marginTop: 22, paddingTop: 18 }}>
                 <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8, opacity: 0.6 }}>
-                  SHIPPING NUMBER
+                  SHIPPING
                 </p>
+                {order.shipping_provider && (
+                  <p style={{ fontSize: 14, fontWeight: 500, opacity: 0.75, marginBottom: 4 }}>
+                    {order.shipping_provider}
+                  </p>
+                )}
                 <p style={{ fontSize: 16, fontWeight: 700, wordBreak: 'break-word' }}>
                   {order.shipping_tracking_number}
                 </p>

@@ -1,25 +1,34 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation';
+import { getOrderStatusLabel } from '@/lib/orderStatus';
 import {
   approvePaymentAction,
   rejectPaymentAction,
   updateOrderStatusAction,
+  updatePickupDetailsAction,
   updateShippingTrackingNumberAction,
 } from '@/lib/actions/orders';
+
+const SHIPPING_PROVIDERS = ['DHL', 'Hermes', 'DPD', 'UPS', 'FedEx', 'Deutsche Post', 'Pickup / Manual'] as const;
 
 export default function OrderDetailsForm({ initialOrder, items }: { initialOrder: any, items: any[] }) {
   const router = useRouter();
   const [status, setStatus] = useState<string>(initialOrder.status);
+  const [shippingProvider, setShippingProvider] = useState<string>(initialOrder.shipping_provider ?? '');
   const [shippingNumber, setShippingNumber] = useState<string>(initialOrder.shipping_tracking_number ?? '');
+  const [pickupDetails, setPickupDetails] = useState<string>(initialOrder.pickup_details ?? '');
+  const [hasSavedPickup, setHasSavedPickup] = useState<boolean>(!!initialOrder.pickup_details);
+  const [pickupSuccess, setPickupSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [proofPreviewOpen, setProofPreviewOpen] = useState(false);
 
-  const statuses: string[] = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'];
-  const canEditShippingNumber = initialOrder.status === 'PROCESSING' || initialOrder.status === 'SHIPPED';
+  const isPickup = initialOrder.delivery_type === 'PICKUP';
+  const statuses: string[] = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', ...(isPickup ? [] : ['SHIPPED']), 'DONE', 'CANCELLED'];
+  const canEditShippingNumber = !isPickup && (initialOrder.status === 'PROCESSING' || initialOrder.status === 'SHIPPED');
 
   const handleUpdateStatus = async () => {
     try {
@@ -70,7 +79,7 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
       setLoading(true);
       setError(null);
       setSuccess(null);
-      const result = await updateShippingTrackingNumberAction(initialOrder.id, shippingNumber);
+      const result = await updateShippingTrackingNumberAction(initialOrder.id, shippingProvider, shippingNumber);
 
       if (!result.ok) {
         setError(result.message);
@@ -82,6 +91,28 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
       router.refresh();
     } catch (err) {
       setError('Failed to save shipping number. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleSavePickupDetails = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setSuccess(null);
+      const result = await updatePickupDetailsAction(initialOrder.id, pickupDetails);
+
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+
+      setHasSavedPickup(true);
+      setPickupSuccess('Pickup details saved.');
+      router.refresh();
+    } catch (err) {
+      setError('Failed to save pickup details. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -130,7 +161,7 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
               onChange={(e) => setStatus(e.target.value)}
               style={{ width: '100%', padding: '12px', borderRadius: 4, border: '1px solid var(--line)', fontFamily: 'var(--font-mono)', fontSize: 12, marginBottom: 16 }}
             >
-              {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+              {statuses.map(s => <option key={s} value={s}>{getOrderStatusLabel(s)}</option>)}
             </select>
             {error && (
             <div style={{
@@ -229,7 +260,7 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
               ) : (
                 <p style={{ ...infoValue, color: 'var(--muted)' }}>Not uploaded yet</p>
               )}
-              {initialOrder.status === 'CONFIRMED' && initialOrder.payment_proof_url && (
+              {initialOrder.status === 'PAYMENT_REVIEW' && initialOrder.payment_proof_url && (
                 <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
                   <button
                     onClick={() => void handlePaymentReview('approve')}
@@ -251,50 +282,125 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
           </div>
         </section>
 
-        <section style={sectionStyle}>
-          <h2 style={h2Style}>Shipping</h2>
-          <div style={{ background: 'white', padding: 24, borderRadius: 8, border: '1px solid var(--line)' }}>
-            <label htmlFor="shipping-number" style={infoLabel}>Shipping Number</label>
-            <input
-              id="shipping-number"
-              value={shippingNumber}
-              onChange={(event) => setShippingNumber(event.target.value)}
-              disabled={loading || !canEditShippingNumber}
-              placeholder="DHL / Hermes / tracking number"
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: 4,
-                border: '1px solid var(--line)',
-                fontSize: 14,
-                marginBottom: 12,
-                background: canEditShippingNumber ? 'white' : 'var(--cream-2)',
-              }}
-            />
-            <p style={{ fontSize: 12, lineHeight: 1.5, color: 'var(--muted)', marginBottom: 14 }}>
-              {canEditShippingNumber
-                ? 'Saving this number marks the order as shipped.'
-                : 'Available after payment approval moves the order to processing.'}
-            </p>
-            <button
-              onClick={handleSaveShippingNumber}
-              disabled={loading || !canEditShippingNumber}
-              style={{
-                width: '100%',
-                padding: '12px',
-                background: loading || !canEditShippingNumber ? 'var(--muted)' : 'var(--black)',
-                color: 'var(--cream)',
-                border: 'none',
-                borderRadius: 4,
-                fontFamily: 'var(--font-mono)',
-                fontSize: 12,
-                cursor: loading || !canEditShippingNumber ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {initialOrder.status === 'SHIPPED' ? 'UPDATE SHIPPING NUMBER' : 'SAVE & MARK SHIPPED'}
-            </button>
-          </div>
-        </section>
+        {isPickup && (
+          <section style={sectionStyle}>
+            <h2 style={h2Style}>Pickup Details</h2>
+            <div style={{ background: 'white', padding: 24, borderRadius: 8, border: '1px solid var(--line)' }}>
+              <label htmlFor="pickup-details" style={infoLabel}>When &amp; where to meet</label>
+              <textarea
+                id="pickup-details"
+                value={pickupDetails}
+                onChange={(e) => setPickupDetails(e.target.value)}
+                disabled={loading}
+                placeholder="e.g. Saturday 14 June, 14:00 at Mensa TU Berlin"
+                rows={4}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: 4,
+                  border: '1px solid var(--line)',
+                  fontSize: 14,
+                  marginBottom: 12,
+                  resize: 'vertical',
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <button
+                onClick={handleSavePickupDetails}
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: loading ? 'var(--muted)' : 'var(--black)',
+                  color: 'var(--cream)',
+                  border: 'none',
+                  borderRadius: 4,
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 12,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {loading ? 'SAVING...' : hasSavedPickup ? 'UPDATE PICKUP DETAILS' : 'SAVE PICKUP DETAILS'}
+              </button>
+              {pickupSuccess && (
+                <p style={{ fontSize: 11, color: '#166534', marginTop: 8, fontFamily: 'var(--font-mono)' }}>
+                  ✓ {pickupSuccess}
+                </p>
+              )}
+            </div>
+          </section>
+        )}
+
+        {initialOrder.delivery_type === 'DELIVERY' && (
+          <section style={sectionStyle}>
+            <h2 style={h2Style}>Shipping</h2>
+            <div style={{ background: 'white', padding: 24, borderRadius: 8, border: '1px solid var(--line)' }}>
+              <label htmlFor="shipping-provider" style={infoLabel}>Shipping Provider</label>
+              <select
+                id="shipping-provider"
+                value={shippingProvider}
+                onChange={(event) => setShippingProvider(event.target.value)}
+                disabled={loading || !canEditShippingNumber}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: 4,
+                  border: '1px solid var(--line)',
+                  fontSize: 14,
+                  marginBottom: 12,
+                  background: canEditShippingNumber ? 'white' : 'var(--cream-2)',
+                }}
+              >
+                <option value="">Choose provider</option>
+                {SHIPPING_PROVIDERS.map((provider) => (
+                  <option key={provider} value={provider}>
+                    {provider}
+                  </option>
+                ))}
+              </select>
+              <label htmlFor="shipping-number" style={infoLabel}>Shipping Number</label>
+              <input
+                id="shipping-number"
+                value={shippingNumber}
+                onChange={(event) => setShippingNumber(event.target.value)}
+                disabled={loading || !canEditShippingNumber}
+                placeholder="DHL / Hermes / tracking number"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: 4,
+                  border: '1px solid var(--line)',
+                  fontSize: 14,
+                  marginBottom: 12,
+                  background: canEditShippingNumber ? 'white' : 'var(--cream-2)',
+                }}
+              />
+              <p style={{ fontSize: 12, lineHeight: 1.5, color: 'var(--muted)', marginBottom: 14 }}>
+                {canEditShippingNumber
+                  ? 'Saving this number marks the order as shipped.'
+                  : 'Available after payment approval moves the order to processing.'}
+              </p>
+              <button
+                onClick={handleSaveShippingNumber}
+                disabled={loading || !canEditShippingNumber}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: loading || !canEditShippingNumber ? 'var(--muted)' : 'var(--black)',
+                  color: 'var(--cream)',
+                  border: 'none',
+                  borderRadius: 4,
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 12,
+                  cursor: loading || !canEditShippingNumber ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {initialOrder.status === 'SHIPPED' ? 'UPDATE SHIPPING NUMBER' : 'SAVE & MARK SHIPPED'}
+              </button>
+            </div>
+          </section>
+        )}
       </div>
 
       {proofPreviewOpen && initialOrder.payment_proof_url && (

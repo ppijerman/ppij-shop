@@ -1,6 +1,6 @@
 import { getCurrentDbUserOrThrow } from '@/lib/users';
 import { getOrdersByUser } from '@/lib/dal/orders';
-import { getOrderStatusColor } from '@/lib/orderStatus';
+import { getOrderStatusColor, getOrderStatusLabel } from '@/lib/orderStatus';
 import Link from 'next/link';
 
 export default async function OrdersPage() {
@@ -59,7 +59,7 @@ export default async function OrdersPage() {
                   borderRadius: 4,
                   textTransform: 'uppercase'
                 }}>
-                  {order.status}
+                  {getOrderStatusLabel(order.status)}
                 </span>
               </span>
               <div style={{ textAlign: 'right' }}>

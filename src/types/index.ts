@@ -96,7 +96,7 @@ export interface CartItem {
   image: string;
 }
 
-export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DONE' | 'CANCELLED';
+export type OrderStatus = 'AWAITING_PAYMENT' | 'PAYMENT_REVIEW' | 'PROCESSING' | 'SHIPPED' | 'DONE' | 'CANCELLED';
 export interface DeliveryAddress {
   street: string,
   city: string,
@@ -127,6 +127,8 @@ export interface Order {
   payment_proof_content_type: string | null;
   payment_proof_data?: unknown;
   shipping_tracking_number: string | null;
+  shipping_provider: string | null;
+  pickup_details: string | null;
   created_at: string;
   updated_at: string;
   items: OrderItem[];

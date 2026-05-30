@@ -10,6 +10,8 @@ const ORDER_COLUMNS = `
   o.payment_proof_url,
   o.payment_proof_content_type,
   o.shipping_tracking_number,
+  o.shipping_provider,
+  o.pickup_details,
   o.created_at,
   o.updated_at,
   o.payment_method

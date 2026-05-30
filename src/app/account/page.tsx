@@ -1,5 +1,6 @@
 import { getCurrentDbUserOrThrow } from '@/lib/users';
 import { getOrdersByUser } from '@/lib/dal/orders';
+import { getOrderStatusColor, getOrderStatusLabel } from '@/lib/orderStatus';
 import Link from 'next/link';
 
 export default async function AccountPage() {
@@ -68,11 +69,11 @@ export default async function AccountPage() {
                 fontSize: 10, 
                 fontWeight: 700, 
                 padding: '4px 8px', 
-                background: 'var(--black)', 
+                background: getOrderStatusColor(latestOrder.status),
                 color: 'white',
                 borderRadius: 4
               }}>
-                {latestOrder.status}
+                {getOrderStatusLabel(latestOrder.status)}
               </span>
             </div>
             <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 20 }}>
@@ -104,6 +105,7 @@ export default async function AccountPage() {
           <p style={{ color: 'var(--muted)', fontSize: 14 }}>No orders yet.</p>
         )}
       </section>
+
     </div>
   );
 }

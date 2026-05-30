@@ -6,7 +6,7 @@ import { requireOrderAdmin } from '@/lib/auth';
 import { getCurrentDbUserOrThrow } from '@/lib/users';
 import type { PaymentMethod } from '@/types';
 
-const ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'] as const;
+const ORDER_STATUSES = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'] as const;
 const PAYMENT_METHODS = ['IBAN'] as const;
 const DELIVERY_TYPES = ['PICKUP', 'DELIVERY'] as const;
 const MAX_PROOF_SIZE_BYTES = 5 * 1024 * 1024;
@@ -188,7 +188,7 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
     const orderResult = await query(
       `
       INSERT INTO orders (user_id, status, total_price, delivery_address, delivery_type, payment_method)
-      VALUES ($1, 'PENDING', $2, $3::jsonb, $4::delivery_type, $5::payment_method)
+      VALUES ($1, 'AWAITING_PAYMENT', $2, $3::jsonb, $4::delivery_type, $5::payment_method)
       RETURNING id
       `,
       [
@@ -238,7 +238,7 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
     await query(
       `
       INSERT INTO order_status_logs (order_id, status, note)
-      VALUES ($1, 'PENDING', $2)
+      VALUES ($1, 'AWAITING_PAYMENT', $2)
       `,
       [orderId, 'Order created. Waiting for payment proof.'],
     );
@@ -293,7 +293,7 @@ export async function uploadPaymentProofAction(formData: FormData): Promise<Simp
       return { ok: false, message: 'Order not found.' };
     }
 
-    if (order.status !== 'PENDING') {
+    if (order.status !== 'AWAITING_PAYMENT') {
       return { ok: false, message: 'Payment proof can only be uploaded while the order is pending.' };
     }
 
@@ -307,7 +307,7 @@ export async function uploadPaymentProofAction(formData: FormData): Promise<Simp
         payment_proof_url = $2,
         payment_proof_data = $3,
         payment_proof_content_type = $4,
-        status = 'CONFIRMED'
+        status = 'PAYMENT_REVIEW'
       WHERE id = $1
       `,
       [orderId, proofUrl, buffer, proofFile.type],
@@ -316,7 +316,7 @@ export async function uploadPaymentProofAction(formData: FormData): Promise<Simp
     await query(
       `
       INSERT INTO order_status_logs (order_id, status, note)
-      VALUES ($1, 'CONFIRMED', $2)
+      VALUES ($1, 'PAYMENT_REVIEW', $2)
       `,
       [orderId, 'Payment proof uploaded. Waiting for admin review.'],
     );
@@ -340,7 +340,7 @@ export async function updateOrderStatusAction(orderId: string, status: string): 
     if (status === 'SHIPPED') {
       const orderResult = await query(
         `
-        SELECT shipping_tracking_number
+        SELECT delivery_type, shipping_tracking_number, shipping_provider
         FROM orders
         WHERE id = $1
         FOR UPDATE
@@ -353,8 +353,8 @@ export async function updateOrderStatusAction(orderId: string, status: string): 
         return { ok: false, message: 'Order not found.' };
       }
 
-      if (!order.shipping_tracking_number) {
-        return { ok: false, message: 'Add a shipping number before marking the order as shipped.' };
+      if (order.delivery_type === 'DELIVERY' && (!order.shipping_tracking_number || !order.shipping_provider)) {
+        return { ok: false, message: 'Add a shipping provider and number before marking the order as shipped.' };
       }
     }
 
@@ -387,13 +387,62 @@ export async function updateOrderStatusAction(orderId: string, status: string): 
   return result;
 }
 
+export async function updatePickupDetailsAction(
+  orderId: string,
+  detailsInput: string,
+): Promise<SimpleActionResult> {
+  await requireOrderAdmin();
+
+  const details = detailsInput.trim();
+
+  if (!details) {
+    return { ok: false, message: 'Enter pickup details.' };
+  }
+
+  if (details.length > 500) {
+    return { ok: false, message: 'Pickup details must be 500 characters or fewer.' };
+  }
+
+  return withTransaction(async (query) => {
+    const result = await query(
+      `
+      UPDATE orders
+      SET pickup_details = $2
+      WHERE id = $1 AND delivery_type = 'PICKUP'
+      RETURNING id
+      `,
+      [orderId, details],
+    );
+
+    if (result.rowCount === 0) {
+      return { ok: false, message: 'Order not found or not a pickup order.' };
+    }
+
+    revalidatePath(`/admin/kk/orders/${orderId}`);
+    revalidatePath(`/admin/it/orders/${orderId}`);
+    revalidatePath(`/account/orders/${orderId}`);
+
+    return { ok: true, message: 'Pickup details saved.' };
+  });
+}
+
 export async function updateShippingTrackingNumberAction(
   orderId: string,
+  providerInput: string,
   trackingNumberInput: string,
 ): Promise<SimpleActionResult> {
   await requireOrderAdmin();
 
+  const provider = providerInput.trim();
   const trackingNumber = trackingNumberInput.trim();
+
+  if (!provider) {
+    return { ok: false, message: 'Choose a shipping provider before marking the order as shipped.' };
+  }
+
+  if (provider.length > 100) {
+    return { ok: false, message: 'Shipping provider must be 100 characters or fewer.' };
+  }
 
   if (!trackingNumber) {
     return { ok: false, message: 'Enter a shipping number before marking the order as shipped.' };
@@ -407,15 +456,15 @@ export async function updateShippingTrackingNumberAction(
     const result = await query(
       `
       UPDATE orders
-      SET shipping_tracking_number = $2, status = 'SHIPPED'
-      WHERE id = $1 AND status IN ('PROCESSING', 'SHIPPED')
+      SET shipping_provider = $2, shipping_tracking_number = $3, status = 'SHIPPED'
+      WHERE id = $1 AND delivery_type = 'DELIVERY' AND status IN ('PROCESSING', 'SHIPPED')
       RETURNING id
       `,
-      [orderId, trackingNumber],
+      [orderId, provider, trackingNumber],
     );
 
     if (result.rowCount === 0) {
-      return { ok: false, message: 'Only processing or shipped orders can receive a shipping number.' };
+      return { ok: false, message: 'Only delivery orders in processing or shipped status can receive a shipping number.' };
     }
 
     await query(
@@ -423,7 +472,7 @@ export async function updateShippingTrackingNumberAction(
       INSERT INTO order_status_logs (order_id, status, note)
       VALUES ($1, 'SHIPPED', $2)
       `,
-      [orderId, `Shipping number saved: ${trackingNumber}`],
+      [orderId, `Shipping saved: ${provider} ${trackingNumber}`],
     );
 
     revalidatePath(`/admin/kk/orders/${orderId}`);
@@ -442,7 +491,7 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
       `
       UPDATE orders
       SET status = 'PROCESSING'
-      WHERE id = $1 AND status = 'CONFIRMED' AND payment_proof_data IS NOT NULL
+      WHERE id = $1 AND status = 'PAYMENT_REVIEW' AND payment_proof_data IS NOT NULL
       RETURNING id
       `,
       [orderId],
@@ -464,6 +513,7 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
     revalidatePath('/admin/it/payments');
     revalidatePath(`/admin/kk/orders/${orderId}`);
     revalidatePath(`/admin/it/orders/${orderId}`);
+    revalidatePath(`/account/orders/${orderId}`);
 
     return { ok: true, message: 'Payment approved.' };
   });
@@ -477,11 +527,11 @@ export async function rejectPaymentAction(orderId: string): Promise<SimpleAction
       `
       UPDATE orders
       SET
-        status = 'PENDING',
+        status = 'AWAITING_PAYMENT',
         payment_proof_url = NULL,
         payment_proof_data = NULL,
         payment_proof_content_type = NULL
-      WHERE id = $1 AND status = 'CONFIRMED'
+      WHERE id = $1 AND status = 'PAYMENT_REVIEW'
       RETURNING id
       `,
       [orderId],
@@ -494,7 +544,7 @@ export async function rejectPaymentAction(orderId: string): Promise<SimpleAction
     await query(
       `
       INSERT INTO order_status_logs (order_id, status, note)
-      VALUES ($1, 'PENDING', $2)
+      VALUES ($1, 'AWAITING_PAYMENT', $2)
       `,
       [orderId, 'Payment proof rejected. Waiting for a new upload.'],
     );
@@ -503,6 +553,7 @@ export async function rejectPaymentAction(orderId: string): Promise<SimpleAction
     revalidatePath('/admin/it/payments');
     revalidatePath(`/admin/kk/orders/${orderId}`);
     revalidatePath(`/admin/it/orders/${orderId}`);
+    revalidatePath(`/account/orders/${orderId}`);
 
     return { ok: true, message: 'Payment rejected.' };
   });
