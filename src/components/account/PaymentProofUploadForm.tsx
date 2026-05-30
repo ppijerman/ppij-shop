@@ -11,9 +11,16 @@ export default function PaymentProofUploadForm({ orderId }: { orderId: string })
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(formData: FormData) {
-    setSubmitting(true);
     setMessage(null);
     setError(null);
+
+    const file = formData.get('paymentProof');
+    if (file instanceof File && file.size > 5 * 1024 * 1024) {
+      setError('Payment proof must be 5 MB or smaller.');
+      return;
+    }
+
+    setSubmitting(true);
     const result = await uploadPaymentProofAction(formData);
     setSubmitting(false);
 
