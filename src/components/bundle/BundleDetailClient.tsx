@@ -2,6 +2,7 @@
 
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
+import { addBundleToCartAction } from "@/lib/actions/cart";
 import { Product, ProductVariant, Bundle, Color } from "@/types";
 import { useState, useMemo, useEffect } from "react";
 import ProductCrop from "@/components/product/ProductCrop";
@@ -19,7 +20,7 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
   const isAdmin = role === 'ADMIN_IT' || role === 'ADMIN_KK';
 
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
-  const { addToCart } = useCart();
+  const { refreshCart } = useCart();
   const { showToast } = useToast();
 
   const handleVariantChange = (productId: string, variantId: string | null) => {
@@ -36,9 +37,10 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
 
   const isComplete = bundle.products.every(p => selectedVariants[p.id]);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (isComplete) {
-      addToCart(bundle as any);
+      await addBundleToCartAction(bundle.id);
+      await refreshCart();
       showToast(`✦ added bundle · ${bundle.name}`);
     }
   }

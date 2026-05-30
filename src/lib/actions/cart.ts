@@ -153,6 +153,32 @@ export async function addVariantToCartAction(variantId: string, quantity = 1): P
   revalidatePath('/cart');
 }
 
+export async function addBundleToCartAction(bundleId: string, quantity = 1): Promise<void> {
+  const user = await getCurrentDbUserOrThrow();
+  const safeQuantity = normalizeQuantity(quantity);
+
+  const bundle = await db.query(
+    `SELECT id FROM bundles WHERE id = $1 LIMIT 1`,
+    [bundleId],
+  );
+
+  if (bundle.rowCount === 0) {
+    throw new Error('Bundle is unavailable.');
+  }
+
+  await db.query(
+    `
+    INSERT INTO cart_items (user_id, bundle_id, quantity)
+    VALUES ($1, $2, $3)
+    ON CONFLICT (user_id, bundle_id)
+    DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+    `,
+    [user.id, bundleId, safeQuantity],
+  );
+
+  revalidatePath('/cart');
+}
+
 export async function updateCartItemQuantityAction(cartItemId: string, delta: number): Promise<void> {
   const user = await getCurrentDbUserOrThrow();
   const safeDelta = Math.trunc(delta);

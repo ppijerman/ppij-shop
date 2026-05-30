@@ -52,7 +52,7 @@ WHERE b.slug = 'classic-bundle' AND v.sku = 'FH-S-WHITE';
 INSERT INTO "orders" (user_id, status, total_price, delivery_address, delivery_type, payment_method, created_at, updated_at)
 SELECT 
   id, 
-  'PENDING', 
+  'AWAITING_PAYMENT',
   38, 
   '{"street": "Eupenerstraße", "number": "70", "postcode": "52072", "city": "Aachen", "country": "Germany"}'::JSONB, 
   'DELIVERY', 
