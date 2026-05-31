@@ -1,27 +1,104 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import ProductCrop from './ProductCrop';
 import { useUser } from '@clerk/nextjs';
 
+import { Product, ProductVariant, Color, FitType } from '@/types';
+
 interface QuickViewModalProps {
-  product: any;
+  product: Product & { variants: ProductVariant[] };
   onClose: () => void;
 }
 
+const SIZE_ORDER = ['S', 'M', 'L', 'XL', 'XXL', 'ONE SIZE'];
+
 export default function QuickViewModal({ product, onClose }: QuickViewModalProps) {
   const variants = product.variants || [];
-  const [selColor, setSelColor] = useState(variants[0]?.color_name || 'Default');
-  const [selSize, setSelSize] = useState(variants[0]?.size || 'ONE SIZE');
+
+  // Derive unique fits from variants, forced order, but inclusive
+  const availableFits = useMemo(() => {
+    const rawFits = Array.from(new Set(variants.map((v) => v.fit_type as FitType)));
+    const preferredOrder = ['REGULAR', 'OVERSIZED'] as FitType[];
+    return rawFits.sort((a, b) => {
+      const idxA = preferredOrder.indexOf(a);
+      const idxB = preferredOrder.indexOf(b);
+      if (idxA === -1 && idxB === -1) return 0;
+      if (idxA === -1) return 1;
+      if (idxB === -1) return -1;
+      return idxA - idxB;
+    });
+  }, [variants]);
+
+  const [selFit, setSelFit] = useState<FitType>(availableFits[0]);
+
+  useEffect(() => {
+    if (availableFits.length > 0 && !availableFits.includes(selFit)) {
+      setSelFit(availableFits[0]);
+    }
+  }, [availableFits, selFit]);
+
+  // Filter variants by selected fit
+  const currentFitVariants = useMemo(() => {
+    return variants.filter((v) => v.fit_type === selFit);
+  }, [variants, selFit]);
+
+  // Derive unique colors from current fit variants
+  const uniqueColors = useMemo(() => {
+    const map = new Map<string, Color>();
+    currentFitVariants.forEach((v) => {
+      if (!map.has(v.color_name)) {
+        map.set(v.color_name, { name: v.color_name, hex: v.color_hex });
+      }
+    });
+    return Array.from(map.values());
+  }, [currentFitVariants]);
+
+  const [selColor, setSelColor] = useState<Color | null>(uniqueColors[0] ?? null);
+
+  useEffect(() => {
+    if (uniqueColors.length > 0) {
+      const exists = uniqueColors.find((c) => c.name === selColor?.name);
+      if (!exists) {
+        setSelColor(uniqueColors[0]);
+      }
+    }
+  }, [uniqueColors, selColor]);
+
+  const availableSizes = useMemo(() => {
+    if (!selColor) return [];
+    return currentFitVariants
+      .filter((v) => v.color_name === selColor.name)
+      .map((v) => v.size.trim())
+      .sort((a, b) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b));
+  }, [currentFitVariants, selColor]);
+
+  const [selSize, setSelSize] = useState<string | null>(availableSizes[0] ?? null);
+
+  useEffect(() => {
+    if (availableSizes.length > 0) {
+      if (!selSize || !availableSizes.includes(selSize)) {
+        setSelSize(availableSizes[0]);
+      }
+    }
+  }, [availableSizes, selSize]);
+
   const [qty, setQty] = useState(1);
   const { addToCart, cart } = useCart();
   const { showToast } = useToast();
   
   const categoryLabel = product.category === 'TOTEBAG' ? 'TOTE BAG' : 'T-SHIRT';
-  const currentVariant = variants.find((v: any) => v.size === selSize && v.color_name === selColor) || variants[0];
+  
+  const currentVariant = useMemo(() => {
+    if (!selColor || !selSize) return null;
+    return currentFitVariants.find(
+      (v) => v.color_name === selColor.name && v.size.trim() === selSize
+    ) || null;
+  }, [currentFitVariants, selColor, selSize]);
+
   const currentPrice = currentVariant?.price || 0;
   const currentOriginalPrice = currentVariant?.original_price || null;
   const currentStock = Number(currentVariant?.stock ?? 0);
@@ -64,7 +141,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
         style={{ background: 'var(--cream)', maxWidth: 980, width: '100%', maxHeight: '90vh', overflow: 'auto', animation: 'scaleIn 0.22s ease' }}
         onClick={e => e.stopPropagation()}
       >
-        <div style={{ display: 'grid', gridTemplateColumns: '1.05fr 0.95fr' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 0.85fr' }}>
           <div style={{ background: 'var(--cream-2)', position: 'relative', minHeight: 520 }}>
             <ProductCrop src={product.primary_image ?? 'editorial-color.jpeg'} height={560} scale={2.4} />
             {product.tag && <div style={{ position: 'absolute', top: 18, right: 18, background: 'var(--orange)', color: 'var(--black)', padding: '5px 12px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase' }}>{product.tag}</div>}
@@ -86,30 +163,91 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
               <span style={{ fontFamily: 'var(--font-display)', fontSize: 38, color: 'var(--black)' }}>€{Number(currentPrice).toFixed(2)}</span>
               {currentOriginalPrice && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--muted)', textDecoration: 'line-through' }}>€{Number(currentOriginalPrice).toFixed(2)}</span>}
             </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: isSoldOut ? '#b91c1c' : '#1F8A5B', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
-              {isSoldOut ? 'sold out' : `${currentStock} in stock`}
-            </div>
-            {!isSoldOut && quantityInCart > 0 && (
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: cannotAddMore ? '#b91c1c' : 'var(--muted)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
-                {cannotAddMore ? 'max in cart' : `${remainingStock} left to add`}
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: isSoldOut ? '#b91c1c' : '#1F8A5B', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+                {isSoldOut ? 'sold out' : `${currentStock} in stock`}
               </div>
-            )}
+              {!isSoldOut && quantityInCart > 0 && (
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: cannotAddMore ? '#b91c1c' : 'var(--muted)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+                  {cannotAddMore ? 'max' : `${remainingStock} left`}
+                </div>
+              )}
+            </div>
 
             <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 8 }}>warna · {selColor}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 8 }}>warna · {selColor?.name}</div>
               <div style={{ display: 'flex', gap: 8 }}>
-                {[...new Set(variants.map((v: any) => v.color_name))].map((c: any) => (
-                  <button key={c} onClick={() => setSelColor(c)} style={{ width: 28, height: 28, borderRadius: '50%', background: variants.find((v:any) => v.color_name === c)?.color_hex, border: 'none', outline: selColor === c ? '2px solid var(--orange)' : '1px solid var(--line)', outlineOffset: 2, cursor: 'pointer' }} />
+                {uniqueColors.map((c) => (
+                  <button
+                    key={c.name}
+                    onClick={() => setSelColor(c)}
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      background: c.hex,
+                      border: 'none',
+                      outline: selColor?.name === c.name ? '2px solid var(--orange)' : '1px solid var(--line)',
+                      outlineOffset: 2,
+                      cursor: 'pointer',
+                    }}
+                  />
                 ))}
               </div>
             </div>
 
-            {variants[0]?.size !== 'ONE SIZE' && (
+            {availableFits.length > 1 && (
+              <div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 8 }}>fit type · {selFit}</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {availableFits.map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setSelFit(f)}
+                      style={{
+                        padding: '6px 12px',
+                        border: '1px solid',
+                        borderColor: selFit === f ? 'var(--black)' : 'var(--line)',
+                        background: selFit === f ? 'var(--black)' : 'transparent',
+                        color: selFit === f ? 'var(--cream)' : 'var(--ink)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 11,
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {availableSizes[0] !== 'ONE SIZE' && (
               <div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 8 }}>size</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {[...new Set(variants.map((v: any) => v.size))].map(s => (
-                    <button key={s as string} onClick={() => setSelSize(s as string)} style={{ minWidth: 42, padding: '8px 12px', border: '1px solid', borderColor: selSize === s ? 'var(--black)' : 'var(--line)', background: selSize === s ? 'var(--black)' : 'transparent', color: selSize === s ? 'var(--cream)' : 'var(--ink)', fontFamily: 'var(--font-mono)', fontSize: 12, cursor: 'pointer', transition: 'all 0.15s' }}>{s as string}</button>
+                  {availableSizes.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setSelSize(s)}
+                      style={{
+                        minWidth: 42,
+                        padding: '8px 12px',
+                        border: '1px solid',
+                        borderColor: selSize === s ? 'var(--black)' : 'var(--line)',
+                        background: selSize === s ? 'var(--black)' : 'transparent',
+                        color: selSize === s ? 'var(--cream)' : 'var(--ink)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 12,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {s}
+                    </button>
                   ))}
                 </div>
               </div>
@@ -159,12 +297,12 @@ function AddBtn({
   return (
     <button
       onClick={onClick}
-      disabled={disabled}
+      disabled={disabled || isAdmin}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{ background: disabled ? 'var(--muted)' : hovered ? 'var(--orange)' : 'var(--black)', color: disabled ? 'var(--cream)' : hovered ? 'var(--black)' : 'var(--cream)', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: disabled ? 'not-allowed' : 'pointer', borderRadius: 999, transition: 'background 0.2s, color 0.2s' }}
+      style={{ background: (disabled || isAdmin) ? 'var(--muted)' : hovered ? 'var(--orange)' : 'var(--black)', color: (disabled || isAdmin) ? 'var(--cream)' : hovered ? 'var(--black)' : 'var(--cream)', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: (disabled || isAdmin) ? 'not-allowed' : 'pointer', borderRadius: 999, transition: 'background 0.2s, color 0.2s' }}
     >
-      {disabled ? (soldOut ? 'sold out' : 'max in cart') : `add to cart — €${price.toFixed(2)} ↗`}
+      {isAdmin ? 'ADMIN MODE' : (disabled ? (soldOut ? 'sold out' : 'max in cart') : `add to cart — €${price.toFixed(2)} ↗`)}
     </button>
   );
 }

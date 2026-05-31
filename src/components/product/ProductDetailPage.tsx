@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import ProductCrop from './ProductCrop';
-import { Product, ProductImage, ProductVariant, Color } from '@/types';
+import { Product, ProductImage, ProductVariant, Color, FitType } from '@/types';
 import { useUser } from '@clerk/nextjs';
 
 interface ProductDetailPageProps {
@@ -23,6 +23,8 @@ const TABS = [
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
+const SIZE_ORDER = ['S', 'M', 'L', 'XL', 'XXL', 'ONE SIZE'];
+
 export default function ProductDetailPage({
   product,
   images,
@@ -35,16 +37,43 @@ export default function ProductDetailPage({
 
   const [showSizeGuide, setShowSizeGuide] = useState(false);
 
-  // Derive unique colors from variants
+  // Derive unique fits from variants, forced order, but inclusive
+  const availableFits = useMemo(() => {
+    const rawFits = Array.from(new Set(variants.map((v) => v.fit_type as FitType)));
+    const preferredOrder = ['REGULAR', 'OVERSIZED'] as FitType[];
+    return rawFits.sort((a, b) => {
+      const idxA = preferredOrder.indexOf(a);
+      const idxB = preferredOrder.indexOf(b);
+      if (idxA === -1 && idxB === -1) return 0;
+      if (idxA === -1) return 1;
+      if (idxB === -1) return -1;
+      return idxA - idxB;
+    });
+  }, [variants]);
+
+  const [selFit, setSelFit] = useState<FitType>(availableFits[0]);
+
+  useEffect(() => {
+    if (availableFits.length > 0 && !availableFits.includes(selFit)) {
+      setSelFit(availableFits[0]);
+    }
+  }, [availableFits, selFit]);
+
+  // Filter variants by selected fit
+  const currentFitVariants = useMemo(() => {
+    return variants.filter((v) => v.fit_type === selFit);
+  }, [variants, selFit]);
+
+  // Derive unique colors from current fit variants
   const uniqueColors = useMemo(() => {
     const map = new Map<string, Color>();
-    variants.forEach((v) => {
+    currentFitVariants.forEach((v) => {
       if (!map.has(v.color_name)) {
         map.set(v.color_name, { name: v.color_name, hex: v.color_hex });
       }
     });
     return Array.from(map.values());
-  }, [variants]);
+  }, [currentFitVariants]);
 
   const [selColor, setSelColor] = useState<Color | null>(uniqueColors[0] ?? null);
 
@@ -59,11 +88,11 @@ export default function ProductDetailPage({
 
   const availableSizes = useMemo(() => {
     if (!selColor) return [];
-    return variants
-      .filter((v) => v.color_name === selColor.name && v.stock > 0)
+    return currentFitVariants
+      .filter((v) => v.color_name === selColor.name)
       .map((v) => v.size.trim())
-      .sort();
-  }, [variants, selColor]);
+      .sort((a, b) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b));
+  }, [currentFitVariants, selColor]);
 
   const [selSize, setSelSize] = useState<string | null>(availableSizes[0] ?? null);
 
@@ -83,10 +112,10 @@ export default function ProductDetailPage({
 
   const currentVariant = useMemo(() => {
     if (!selColor || !selSize) return null;
-    return variants.find(
+    return currentFitVariants.find(
       (v) => v.color_name === selColor.name && v.size.trim() === selSize
     ) || null;
-  }, [variants, selColor, selSize]);
+  }, [currentFitVariants, selColor, selSize]);
 
   const currentPrice = currentVariant?.price ?? 0;
   const currentOriginalPrice = currentVariant?.original_price;
@@ -510,6 +539,45 @@ export default function ProductDetailPage({
               ))}
             </div>
           </div>
+
+          {availableFits.length > 1 && (
+            <div style={{ marginTop: 22 }}>
+              <div
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  color: 'var(--muted)',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  marginBottom: 10,
+                }}
+              >
+                fit type · <span style={{ color: 'var(--black)' }}>{selFit}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {availableFits.map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setSelFit(f)}
+                    style={{
+                      padding: '8px 16px',
+                      border: '1px solid',
+                      borderColor: selFit === f ? 'var(--black)' : 'var(--line)',
+                      background: selFit === f ? 'var(--black)' : 'transparent',
+                      color: selFit === f ? 'var(--cream)' : 'var(--ink)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {availableSizes[0] !== 'ONE SIZE' ? (
             <div style={{ marginTop: 20 }}>
@@ -1001,29 +1069,32 @@ function AddToCartBtn({
   soldOut?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
+  const { user } = useUser();
+  const role = user?.publicMetadata?.role;
+  const isAdmin = role === 'ADMIN_IT' || role === 'ADMIN_KK';
   return (
     <button
       onClick={onClick}
-      disabled={disabled}
+      disabled={disabled || isAdmin}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
         flex: 1,
-        background: disabled ? 'var(--muted)' : hovered ? 'var(--orange)' : 'var(--black)',
-        color: disabled ? 'var(--cream)' : hovered ? 'var(--black)' : 'var(--cream)',
+        background: (disabled || isAdmin) ? 'var(--muted)' : hovered ? 'var(--orange)' : 'var(--black)',
+        color: (disabled || isAdmin) ? 'var(--cream)' : hovered ? 'var(--black)' : 'var(--cream)',
         border: 'none',
         padding: '15px',
         fontFamily: 'var(--font-mono)',
         fontSize: 12,
         letterSpacing: '0.22em',
         textTransform: 'uppercase',
-        cursor: disabled ? 'not-allowed' : 'pointer',
+        cursor: (disabled || isAdmin) ? 'not-allowed' : 'pointer',
         borderRadius: 999,
         fontWeight: 600,
         transition: 'all 0.2s',
       }}
     >
-      {disabled ? (soldOut ? 'sold out' : 'max in cart') : `add to cart — €${price.toFixed(2)} ↗`}
+      {isAdmin ? 'ADMIN MODE' : (disabled ? (soldOut ? 'sold out' : 'max in cart') : `add to cart — €${price.toFixed(2)} ↗`)}
     </button>
   );
 }

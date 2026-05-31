@@ -88,7 +88,9 @@ export default function CartView() {
                       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.22em', color: 'var(--muted)', textTransform: 'uppercase' }}>{item.category}</div>
                       <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--black)', marginTop: 4 }}>{item.name.toUpperCase()}</div>
                       {!item.bundleId && (
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', marginTop: 4 }}>{item.color?.name} · size {item.size}</div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', marginTop: 4 }}>
+                          {item.color?.name} · size {item.size} {item.fit_type && `· fit ${item.fit_type}`}
+                        </div>
                       )}
                       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: isSoldOut ? '#b91c1c' : 'var(--muted)', marginTop: 5, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
                         {isSoldOut ? 'sold out' : `${item.stock} available`}

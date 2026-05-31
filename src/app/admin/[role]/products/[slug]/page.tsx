@@ -17,28 +17,16 @@ export default async function EditProduct({ params }: { params: Promise<{ slug: 
     const name = formData.get('name') as string;
     const subtitle = formData.get('subtitle') as string;
     const category = formData.get('category') as string;
-    const fitType = formData.get('fitType') as string;
     const tag = formData.get('tag') as string;
     const skuPrefix = formData.get('skuPrefix') as string;
-    const price = parseFloat(formData.get('price') as string);
-
-    const originalPriceValue = formData.get('originalPrice');
-    const parsedOriginalPrice = 
-      typeof originalPriceValue === 'string' && 
-        originalPriceValue.trim() !== '' 
-      ? parseFloat(originalPriceValue)
-      : NaN;
-    const originalPrice = Number.isNaN(parsedOriginalPrice) ? null : parsedOriginalPrice;
-
     const description = formData.get('desc') as string;
     const images = JSON.parse(formData.get('images') as string);
-    const sizes = JSON.parse(formData.get('sizes') as string);
     const colors = JSON.parse(formData.get('colors') as string);
-    const stock = JSON.parse(formData.get('stock') as string);
     const newSlug = generateSlug(name);
     const weightG = Number(formData.get('weightG'));
+    const fits = JSON.parse(formData.get('fits') as string);
 
-    await updateProduct(id, { name, subtitle, category, fitType, tag, skuPrefix, price, originalPrice, description, images, sizes, colors, stock, slug: newSlug, weightG });
+    await updateProduct(id, { name, subtitle, category, tag, skuPrefix,description, images, colors, slug: newSlug, weightG, fits: fits });
   };
 
   const initialData = {

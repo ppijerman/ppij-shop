@@ -53,7 +53,7 @@ export async function createProduct(productData: ProductData) {
               fitType,
               config.price,
               config.originalPrice,
-              `${productData.skuPrefix}-${color.name}-${size}`,
+              `${productData.skuPrefix}-${color.name}-${size}-${fitType}`,
               stock,
             ]
           )
@@ -106,7 +106,7 @@ export async function updateProduct(id: string, productData: ProductData) {
 
     const existingMap: Record<string, string> = {};
     for (const v of existingVariants.rows) {
-      const key = `${v.color_name}__${v.size.trim()}`;
+      const key = `${v.fit_type}__${v.color_name}__${v.size.trim()}`;
       existingMap[key] = v.id;
     }
 
@@ -119,7 +119,7 @@ export async function updateProduct(id: string, productData: ProductData) {
       for (const color of productData.colors) {
         for (const size of config.sizes) {
           const stock = config.stock[color.name]?.[size] || 0;
-          const key = `${color.name}__${size}`;
+          const key = `${fitType}__${color.name}__${size}`;
           incomingKeys.add(key);
 
           if (existingMap[key]) {
@@ -127,19 +127,19 @@ export async function updateProduct(id: string, productData: ProductData) {
             await query(
               `
               UPDATE product_variants
-              SET stock = $2, price = $3, original_price = $4, color_hex = $5
+              SET stock = $2, price = $3, original_price = $4, color_hex = $5, sku = $6
               WHERE id = $1
               `,
-              [existingMap[key], stock, config.price, config.originalPrice || null, color.hex]
+              [existingMap[key], stock, config.price, config.originalPrice || null, color.hex, `${productData.skuPrefix}-${color.name}-${size}-${fitType}`]
             );
           } else {
             // Insert new variant
             await query(
               `
-              INSERT INTO product_variants (product_id, color_name, color_hex, size, price, original_price, sku, stock)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+              INSERT INTO product_variants (product_id, color_name, color_hex, size, fit_type, price, original_price, sku, stock)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
               `,
-              [id, color.name, color.hex, size, config.price, config.originalPrice, `${productData.skuPrefix}-${color.name}-${size}`, stock]
+              [id, color.name, color.hex, size, fitType, config.price, config.originalPrice, `${productData.skuPrefix}-${color.name}-${size}-${fitType}`, stock]
             );
           }
         }

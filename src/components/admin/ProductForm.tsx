@@ -1,5 +1,6 @@
 'use client';
 
+import { FitConfig, FitType } from '@/types';
 import { useState } from 'react';
 
 interface ProductFormProps {
@@ -13,6 +14,8 @@ const getFieldStyle = (isChanged: boolean) => ({
   backgroundColor: isChanged ? '#fff7ed' : 'white',
 });
 
+const DEFAULT_SIZES = ['S', 'M', 'L', 'XL', 'XXL', 'ONE SIZE'];
+
 export default function ProductForm({ initialData, action }: ProductFormProps) {
   const variants = initialData?.variants || [];
   
@@ -20,44 +23,61 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
     name: initialData?.name || '',
     subtitle: initialData?.subtitle || '',
     category: initialData?.category || 'TSHIRT',
-    fitType: initialData?.fit_type || 'REGULAR',
     tag: initialData?.tag || '',
     skuPrefix: initialData?.sku_prefix || '',
-    price: variants[0]?.price || 0,
     weight: initialData?.weight_g || 0,
-    originalPrice: variants[0]?.original_price || '',
     desc: initialData?.desc || ''
   });
-  
-  const [sizes, setSizes] = useState<string[]>(
-    Array.from(new Set(variants.map((v: any) => v.size as string)))
-  );
   
   const [colors, setColors] = useState<{name: string, hex: string}[]>(
     Array.from(new Set(variants.map((v: any) => JSON.stringify({ name: v.color_name, hex: v.color_hex }))))
       .map(s => JSON.parse(s as string))
   );
 
-  const [stock, setStock] = useState<Record<string, Record<string, number>>>( () => {
+  const [fits, setFits] = useState<Record<FitType, FitConfig>>(() => {
+    const initialFits: Record<FitType, FitConfig> = {
+      REGULAR: { enabled: true, price: 0, originalPrice: null, sizes: [], stock: {} },
+      OVERSIZED: { enabled: false, price: 0, originalPrice: null, sizes: [], stock: {} }
+    };
+
     if (variants.length > 0) {
-      return variants.reduce((acc: any, v: any) => {
-        acc[v.color_name] = acc[v.color_name] || {};
-        acc[v.color_name][v.size] = v.stock;
-        return acc;
-      }, {});
+      variants.forEach((v: any) => {
+        const type = (v.fit_type || 'REGULAR') as FitType;
+        initialFits[type].enabled = true;
+        initialFits[type].price = v.price;
+        initialFits[type].originalPrice = v.original_price;
+        if (!initialFits[type].sizes.includes(v.size.trim())) {
+          initialFits[type].sizes.push(v.size.trim());
+        }
+        initialFits[type].stock[v.color_name] = initialFits[type].stock[v.color_name] || {};
+        initialFits[type].stock[v.color_name][v.size.trim()] = v.stock;
+      });
     }
-    return {};
-  });
+    return initialFits;
+  })
 
   const [images, setImages] = useState<{ url: string; is_primary: boolean; }[]>(initialData?.images || []);
   const [fileInputKey, setFileInputKey] = useState(0);
 
-  const handleStockChange = (colorName: string, size: string, value: number) => {
-    setStock(prevStock => ({
-      ...prevStock,
-      [colorName]: {
-        ...(prevStock[colorName] || {}),
-        [size]: value,
+  const handleUpdateFit = (type: FitType, updates: Partial<FitConfig>) => {
+    setFits(prev => ({
+      ...prev,
+      [type]: { ...prev[type], ...updates}
+    }));
+  };
+
+  const handleStockChange = (type: FitType, colorName: string, size: string, value: number) => {
+    setFits(prev => ({
+      ...prev,
+      [type]: {
+        ...(prev[type]),
+        stock: {
+          ...prev[type].stock,
+          [colorName]: {
+            ...(prev[type].stock[colorName] || {}),
+            [size]: value
+          }
+        }
       },
     }));
   };
@@ -66,15 +86,14 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     formData.set('images', JSON.stringify(images));
+    formData.set('colors', JSON.stringify(colors));
+    formData.set('fits', JSON.stringify(fits));
     action(formData);
   };
 
   return (
     <form onSubmit={handleSubmit} style={{ background: 'white', padding: 32, borderRadius: 12, border: '1px solid var(--line)', maxWidth: 800 }}>
       {initialData?.id && <input type="hidden" name="id" value={initialData.id} />}
-      <input type="hidden" name="sizes" value={JSON.stringify(sizes)} />
-      <input type="hidden" name="colors" value={JSON.stringify(colors)} />
-      <input type="hidden" name="stock" value={JSON.stringify(stock)} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
         <div style={fieldGroup}>
@@ -110,18 +129,6 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
           </select>
         </div>
         <div style={fieldGroup}>
-          <label style={labelStyle}>Fit Type</label>
-          <select 
-            name="fitType" 
-            value={formData.fitType} 
-            onChange={e => setFormData({...formData, fitType: e.target.value})}
-            style={{...getFieldStyle(formData.fitType !== (initialData?.fit_type || 'REGULAR')), height: '48px' }}
-          >
-            <option value="REGULAR">REGULAR</option>
-            <option value="OVERSIZED">OVERSIZED</option>
-          </select>
-        </div>
-        <div style={fieldGroup}>
           <label style={labelStyle}>Tag</label>
           <input 
             name="tag" 
@@ -142,16 +149,6 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
           />
         </div>
         <div style={fieldGroup}>
-          <label style={labelStyle}>Price (€)</label>
-          <input 
-            name="price" 
-            type="number" 
-            value={formData.price} 
-            onChange={e => setFormData({...formData, price: parseFloat(e.target.value) || 0})}
-            style={getFieldStyle(formData.price !== (initialData?.price || variants[0]?.price || 0))}
-          />
-        </div>
-        <div style={fieldGroup}>
           <label style={labelStyle}>Weight (kg)</label>
           <input 
             name="weight" 
@@ -161,16 +158,6 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
             onChange={e => setFormData({...formData, weight: parseFloat(e.target.value) || 0})}
             style={getFieldStyle(formData.weight !== (initialData?.weight_g || 0))}
             placeholder="e.g. 0.25" 
-          />
-        </div>
-        <div style={fieldGroup}>
-          <label style={labelStyle}>Original Price (€)</label>
-          <input 
-            name="originalPrice" 
-            type="number" 
-            value={formData.originalPrice} 
-            onChange={e => setFormData({...formData, originalPrice: e.target.value})}
-            style={getFieldStyle(formData.originalPrice !== (initialData?.original_price || variants[0]?.original_price || ''))}
           />
         </div>
       </div>
@@ -185,129 +172,151 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
         />
       </div>
 
-      <div style={{ marginBottom: 32 }}>
-        <label style={labelStyle}>Sizes</label>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-          {['S', 'M', 'L', 'XL', 'XXL', 'ONE SIZE'].map(s => (
-            <button 
-              type='button'
-              key={s}
-              onClick={() => {
-                if (sizes.includes(s)) setSizes(sizes.filter(x => x !== s));
-                else setSizes([...sizes, s]);
-              }}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 4,
-                border: '1px solid var(--line)',
-                background: sizes.includes(s) ? 'var(--black)' : 'white',
-                color: sizes.includes(s) ? 'white' : 'var(--black)',
-                cursor: 'pointer',
-                fontSize: 12,
-                fontFamily: 'var(--font-mono)'
-              }}
-            >
-              {s}
-            </button>
+      <div  style={{ marginBottom: 32 }}>
+        <label style={labelStyle}>Enabled Fits</label>
+        <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
+          {(['REGULAR', 'OVERSIZED'] as FitType[]).map(f => (
+            <label key={f} style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 10, 
+              cursor: 'pointer',
+              padding: '10px 16px',
+              border: '1px solid var(--line)',
+              borderRadius: 8,
+              background: fits[f].enabled ? 'rgba(0,0,0,0.03)' : 'transparent',
+              transition: 'all 0.2s ease',
+              borderColor: fits[f].enabled ? 'var(--black)' : 'var(--line)'
+            }}>
+              <input 
+                type="checkbox"
+                checked={fits[f].enabled}
+                onChange={e => handleUpdateFit(f, { enabled: e.target.checked })}
+                style={{ 
+                  width: 18, 
+                  height: 18, 
+                  cursor: 'pointer',
+                  accentColor: 'var(--black)'
+                }}
+              />
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: fits[f].enabled ? 600 : 400 }}>{f}</span>
+            </label>
           ))}
         </div>
       </div>
 
-      <div style={{ marginBottom: 32 }}>
-        <label style={labelStyle}>Colors</label>
+      <div style={{ marginBottom: 32 }}>
+        <label style={labelStyle}>Global Colors</label>
         <div style={{ display: 'flex', gap: 12, flexDirection: 'column', marginTop: 8 }}>
           {colors.map((c, i) => (
             <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <input 
-                value={c.name} 
+                value={c.name}
                 onChange={(e) => {
                   const newColors = [...colors];
                   newColors[i].name = e.target.value;
                   setColors(newColors);
                 }}
                 style={{ ...inputStyle, flex: 1 }}
-                placeholder="Color Name (e.g. White)"
+                placeholder='Color Name (e.g White)'
               />
               <input 
-                type="color"
+                type="color" 
                 value={c.hex} 
                 onChange={(e) => {
                   const newColors = [...colors];
                   newColors[i].hex = e.target.value;
                   setColors(newColors);
                 }}
-                style={{ width: 44, height: 44, padding: 0, border: 'none', cursor: 'pointer' }}
+                style={{ width: 44, height: 44, padding: 0, border: 'none', cursor: 'pointer' }} 
               />
-              <button 
-                type='button'
-                onClick={() => setColors(colors.filter((_, idx) => idx !== i))}
-                style={{ background: 'none', border: 'none', color: '#f44336', cursor: 'pointer', fontSize: 20 }}
-              >
+              <button type='button' 
+                onClick={() => setColors(colors.filter((_, idx) => idx !== i))} 
+                style={{ background: 'none', border: 'none', color: '#f44336', cursor: 'pointer', fontSize: 20 }}>
                 ×
               </button>
             </div>
           ))}
-          <button 
-            type='button'
-            onClick={() => setColors([...colors, { name: '', hex: '#000000' }])}
-            style={{ 
-              alignSelf: 'flex-start',
-              padding: '8px 16px', 
-              background: 'white', 
-              border: '1px dashed var(--line)', 
-              borderRadius: 4, 
-              fontSize: 12, 
-              cursor: 'pointer',
-              fontFamily: 'var(--font-mono)'
-            }}
+          <button type='button' 
+            onClick={() => setColors([...colors, { name: '', hex: '#000000' }])} 
+            style={{ alignSelf: 'flex-start', padding: '8px 16px', background: 'white', border: '1px dashed var(--line)', borderRadius: 4, fontSize: 12, cursor: 'pointer', fontFamily:'var(--font-mono)' }}
           >
             + ADD COLOR
           </button>
         </div>
       </div>
 
-      {(colors.length > 0 && sizes.length > 0) && (
-        <div style={{ marginBottom: 32 }}>
-          <label style={labelStyle}>Inventory & Stock</label>
-          <div style={{ marginTop: 12, border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead>
-                <tr style={{ background: '#f9f9f9', borderBottom: '1px solid var(--line)' }}>
-                  <th style={{ padding: 12, textAlign: 'left', fontFamily: 'var(--font-mono)', color: 'var(--muted)' }}>Color / Size</th>
-                  {sizes.map(s => (
-                    <th key={s} style={{ padding: 12, textAlign: 'center', fontFamily: 'var(--font-mono)', color: 'var(--muted)' }}>{s}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {colors.map(c => (
-                  <tr key={c.name} style={{ borderBottom: '1px solid var(--line)' }}>
-                    <td style={{ padding: 12, fontWeight: 600 }}>{c.name}</td>
-                    {sizes.map(s => (
-                      <td key={s} style={{ padding: 8 }}>
-                        <input 
-                          type="number"
-                          value={stock[c.name]?.[s] ?? 0}
-                          placeholder="0"
-                          onChange={(e) => handleStockChange(c.name, s, parseInt(e.target.value) || 0)}
-                          style={{ 
-                            width: '100%', 
-                            padding: '6px', 
-                            textAlign: 'center', 
-                            border: '1px solid var(--line)', 
-                            borderRadius: 4,
-                            fontFamily: 'var(--font-mono)'
-                          }}
-                        />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {(['REGULAR', 'OVERSIZED'] as FitType[]).map(f => fits[f].enabled && (
+        <div key={f} style={{ marginBottom: 40, padding: 24, border: '1px solid var(--line)', borderRadius: 12, background: '#fafafa' }}>
+          <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: 13, marginBottom: 20, color: 'var(--orange-deep)' }}>{f} FIT CONFIGURATION</h3>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
+            <div style={fieldGroup}>
+              <label style={labelStyle}>{f} Price (€)</label>
+              <input type="number" value={fits[f].price} 
+                onChange={e => handleUpdateFit(f, { price: parseFloat(e.target.value) || 0 })} 
+                style={inputStyle}/>
+            </div>
+            <div style={fieldGroup}>
+              <label style={labelStyle}>{f} Original Price (€)</label>
+              <input type="number" value={fits[f].originalPrice || ''} 
+                onChange={e => handleUpdateFit(f, { originalPrice: parseFloat(e.target.value) || null })} 
+                style={inputStyle} />
+            </div>
           </div>
+
+          <div style={{ marginBottom: 24 }}>
+            <label style={labelStyle}>{f} Sizes</label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+              {DEFAULT_SIZES.map(s => (
+                <button
+                  type="button" key={s}
+                  onClick={() => {
+                    const newSizes = fits[f].sizes.includes(s) ? fits[f].sizes.filter(x => x !== s) : [...fits[f].sizes, s];
+                    handleUpdateFit(f, { sizes: newSizes });
+                  }}
+                  style={{
+                    padding: '8px 16px', borderRadius: 4, border: '1px solid var(--line)', fontSize: 12, fontFamily: 'var(--font-mono)', cursor: 'pointer',
+                    background: fits[f].sizes.includes(s) ? 'var(--black)' : 'white',
+                    color: fits[f].sizes.includes(s) ? 'white' : 'var(--black)'
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {fits[f].sizes.length > 0 && colors.length > 0 && (
+            <div style={{ marginTop: 12, border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden', background: 'white' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+                <thead>
+                  <tr style={{ background: '#f9f9f9', borderBottom: '1px solid var(--line)' }}>
+                    <th style={{ padding: 10, textAlign: 'left', fontFamily: 'var(--font-mono)' }}>Color / Size</th>
+                    {fits[f].sizes.map(s => <th key={s} style={{ padding: 10, textAlign: 'center', fontFamily: 'var(--font-mono)' }}>{s}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {colors.map(c => (
+                    <tr key={c.name} style={{ borderBottom: '1px solid var(--line)' }}>
+                      <td style={{ padding: 10, fontWeight: 600 }}>{c.name}</td>
+                      {fits[f].sizes.map(s => (
+                        <td key={s} style={{ padding: 6 }}>
+                          <input 
+                            type="number" value={fits[f].stock[c.name]?.[s] ?? 0}
+                            onChange={(e) => handleStockChange(f, c.name, s, parseInt(e.target.value) || 0)}
+                            style={{ width: '100%', padding: '6px', textAlign: 'center', border: '1px solid var(--line)', borderRadius: 4, fontFamily: 'var(--font-mono)' }}
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      )}
+      ))}
 
       <div style={{ marginBottom: 40 }}>
         <label style={labelStyle}>Images</label>

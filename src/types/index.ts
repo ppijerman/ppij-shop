@@ -20,7 +20,6 @@ export interface Product {
   id: string;
   name: string;
   subtitle: string;
-  fit_type: string;
   primary_image?: string; // Derived from images array or join
   images?: ProductImage[];
   slug: string;
@@ -38,7 +37,7 @@ export interface ProductVariant {
   product_id: string;
   size: string;
   stock: number;
-  fit_type: string | null;
+  fit_type: FitType;
   price: number;
   original_price: number | null;
   sku: string;
@@ -100,6 +99,7 @@ export interface CartItem {
   size: string | null;
   color: Color | null;
   image: string;
+  fit_type: FitType | null;
 }
 
 export type OrderStatus = 'AWAITING_PAYMENT' | 'PAYMENT_REVIEW' | 'PROCESSING' | 'SHIPPED' | 'DONE' | 'CANCELLED';

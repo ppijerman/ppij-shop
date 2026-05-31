@@ -7,13 +7,13 @@ INSERT INTO "users" (clerk_user_id, first_name, last_name, email, role, created_
 ('user_2NNEqL2nrIRdJ194ndJiSCjFMnQ', 'John', 'Pork', 'john@pork.com', 'BUYER', NOW(), NOW()),
 ('user_2NNEqL2nrIRdJ194ndJiSCjFMnR', 'Budi', 'Santoso', 'budi@ppij.org', 'ADMIN_KK', NOW(), NOW());
 
-INSERT INTO "products" (name, subtitle, category, weight_g, fit_type, "desc", tag, slug, created_at, updated_at)
+INSERT INTO "products" (name, subtitle, category, weight_g, "desc", tag, slug, created_at, updated_at)
 VALUES
-  ('Fang & Horn', 'OVERSIZED TEE — WHITE', 'TSHIRT', 220, 'normal', 'Kaos oversized 220gsm dengan hand-drawn graphic.', 'BESTSELLER', 'fang-and-horn', NOW(), NOW()),
-  ('Trio Komodores', 'GRAPHIC TEE — BLACK', 'TSHIRT', 250, 'normal', 'Graphic tee dengan illustrasi.', 'NEW', 'trio-komodores', NOW(), NOW()),
-  ('Elle the Elephant', 'BACK PRINT TEE — GREY', 'TSHIRT', 220, 'oversized', 'Tee abu dengan POV back print.', 'LIMITED', 'elle-the-elephant', NOW(), NOW()),
-  ('"Einkaufen 101"', 'HEAVY CANVAS TOTE — BLUE PRINT', 'TOTEBAG', 400, 'none', 'Tote canvas dengan blue print.', 'NEW', 'einkaufen-101', NOW(), NOW()),
-  ('"Mit Karte Bitte"', 'HEAVY CANVAS TOTE — GREEN PRINT', 'TOTEBAG', 400, 'none', 'Tote canvas dengan green print.', 'BESTSELLER', 'mit-karte-bitte', NOW(), NOW());
+  ('Fang & Horn', 'OVERSIZED TEE — WHITE', 'TSHIRT', 220, 'Kaos oversized 220gsm dengan hand-drawn graphic.', 'BESTSELLER', 'fang-and-horn', NOW(), NOW()),
+  ('Trio Komodores', 'GRAPHIC TEE — BLACK', 'TSHIRT', 250, 'Graphic tee dengan illustrasi.', 'NEW', 'trio-komodores', NOW(), NOW()),
+  ('Elle the Elephant', 'BACK PRINT TEE — GREY', 'TSHIRT', 220, 'Tee abu dengan POV back print.', 'LIMITED', 'elle-the-elephant', NOW(), NOW()),
+  ('"Einkaufen 101"', 'HEAVY CANVAS TOTE — BLUE PRINT', 'TOTEBAG', 400, 'Tote canvas dengan blue print.', 'NEW', 'einkaufen-101', NOW(), NOW()),
+  ('"Mit Karte Bitte"', 'HEAVY CANVAS TOTE — GREEN PRINT', 'TOTEBAG', 400, 'Tote canvas dengan green print.', 'BESTSELLER', 'mit-karte-bitte', NOW(), NOW());
 
 INSERT INTO "product_images" (product_id, url, is_primary)
 SELECT p.id, v.url, v.is_primary
@@ -32,12 +32,12 @@ FROM (
   UNION ALL SELECT 'fang-and-horn', 'M', 'OVERSIZED', 25, 30, 'FH-M-WHITE', 'White', '#F5F1E6', 8
   UNION ALL SELECT 'fang-and-horn', 'L', 'OVERSIZED', 25, 30, 'FH-L-WHITE', 'White', '#F5F1E6', 5
   UNION ALL SELECT 'fang-and-horn', 'S', 'OVERSIZED', 25, 30, 'FH-S-BLACK', 'Black', '#0E0E0E', 7
-  UNION ALL SELECT 'trio-komodores', 'S', 'NORMAL', 25, NULL, 'TK-S-BLACK', 'Black', '#0E0E0E', 10
-  UNION ALL SELECT 'trio-komodores', 'S', 'NORMAL', 25, NULL, 'TK-S-CHARCOAL', 'Charcoal', '#3A3A3A', 5
-  UNION ALL SELECT 'elle-the-elephant', 'S', 'NORMAL', 28, 35, 'EE-S-GREY', 'Grey', '#5A5A5A', 5
-  UNION ALL SELECT 'elle-the-elephant', 'S', 'NORMAL', 28, 35, 'EE-S-SAND', 'Sand', '#C9B89A', 4
-  UNION ALL SELECT 'einkaufen-101', 'ONE SIZE', 'none', 18, NULL, 'EK-OS-NATBLUE', 'Natural / Blue', '#E8E0CC', 20
-  UNION ALL SELECT 'mit-karte-bitte', 'ONE SIZE', 'none', 18, NULL, 'MKB-OS-NATGREEN', 'Natural / Green', '#E8E0CC', 15
+  UNION ALL SELECT 'trio-komodores', 'S', 'REGULAR', 25, NULL, 'TK-S-BLACK', 'Black', '#0E0E0E', 10
+  UNION ALL SELECT 'trio-komodores', 'S', 'REGULAR', 25, NULL, 'TK-S-CHARCOAL', 'Charcoal', '#3A3A3A', 5
+  UNION ALL SELECT 'elle-the-elephant', 'S', 'REGULAR', 28, 35, 'EE-S-GREY', 'Grey', '#5A5A5A', 5
+  UNION ALL SELECT 'elle-the-elephant', 'S', 'REGULAR', 28, 35, 'EE-S-SAND', 'Sand', '#C9B89A', 4
+  UNION ALL SELECT 'einkaufen-101', 'ONE SIZE', 'REGULAR', 18, NULL, 'EK-OS-NATBLUE', 'Natural / Blue', '#E8E0CC', 20
+  UNION ALL SELECT 'mit-karte-bitte', 'ONE SIZE', 'REGULAR', 18, NULL, 'MKB-OS-NATGREEN', 'Natural / Green', '#E8E0CC', 15
 ) v
 JOIN "products" p ON p.slug = v.slug;
 

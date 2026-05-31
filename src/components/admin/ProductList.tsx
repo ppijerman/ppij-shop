@@ -57,12 +57,38 @@ export default function ProductList({ initialProducts }: { initialProducts: any[
                   : 'N/A'}
               </td>
               <td style={tdStyle}>
-                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                  {product.variants?.map((v: any) => (
-                    <span key={v.id} style={{ fontSize: 10, border: '1px solid var(--line)', padding: '2px 4px', borderRadius: 2 }}>
-                      {v.size}: {v.stock}
-                    </span>
-                  ))}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {(() => {
+                    const fits = Array.from(new Set(product.variants?.map((v: any) => v.fit_type)));
+                    return fits.map((fit: any) => (
+                      <div key={fit} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {fits.length > 1 && (
+                          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            {fit}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                          {product.variants
+                            ?.filter((v: any) => v.fit_type === fit)
+                            .map((v: any) => (
+                              <span 
+                                key={v.id} 
+                                style={{ 
+                                  fontSize: 10, 
+                                  border: '1px solid var(--line)', 
+                                  padding: '2px 4px', 
+                                  borderRadius: 2,
+                                  background: fit === 'OVERSIZED' ? 'rgba(255, 165, 0, 0.05)' : 'transparent',
+                                  borderColor: fit === 'OVERSIZED' ? 'rgba(255, 165, 0, 0.2)' : 'var(--line)'
+                                }}
+                              >
+                                {v.size}: {v.stock}
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+                    ));
+                  })()}
                 </div>
               </td>
               <td style={tdStyle}>
