@@ -30,8 +30,14 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
           {products.map((product, i) => {
             const isHovered = hoveredId === product.id;
             const categoryLabel = product.category === 'TOTEBAG' ? 'TOTE BAG' : 'T-SHIRT';
-            const price = product.variants?.[0]?.price || 0;
-            const originalPrice = product.variants?.[0]?.original_price || null;
+            
+            const prices = product.variants?.map((v: any) => Number(v.price)) || [0];
+            const minPrice = Math.min(...prices);
+            const hasPriceRange = new Set(prices).size > 1;
+            
+            const originalPrices = product.variants?.map((v: any) => Number(v.original_price)).filter((p: number) => p > 0) || [];
+            const minOriginalPrice = originalPrices.length > 0 ? Math.min(...originalPrices) : null;
+
             const isSoldOut = !product.variants?.some((variant: any) => Number(variant.stock) > 0);
 
             return (
@@ -75,9 +81,9 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
                       {product.name.toUpperCase()}
                     </div>
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--ink)', marginTop: 6, fontWeight: 500 }}>
-                      €{Number(price).toFixed(2)}
-                      {originalPrice && (
-                        <span style={{ color: 'var(--muted)', textDecoration: 'line-through', marginLeft: 8, fontSize: 11 }}>€{Number(originalPrice).toFixed(2)}</span>
+                      {hasPriceRange ? 'from ' : ''}€{Number(minPrice).toFixed(2)}
+                      {minOriginalPrice && (
+                        <span style={{ color: 'var(--muted)', textDecoration: 'line-through', marginLeft: 8, fontSize: 11 }}>€{Number(minOriginalPrice).toFixed(2)}</span>
                       )}
                     </div>
                   </div>
