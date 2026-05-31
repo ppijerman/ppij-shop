@@ -9,7 +9,7 @@ export async function createProduct(productData: ProductData) {
   return withTransaction(async (query) => {
     const res = await query(
       `
-      INSERT INTO products (name, subtitle, category, fit_type, tag, "desc", weight_g, slug)
+      INSERT INTO products (name, subtitle, category, tag, "desc", weight_g, slug)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id
       `,

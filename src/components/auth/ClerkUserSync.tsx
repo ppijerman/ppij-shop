@@ -38,16 +38,7 @@ export default function ClerkUserSync() {
         }
 
         const data = await response.json();
-        const role = data.user?.role;
-        const isAdminPage = pathname.startsWith('/admin');
-        const isAuthPage = pathname.startsWith('/auth');
-
-        if (role === 'ADMIN_IT' && !isAdminPage && !isAuthPage) {
-          router.push('/admin/it');
-        } else if (role === 'ADMIN_KK' && !isAdminPage && !isAuthPage) {
-          router.push('/admin/kk');
-        }
-
+        
         lastSyncedUserIdRef.current = user.id;
       })
       .catch((error: unknown) => {
