@@ -121,7 +121,17 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
           <select 
             name="category" 
             value={formData.category} 
-            onChange={e => setFormData({...formData, category: e.target.value})}
+            onChange={e => {
+              const newCategory = e.target.value;
+              setFormData({...formData, category: newCategory});
+              if (newCategory === 'TOTEBAG') {
+                setFits(prev => ({
+                  ...prev,
+                  REGULAR: { ...prev.REGULAR, enabled: true, sizes: ['ONE SIZE'] },
+                  OVERSIZED: { ...prev.OVERSIZED, enabled: false }
+                }));
+              }
+            }}
             style={{...getFieldStyle(formData.category !== (initialData?.category || 'TSHIRT')), height: '48px'}}
           >
             <option value="TSHIRT">TSHIRT</option>
@@ -172,38 +182,40 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
         />
       </div>
 
-      <div  style={{ marginBottom: 32 }}>
-        <label style={labelStyle}>Enabled Fits</label>
-        <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
-          {(['REGULAR', 'OVERSIZED'] as FitType[]).map(f => (
-            <label key={f} style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 10, 
-              cursor: 'pointer',
-              padding: '10px 16px',
-              border: '1px solid var(--line)',
-              borderRadius: 8,
-              background: fits[f].enabled ? 'rgba(0,0,0,0.03)' : 'transparent',
-              transition: 'all 0.2s ease',
-              borderColor: fits[f].enabled ? 'var(--black)' : 'var(--line)'
-            }}>
-              <input 
-                type="checkbox"
-                checked={fits[f].enabled}
-                onChange={e => handleUpdateFit(f, { enabled: e.target.checked })}
-                style={{ 
-                  width: 18, 
-                  height: 18, 
-                  cursor: 'pointer',
-                  accentColor: 'var(--black)'
-                }}
-              />
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: fits[f].enabled ? 600 : 400 }}>{f}</span>
-            </label>
-          ))}
+      {formData.category !== 'TOTEBAG' && (
+        <div  style={{ marginBottom: 32 }}>
+          <label style={labelStyle}>Enabled Fits</label>
+          <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
+            {(['REGULAR', 'OVERSIZED'] as FitType[]).map(f => (
+              <label key={f} style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 10, 
+                cursor: 'pointer',
+                padding: '10px 16px',
+                border: '1px solid var(--line)',
+                borderRadius: 8,
+                background: fits[f].enabled ? 'rgba(0,0,0,0.03)' : 'transparent',
+                transition: 'all 0.2s ease',
+                borderColor: fits[f].enabled ? 'var(--black)' : 'var(--line)'
+              }}>
+                <input 
+                  type="checkbox"
+                  checked={fits[f].enabled}
+                  onChange={e => handleUpdateFit(f, { enabled: e.target.checked })}
+                  style={{ 
+                    width: 18, 
+                    height: 18, 
+                    cursor: 'pointer',
+                    accentColor: 'var(--black)'
+                  }}
+                />
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: fits[f].enabled ? 600 : 400 }}>{f}</span>
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div style={{ marginBottom: 32 }}>
         <label style={labelStyle}>Global Colors</label>
@@ -267,24 +279,30 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
 
           <div style={{ marginBottom: 24 }}>
             <label style={labelStyle}>{f} Sizes</label>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-              {DEFAULT_SIZES.map(s => (
-                <button
-                  type="button" key={s}
-                  onClick={() => {
-                    const newSizes = fits[f].sizes.includes(s) ? fits[f].sizes.filter(x => x !== s) : [...fits[f].sizes, s];
-                    handleUpdateFit(f, { sizes: newSizes });
-                  }}
-                  style={{
-                    padding: '8px 16px', borderRadius: 4, border: '1px solid var(--line)', fontSize: 12, fontFamily: 'var(--font-mono)', cursor: 'pointer',
-                    background: fits[f].sizes.includes(s) ? 'var(--black)' : 'white',
-                    color: fits[f].sizes.includes(s) ? 'white' : 'var(--black)'
-                  }}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+            {formData.category === 'TOTEBAG' ? (
+              <div style={{ marginTop: 8, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--black)', fontWeight: 600 }}>
+                ONE SIZE (Standard for Tote Bags)
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                {DEFAULT_SIZES.map(s => (
+                  <button
+                    type="button" key={s}
+                    onClick={() => {
+                      const newSizes = fits[f].sizes.includes(s) ? fits[f].sizes.filter(x => x !== s) : [...fits[f].sizes, s];
+                      handleUpdateFit(f, { sizes: newSizes });
+                    }}
+                    style={{
+                      padding: '8px 16px', borderRadius: 4, border: '1px solid var(--line)', fontSize: 12, fontFamily: 'var(--font-mono)', cursor: 'pointer',
+                      background: fits[f].sizes.includes(s) ? 'var(--black)' : 'white',
+                      color: fits[f].sizes.includes(s) ? 'white' : 'var(--black)'
+                    }}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {fits[f].sizes.length > 0 && colors.length > 0 && (
