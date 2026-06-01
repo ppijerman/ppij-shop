@@ -71,6 +71,32 @@ export async function getOrderByIdForUser(id: string, userId: string) {
 }
 
 export async function getOrderItems(orderId: string) {
-  const res = await db.query("SELECT * FROM order_items WHERE order_id = $1", [orderId])
+  const res = await db.query(
+    `
+    SELECT 
+      oi.*,
+      pv.size,
+      pv.color_name,
+      pv.fit_type,
+      b.name as bundle_name,
+      (
+        SELECT json_agg(json_build_object(
+          'product_name', p.name,
+          'size', trim(pv.size),
+          'color', pv.color_name,
+          'fit', pv.fit_type
+        ))
+        FROM bundle_items bi
+        JOIN product_variants pv ON bi.variant_id = pv.id
+        JOIN products p ON pv.product_id = p.id
+        WHERE bi.bundle_id = oi.bundle_id
+      ) as bundle_products
+    FROM order_items oi
+    LEFT JOIN product_variants pv ON oi.variant_id = pv.id
+    LEFT JOIN bundles b ON oi.bundle_id = b.id
+    WHERE oi.order_id = $1
+    `, 
+    [orderId]
+  )
   return res.rows
 }

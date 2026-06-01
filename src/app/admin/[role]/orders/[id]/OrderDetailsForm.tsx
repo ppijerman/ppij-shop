@@ -135,7 +135,28 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
               <tbody>
                 {items.map((item: any, i: number) => (
                   <tr key={i} style={{ borderBottom: '1px solid var(--line)' }}>
-                    <td style={tdStyle}>{item.product_name_snapshot}</td>
+                    <td style={tdStyle}>
+                      <div style={{ fontWeight: 600 }}>{item.bundle_id ? item.bundle_name : item.product_name_snapshot}</div>
+                      {!item.bundle_id && (
+                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                          {item.color_name} • {item.size} • {item.fit_type}
+                        </div>
+                      )}
+                      {item.bundle_id && item.bundle_products && (
+                        <div style={{ marginTop: 10, padding: 12, background: 'var(--cream-2)', borderRadius: 6, border: '1px solid var(--line)' }}>
+                          <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Bundle Contents
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            {item.bundle_products.map((p: any, idx: number) => (
+                              <div key={idx} style={{ fontSize: 12, fontWeight: 500, color: 'var(--black)' }}>
+                                • {p.product_name} <span style={{ color: 'var(--muted)', fontSize: 11 }}>({p.color} • {p.size} • {p.fit})</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </td>
                     <td style={tdStyle}>{item.quantity}</td>
                     <td style={tdStyle}>€{Number(item.price_at_purchase).toFixed(2)}</td>
                   </tr>

@@ -13,17 +13,13 @@ export default async function NewProduct({ params }: { params: Promise<{ role: s
       name: formData.get('name') as string,
       subtitle: formData.get('subtitle') as string,
       category: formData.get('category') as string,
-      fitType: formData.get('fitType') as string,
       tag: formData.get('tag') as string,
       description: formData.get('desc') as string,
       images: JSON.parse(formData.get('images') as string),
       weightG: Number(formData.get('weight')),
-      price: Number(formData.get('price')),
-      originalPrice: formData.get('originalPrice') ? Number(formData.get('originalPrice')) : null,
       skuPrefix: formData.get('skuPrefix') as string,
       colors: JSON.parse(formData.get('colors') as string),
-      sizes: JSON.parse(formData.get('sizes') as string),
-      stock: JSON.parse(formData.get('stock') as string),
+      fits: JSON.parse(formData.get('fits') as string),
       slug: generateSlug(name),
     });
     redirect(`/admin/${role}/products`);

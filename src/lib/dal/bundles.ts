@@ -36,7 +36,9 @@ export async function getBundleBySlug(slug: string) {
         SELECT json_agg(json_build_object(
           'id', p.id,
           'name', p.name,
-          'category',p.category,
+          'subtitle', p.subtitle,
+          'category', p.category,
+          'primary_image', p.primary_image,
           'images', (
             SELECT json_agg(json_build_object('url', pimg.url, 'is_primary', pimg.is_primary))
             FROM product_images pimg WHERE pimg.product_id = p.id
@@ -46,6 +48,7 @@ export async function getBundleBySlug(slug: string) {
               'id', pv.id,
               'size', trim(pv.size),
               'stock', pv.stock,
+              'fit_type', pv.fit_type,
               'price', pv.price::float,
               'color_name', pv.color_name,
               'color_hex', pv.color_hex
@@ -54,10 +57,11 @@ export async function getBundleBySlug(slug: string) {
           )
         ))
         FROM (
-          SELECT DISTINCT p.id, p.name, p.category
+          SELECT DISTINCT p.id, p.name, p.subtitle, p.category, pi.url AS primary_image
           FROM bundle_items bi
           JOIN product_variants pv ON bi.variant_id = pv.id
           JOIN products p ON pv.product_id = p.id
+          LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
           WHERE bi.bundle_id = b.id
         ) p
       ) AS products

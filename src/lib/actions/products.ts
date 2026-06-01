@@ -1,7 +1,7 @@
 'use server';
 
 import { db, withTransaction } from '../db';
-import { ProductData } from '@/types';
+import { FitType, ProductData } from '@/types';
 import { requireAdmin } from '../auth';
 
 export async function createProduct(productData: ProductData) {
@@ -9,15 +9,14 @@ export async function createProduct(productData: ProductData) {
   return withTransaction(async (query) => {
     const res = await query(
       `
-      INSERT INTO products (name, subtitle, category, fit_type, tag, "desc", weight_g, slug)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO products (name, subtitle, category, tag, "desc", weight_g, slug)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id
       `,
       [
         productData.name,
         productData.subtitle,
         productData.category,
-        productData.fitType,
         productData.tag,
         productData.description,
         productData.weightG,
@@ -34,37 +33,39 @@ export async function createProduct(productData: ProductData) {
         [productId, image.url, image.is_primary]
       );
     }
-    
-    for (const color of productData.colors) {
-      for (const size of productData.sizes) {
-        const stock = productData.stock[color.name]?.[size] ?? 0;
-        await query(
-          `
-          INSERT INTO product_variants (product_id, color_name, color_hex, size, price, original_price, sku, stock)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-          `,
-          [
-            productId,
-            color.name,
-            color.hex,
-            size,
-            productData.price,
-            productData.originalPrice,
-            `${productData.skuPrefix}-${color.name}-${size}`,
-            stock,
-          ]
-        )
+    for ( const fitType of ['REGULAR', 'OVERSIZED'] as FitType[]) {
+      const config = productData.fits[fitType];
+      if (!config.enabled) continue;
+
+      for (const color of productData.colors) {
+        for (const size of config.sizes) {
+          const stock = config.stock[color.name]?.[size] ?? 0;
+          await query(
+            `
+            INSERT INTO product_variants (product_id, color_name, color_hex, size, fit_type, price, original_price, sku, stock)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            `,
+            [
+              productId,
+              color.name,
+              color.hex,
+              size,
+              fitType,
+              config.price,
+              config.originalPrice,
+              `${productData.skuPrefix}-${color.name}-${size}-${fitType}`,
+              stock,
+            ]
+          )
+        }
       }
     }
   })
-  
-  
 }
 
 export async function updateProduct(id: string, productData: ProductData) {
   await requireAdmin();
   await withTransaction(async (query) => {
-    // Update product details
     await query(
       `
       UPDATE products
@@ -72,11 +73,10 @@ export async function updateProduct(id: string, productData: ProductData) {
         name = $2,
         subtitle = $3,
         category = $4,
-        fit_type = $5,
-        tag = $6,
-        "desc" = $7,
-        slug = $8,
-        weight_g = $9
+        tag = $5,
+        "desc" = $6,
+        slug = $7,
+        weight_g = $8
       WHERE id = $1
       `,
       [
@@ -84,7 +84,6 @@ export async function updateProduct(id: string, productData: ProductData) {
         productData.name,
         productData.subtitle,
         productData.category,
-        productData.fitType,
         productData.tag,
         productData.description,
         productData.slug,
@@ -92,7 +91,6 @@ export async function updateProduct(id: string, productData: ProductData) {
       ]
     );
 
-    // Sync Images
     await query('DELETE FROM product_images WHERE product_id = $1', [id]);
     for (const image of productData.images) {
       await query(
@@ -101,7 +99,6 @@ export async function updateProduct(id: string, productData: ProductData) {
       );
     }
 
-    // Get existing variants
     const existingVariants = await query(
       'SELECT * FROM product_variants WHERE product_id = $1',
       [id]
@@ -109,37 +106,42 @@ export async function updateProduct(id: string, productData: ProductData) {
 
     const existingMap: Record<string, string> = {};
     for (const v of existingVariants.rows) {
-      const key = `${v.color_name}__${v.size.trim()}`;
+      const key = `${v.fit_type}__${v.color_name}__${v.size.trim()}`;
       existingMap[key] = v.id;
     }
 
     const incomingKeys = new Set<string>();
 
-    for (const color of productData.colors) {
-      for (const size of productData.sizes) {
-        const stock = productData.stock[color.name]?.[size] || 0;
-        const key = `${color.name}__${size}`;
-        incomingKeys.add(key);
+    for (const fitType of ['REGULAR', 'OVERSIZED'] as FitType[]) {
+      const config = productData.fits[fitType];
+      if (!config.enabled) continue;
 
-        if (existingMap[key]) {
-          // Update existing variant
-          await query(
-            `
-            UPDATE product_variants
-            SET stock = $2, price = $3, original_price = $4, color_hex = $5
-            WHERE id = $1
-            `,
-            [existingMap[key], stock, productData.price, productData.originalPrice || null, color.hex]
-          );
-        } else {
-          // Insert new variant
-          await query(
-            `
-            INSERT INTO product_variants (product_id, color_name, color_hex, size, price, original_price, sku, stock)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            `,
-            [id, color.name, color.hex, size, productData.price, productData.originalPrice, `${productData.skuPrefix}-${color.name}-${size}`, stock]
-          );
+      for (const color of productData.colors) {
+        for (const size of config.sizes) {
+          const stock = config.stock[color.name]?.[size] || 0;
+          const key = `${fitType}__${color.name}__${size}`;
+          incomingKeys.add(key);
+
+          if (existingMap[key]) {
+            // Update existing variant
+            await query(
+              `
+              UPDATE product_variants
+              SET stock = $2, price = $3, original_price = $4, color_hex = $5, sku = $6
+              WHERE id = $1
+              `,
+              [existingMap[key], stock, config.price, config.originalPrice || null, color.hex, `${productData.skuPrefix}-${color.name.split(' ').join('')}-${size}-${fitType}`]
+            );
+          } else {
+            // Insert new variant
+            await query(
+              `
+              INSERT INTO product_variants (product_id, color_name, color_hex, size, fit_type, price, original_price, sku, stock)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+              `,
+              [id, color.name, color.hex, size, fitType, config.price, config.originalPrice, `${productData.skuPrefix}-${color.name.split(' ').join('')}-${size}-${fitType}`, stock]
+            );
+          }
         }
       }
     }

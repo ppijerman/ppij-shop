@@ -69,6 +69,7 @@ export async function getCartItemsAction(): Promise<CartItem[]> {
       trim(pv.size) AS size,
       pv.color_name,
       pv.color_hex,
+      pv.fit_type,
       COALESCE(
         pi.url,
         (
@@ -106,6 +107,7 @@ export async function getCartItemsAction(): Promise<CartItem[]> {
     size: row.size,
     color: row.color_name && row.color_hex ? { name: row.color_name, hex: row.color_hex } : null,
     image: row.image,
+    fit_type: row.fit_type,
   }));
 }
 

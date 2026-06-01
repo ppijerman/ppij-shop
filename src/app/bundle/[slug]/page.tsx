@@ -13,11 +13,10 @@ export default async function BundlePage({ params }: { params: Promise<{ slug: s
 
   return (
     <main style={{ background: 'var(--cream)', minHeight: '100vh' }}>
-      {/* Breadcrumbs */}
       <div style={{ 
         maxWidth: 1440, 
         margin: '0 auto', 
-        padding: '120px 28px 0', 
+        padding: '30px 28px 0', 
         display: 'flex', 
         gap: 8, 
         fontFamily: 'var(--font-mono)', 

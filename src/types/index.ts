@@ -20,7 +20,6 @@ export interface Product {
   id: string;
   name: string;
   subtitle: string;
-  fit_type: string;
   primary_image?: string; // Derived from images array or join
   images?: ProductImage[];
   slug: string;
@@ -38,7 +37,7 @@ export interface ProductVariant {
   product_id: string;
   size: string;
   stock: number;
-  fit_type: string | null;
+  fit_type: FitType;
   price: number;
   original_price: number | null;
   sku: string;
@@ -52,7 +51,6 @@ export interface ProductData {
   name: string
   subtitle: string
   category: string
-  fitType: string
   tag: string
   description: string
   images: {
@@ -63,13 +61,10 @@ export interface ProductData {
     name: string
     hex: string
   }[]
-  sizes: string[]
-  stock: Record<string, Record<string, number>>
-  price: number
-  originalPrice: number | null
   skuPrefix: string
   weightG: number
   slug: string
+  fits: Record<FitType, FitConfig>
 }
 
 export interface ProductImage {
@@ -77,6 +72,16 @@ export interface ProductImage {
   product_id: string;
   url: string;
   is_primary: boolean;
+}
+
+export type FitType = 'REGULAR' | 'OVERSIZED';
+
+export interface FitConfig {
+  enabled: boolean;
+  price: number;
+  originalPrice: number | null;
+  sizes: string[];
+  stock: Record<string, Record<string, number>>;
 }
 
 export type PaymentMethod = 'IBAN';
@@ -94,6 +99,7 @@ export interface CartItem {
   size: string | null;
   color: Color | null;
   image: string;
+  fit_type: FitType | null;
 }
 
 export type OrderStatus = 'AWAITING_PAYMENT' | 'PAYMENT_REVIEW' | 'PROCESSING' | 'SHIPPED' | 'DONE' | 'CANCELLED';

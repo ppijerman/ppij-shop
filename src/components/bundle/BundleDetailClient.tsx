@@ -3,7 +3,7 @@
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
 import { addBundleToCartAction } from "@/lib/actions/cart";
-import { Product, ProductVariant, Bundle, Color } from "@/types";
+import { Product, ProductVariant, Bundle, Color, FitType } from "@/types";
 import { useState, useMemo, useEffect } from "react";
 import ProductCrop from "@/components/product/ProductCrop";
 import { useUser } from "@clerk/nextjs";
@@ -46,8 +46,7 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
   }
 
   return (
-    <div style={{ maxWidth: 1440, margin: '0 auto', padding: '120px 28px 80px' }}>
-      {/* Header */}
+    <div style={{ maxWidth: 1440, margin: '0 auto', padding: '48px 28px 80px' }}>
       <div style={{ marginBottom: 60 }}>
         <div style={{ 
           fontFamily: 'var(--font-mono)', 
@@ -96,10 +95,9 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
         </div>
       </div>
 
-      {/* Product List */}
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
         gap: 24 
       }}>
         {bundle.products.map(product => (
@@ -111,7 +109,6 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
         ))}
       </div>
 
-      {/* Add to Cart Bar */}
       {isAdmin ? (
         <div style={{ marginTop: 60, padding: '24px', background: 'var(--line)', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 12,
           textAlign: 'center' }}>
@@ -163,22 +160,56 @@ function BundleProductCard({
   product: Product & { variants: ProductVariant[] }, 
   onVariantSelect: (variantId: string | null) => void 
 }) {
+  const availableFits = useMemo(() => {
+    const rawFits = Array.from(new Set(product.variants.map((v) => v.fit_type as FitType)));
+    const preferredOrder = ['REGULAR', 'OVERSIZED'] as FitType[];
+    return rawFits.sort((a, b) => {
+      const idxA = preferredOrder.indexOf(a);
+      const idxB = preferredOrder.indexOf(b);
+      if (idxA === -1 && idxB === -1) return 0;
+      if (idxA === -1) return 1;
+      if (idxB === -1) return -1;
+      return idxA - idxB;
+    });
+  }, [product.variants]);
+
+  const [selFit, setSelFit] = useState<FitType>(availableFits[0]);
+
+  useEffect(() => {
+    if (availableFits.length > 0 && !availableFits.includes(selFit)) {
+      setSelFit(availableFits[0]);
+    }
+  }, [availableFits, selFit]);
+
+  const currentFitVariants = useMemo(() => {
+    return product.variants.filter((v) => v.fit_type === selFit);
+  }, [product.variants, selFit]);
+
   const uniqueColors = useMemo(() => {
     const map = new Map<string, Color>();
-    product.variants.forEach((v) => {
+    currentFitVariants.forEach((v) => {
       if (!map.has(v.color_name)) {
         map.set(v.color_name, { name: v.color_name, hex: v.color_hex });
       }
     });
     return Array.from(map.values());
-  }, [product.variants]);
+  }, [currentFitVariants]);
 
   const [selColor, setSelColor] = useState<Color | null>(uniqueColors[0] ?? null);
 
+  useEffect(() => {
+    if (uniqueColors.length > 0) {
+      const exists = uniqueColors.find((c) => c.name === selColor?.name);
+      if (!exists) {
+        setSelColor(uniqueColors[0]);
+      }
+    }
+  }, [uniqueColors, selColor]);
+
   const availableSizes = useMemo(() => {
     if (!selColor) return [];
-    return product.variants
-      .filter((v) => v.color_name === selColor.name && v.stock > 0)
+    return currentFitVariants
+      .filter((v) => v.color_name === selColor.name)
       .map((v) => v.size.trim())
       .sort((a, b) => {
         const indexA = SIZE_ORDER.indexOf(a.toUpperCase());
@@ -187,22 +218,26 @@ function BundleProductCard({
         if (indexB === -1) return -1;
         return indexA - indexB;
       });
-  }, [product.variants, selColor]);
+  }, [currentFitVariants, selColor]);
 
   const [selSize, setSelSize] = useState<string | null>(null);
 
-  // Reset size when color changes
+  const getStockForSize = (size: string) => {
+    const v = currentFitVariants.find(v => v.color_name === selColor?.name && v.size.trim() === size);
+    return v?.stock ?? 0;
+  };
+
   useEffect(() => {
     setSelSize(null);
     onVariantSelect(null);
-  }, [selColor]);
+  }, [selFit, selColor]);
 
   const currentVariant = useMemo(() => {
     if (!selColor || !selSize) return null;
-    return product.variants.find(
+    return currentFitVariants.find(
       (v) => v.color_name === selColor.name && v.size.trim() === selSize
     ) || null;
-  }, [product.variants, selColor, selSize]);
+  }, [currentFitVariants, selColor, selSize]);
 
   useEffect(() => {
     if (currentVariant) {
@@ -210,29 +245,20 @@ function BundleProductCard({
     }
   }, [currentVariant]);
 
-  const primaryImage = product.images?.find(img => img.is_primary)?.url || product.images?.[0]?.url || 'editorial-color.jpeg';
+  const primaryImage = product.primary_image || product.images?.[0]?.url || 'editorial-color.jpeg';
 
   return (
     <div style={{ 
       background: 'var(--cream-2)', 
       border: '1px solid var(--line)',
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'row'
     }}>
-      <div style={{ overflow: 'hidden', background: 'var(--cream-2)', aspectRatio: '4/5' }}>
-        <img 
-          src={primaryImage} 
-          alt={product.name}
-          style={{ 
-            width: '100%', 
-            height: '100%', 
-            objectFit: 'cover',
-            display: 'block'
-          }} 
-        />
+      <div style={{ width: '50%', height: '100%', flexShrink: 0, overflow: 'hidden', background: 'var(--cream-2)', aspectRatio: '4/5' }}>
+        <ProductCrop src={primaryImage} scale={2.4} />
       </div>
       
-      <div style={{ padding: 28, flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '18px 28px 28px', flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div style={{ 
           fontFamily: 'var(--font-mono)', 
           fontSize: 9, 
@@ -246,15 +272,62 @@ function BundleProductCard({
         <h3 style={{ 
           fontFamily: 'var(--font-display)', 
           fontSize: 22, 
-          marginBottom: 20, 
           color: 'var(--black)',
-          lineHeight: 1.1
+          lineHeight: 1.1,
+          marginBottom: 6
         }}>
           {product.name.toUpperCase()}
         </h3>
+        {product.subtitle && (
+          <div style={{ 
+            fontFamily: 'var(--font-serif)', 
+            fontStyle: 'italic', 
+            fontSize: 14, 
+            color: 'var(--muted)',
+            marginBottom: 20
+          }}>
+            {product.subtitle}
+          </div>
+        )}
         
         <div style={{ marginTop: 'auto' }}>
-          {/* Color Selection */}
+          {availableFits.length > 1 && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ 
+                fontFamily: 'var(--font-mono)', 
+                fontSize: 9, 
+                color: 'var(--muted)', 
+                textTransform: 'uppercase', 
+                marginBottom: 8 
+              }}>
+                fit: <span style={{ color: 'var(--black)' }}>{selFit}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {availableFits.map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setSelFit(f)}
+                    style={{
+                      padding: '6px 10px',
+                      border: '1px solid',
+                      borderColor: selFit === f ? 'var(--black)' : 'var(--line)',
+                      background: selFit === f ? 'var(--black)' : 'transparent',
+                      color: selFit === f ? 'var(--cream)' : 'var(--ink)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                      fontWeight: 600,
+                      textTransform: 'uppercase'
+                    }}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div style={{ marginBottom: 18 }}>
             <div style={{ 
               fontFamily: 'var(--font-mono)', 
@@ -286,7 +359,6 @@ function BundleProductCard({
             </div>
           </div>
 
-          {/* Size Selection */}
           <div>
             <div style={{ 
               fontFamily: 'var(--font-mono)', 
@@ -297,28 +369,44 @@ function BundleProductCard({
             }}>
               size: <span style={{ color: 'var(--black)' }}>{selSize || 'choose size'}</span>
             </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {availableSizes.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSelSize(s)}
-                  style={{
-                    minWidth: 44,
-                    padding: '8px 10px',
-                    border: '1px solid',
-                    borderColor: selSize === s ? 'var(--black)' : 'var(--line)',
-                    background: selSize === s ? 'var(--black)' : 'transparent',
-                    color: selSize === s ? 'var(--cream)' : 'var(--ink)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 11,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                    fontWeight: 600,
-                  }}
-                >
-                  {s}
-                </button>
-              ))}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+              {availableSizes.map((s) => {
+                const stock = getStockForSize(s);
+                const isSoldOut = stock <= 0;
+                return (
+                  <button
+                    key={s}
+                    disabled={isSoldOut}
+                    onClick={() => setSelSize(s)}
+                    style={{
+                      minWidth: 44,
+                      padding: '8px 10px',
+                      border: '1px solid',
+                      borderColor: isSoldOut ? 'var(--line)' : (selSize === s ? 'var(--black)' : 'var(--line)'),
+                      background: selSize === s ? 'var(--black)' : 'transparent',
+                      color: isSoldOut ? 'var(--muted)' : (selSize === s ? 'var(--cream)' : 'var(--ink)'),
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 11,
+                      cursor: isSoldOut ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.15s',
+                      fontWeight: 600,
+                      opacity: isSoldOut ? 0.4 : 1
+                    }}
+                  >
+                    {s} {isSoldOut && ' (sold out)'}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              color: selSize && getStockForSize(selSize) > 0 ? '#1F8A5B' : (selSize ? '#b91c1c' : 'var(--muted)'),
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              marginTop: 4
+            }}>
+              {selSize ? (getStockForSize(selSize) > 0 ? `${getStockForSize(selSize)} in stock` : 'sold out') : 'select size for stock'}
             </div>
           </div>
         </div>

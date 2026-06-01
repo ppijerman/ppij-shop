@@ -1,6 +1,6 @@
 \restrict dbmate
 
--- Dumped from database version 16.14 (Debian 16.14-1.pgdg13+1)
+-- Dumped from database version 18.3 (Homebrew)
 -- Dumped by pg_dump version 18.3 (Homebrew)
 
 SET statement_timeout = 0;
@@ -212,7 +212,7 @@ CREATE TABLE public.product_variants (
     product_id uuid NOT NULL,
     size character(10),
     stock integer NOT NULL,
-    fit_type character varying(50),
+    fit_type character varying(50) NOT NULL,
     price numeric NOT NULL,
     original_price numeric,
     sku character varying(100) NOT NULL,
@@ -220,6 +220,7 @@ CREATE TABLE public.product_variants (
     color_hex character varying(7),
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT chk_fit_type CHECK (((fit_type)::text = ANY ((ARRAY['REGULAR'::character varying, 'OVERSIZED'::character varying])::text[]))),
     CONSTRAINT chk_original_price CHECK (((original_price IS NULL) OR (original_price >= price))),
     CONSTRAINT chk_price CHECK ((price >= (0)::numeric)),
     CONSTRAINT chk_stock CHECK ((stock >= 0))
@@ -234,7 +235,6 @@ CREATE TABLE public.products (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     name character varying(255) NOT NULL,
     subtitle character varying(255) NOT NULL,
-    fit_type character varying(255) NOT NULL,
     slug character varying(255) NOT NULL,
     category public.product_category NOT NULL,
     "desc" text NOT NULL,
@@ -666,4 +666,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260518190445'),
     ('20260520002041'),
     ('20260526233645'),
-    ('20260527000100');
+    ('20260527000100'),
+    ('20260531012302');
