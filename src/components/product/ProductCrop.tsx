@@ -1,13 +1,14 @@
 interface ProductCropProps {
   src: string;
-  height?: number;
+  height?: number | 'auto';
   scale?: number;
 }
 
-export default function ProductCrop({ src, height = 380, scale = 2.2 }: ProductCropProps) {
+export default function ProductCrop({ src, height = 'auto', scale = 2.2 }: ProductCropProps) {
   return (
     <div style={{
-      width: '100%', height,
+      width: '100%', 
+      height: height === 'auto' ? '100%' : height,
       backgroundImage: `url(${src})`,
       backgroundSize: `${scale * 100}%`,
       backgroundPosition: 'center',

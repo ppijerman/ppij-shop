@@ -62,11 +62,9 @@ export default function ProductList({ initialProducts }: { initialProducts: any[
                     const fits = Array.from(new Set(product.variants?.map((v: any) => v.fit_type)));
                     return fits.map((fit: any) => (
                       <div key={fit} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        {fits.length > 1 && (
-                          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            {fit}
-                          </div>
-                        )}
+                        <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          {fit}
+                        </div>
                         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                           {product.variants
                             ?.filter((v: any) => v.fit_type === fit)

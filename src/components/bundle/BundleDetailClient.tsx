@@ -97,7 +97,7 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
 
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
         gap: 24 
       }}>
         {bundle.products.map(product => (
@@ -252,10 +252,10 @@ function BundleProductCard({
       background: 'var(--cream-2)', 
       border: '1px solid var(--line)',
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'row'
     }}>
-      <div style={{ overflow: 'hidden', background: 'var(--cream-2)', aspectRatio: '4/5' }}>
-        <ProductCrop src={primaryImage} height={450} scale={2.4} />
+      <div style={{ width: '50%', height: '100%', flexShrink: 0, overflow: 'hidden', background: 'var(--cream-2)', aspectRatio: '4/5' }}>
+        <ProductCrop src={primaryImage} scale={2.4} />
       </div>
       
       <div style={{ padding: '18px 28px 28px', flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -369,7 +369,7 @@ function BundleProductCard({
             }}>
               size: <span style={{ color: 'var(--black)' }}>{selSize || 'choose size'}</span>
             </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
               {availableSizes.map((s) => {
                 const stock = getStockForSize(s);
                 const isSoldOut = stock <= 0;
@@ -397,6 +397,16 @@ function BundleProductCard({
                   </button>
                 );
               })}
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              color: selSize && getStockForSize(selSize) > 0 ? '#1F8A5B' : (selSize ? '#b91c1c' : 'var(--muted)'),
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              marginTop: 4
+            }}>
+              {selSize ? (getStockForSize(selSize) > 0 ? `${getStockForSize(selSize)} in stock` : 'sold out') : 'select size for stock'}
             </div>
           </div>
         </div>
