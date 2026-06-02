@@ -39,7 +39,8 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
 
   const handleAdd = async () => {
     if (isComplete) {
-      await addBundleToCartAction(bundle.id);
+      const variantIds = Object.values(selectedVariants);
+      await addBundleToCartAction(bundle.id, variantIds);
       await refreshCart();
       showToast(`✦ added bundle · ${bundle.name}`);
     }

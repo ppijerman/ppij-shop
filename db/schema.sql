@@ -129,6 +129,7 @@ CREATE TABLE public.cart_items (
     quantity integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    selected_variant_ids uuid[] DEFAULT '{}'::uuid[],
     CONSTRAINT cart_items_exclusive_id CHECK ((((variant_id IS NOT NULL) AND (bundle_id IS NULL)) OR ((variant_id IS NULL) AND (bundle_id IS NOT NULL)))),
     CONSTRAINT chk_cart_item_qty CHECK ((quantity > 0))
 );
@@ -667,4 +668,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260520002041'),
     ('20260526233645'),
     ('20260527000100'),
-    ('20260531012302');
+    ('20260531012302'),
+    ('20260602154031');
