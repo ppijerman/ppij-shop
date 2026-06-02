@@ -2,6 +2,7 @@
 
 import { useRouter, useParams } from 'next/navigation';
 import ProductForm from './ProductForm';
+import { useToast } from '@/context/ToastContext';
 
 interface AdminProductEditFormProps {
   initialData: any;
@@ -11,10 +12,11 @@ interface AdminProductEditFormProps {
 export default function AdminProductEditForm({ initialData, updateProduct }: AdminProductEditFormProps) {
   const router = useRouter();
   const { role } = useParams();
+  const { showToast } = useToast();
 
   const handleSubmit = async (formData: FormData) => {
     await updateProduct(formData);
-    alert('Product updated successfully!');
+    showToast('Product updated successfully!');
     router.push(`/admin/${role}/products`);
   };
 

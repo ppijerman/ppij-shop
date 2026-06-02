@@ -5,11 +5,13 @@ import { redirect } from 'next/navigation';
 import { notFound } from 'next/navigation';
 import { updateBundle } from '@/lib/actions/bundles';
 import { generateSlug } from '@/lib/utils';
+import { useToast } from '@/context/ToastContext';
 
 export default async function EditBundle({ params }: { params: Promise<{ id: string, role: string }> }) {
   const { id, role } = await params;
   const bundle = await getBundleById(id);
   const products = await getAllProductsWithVariants();
+  const { showToast } = useToast();
 
   if (!bundle) notFound();
 
@@ -35,6 +37,7 @@ export default async function EditBundle({ params }: { params: Promise<{ id: str
     const variantIds = JSON.parse(formData.get('selectedVariantIds') as string);
 
     await updateBundle(bundleId, { name, skuPrefix, price, originalPrice, description, slug: newSlug, variantIds });
+    showToast('Bundle updated successfully!');
     redirect(`/admin/${role}/bundles`);
   }
 
