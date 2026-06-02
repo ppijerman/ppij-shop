@@ -21,6 +21,11 @@ async function getCartItemStockLimit(cartItemId: string, userId: string): Promis
     SELECT
       CASE
         WHEN ci.variant_id IS NOT NULL THEN pv.stock
+        WHEN array_length(ci.selected_variant_ids, 1) > 0 THEN (
+          SELECT MIN(pv2.stock)
+          FROM product_variants pv2
+          WHERE pv2.id = ANY(ci.selected_variant_ids)
+        )
         ELSE (
           SELECT MIN(bpv.stock)
           FROM bundle_items bi
@@ -59,6 +64,11 @@ export async function getCartItemsAction(): Promise<CartItem[]> {
       COALESCE(pv.price, b.price) AS price,
       CASE
         WHEN ci.variant_id IS NOT NULL THEN pv.stock
+        WHEN array_length(ci.selected_variant_ids, 1) > 0 THEN (
+          SELECT MIN(pv2.stock)
+          FROM product_variants pv2
+          WHERE pv2.id = ANY(ci.selected_variant_ids)
+        )
         ELSE (
           SELECT MIN(bpv.stock)
           FROM bundle_items bi
@@ -155,7 +165,7 @@ export async function addVariantToCartAction(variantId: string, quantity = 1): P
   revalidatePath('/cart');
 }
 
-export async function addBundleToCartAction(bundleId: string, quantity = 1): Promise<void> {
+export async function addBundleToCartAction(bundleId: string, selectedVariantIds: string[], quantity = 1): Promise<void> {
   const user = await getCurrentDbUserOrThrow();
   const safeQuantity = normalizeQuantity(quantity);
 
@@ -168,14 +178,32 @@ export async function addBundleToCartAction(bundleId: string, quantity = 1): Pro
     throw new Error('Bundle is unavailable.');
   }
 
+  if (selectedVariantIds.length > 0) {
+    const variants = await db.query(
+      `SELECT id, stock FROM product_variants WHERE id = ANY($1::uuid[])`,
+      [selectedVariantIds],
+    );
+    
+    if (variants.rowCount !== selectedVariantIds.length) {
+      throw new Error('One or more selected variants are unavailable.');
+    }
+    
+    const oosVariant = variants.rows.find(v => Number(v.stock) <= 0);
+    if (oosVariant) {
+      throw new Error('One of the selected sizes is sold out.');
+    }
+  }
+
   await db.query(
     `
-    INSERT INTO cart_items (user_id, bundle_id, quantity)
-    VALUES ($1, $2, $3)
+    INSERT INTO cart_items (user_id, bundle_id, quantity, selected_variant_ids)
+    VALUES ($1, $2, $3, $4)
     ON CONFLICT (user_id, bundle_id)
-    DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+    DO UPDATE SET 
+      quantity = cart_items.quantity + EXCLUDED.quantity,
+      selected_variant_ids = EXCLUDED.selected_variant_ids
     `,
-    [user.id, bundleId, safeQuantity],
+    [user.id, bundleId, safeQuantity, selectedVariantIds],
   );
 
   revalidatePath('/cart');

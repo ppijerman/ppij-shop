@@ -45,9 +45,9 @@ INSERT INTO "bundles" (name, "desc", price, original_price, slug, sku, created_a
 ('Classic Bundle', 'Totebag + Normal Fit T-Shirt', 38, 43, 'classic-bundle', 'BNDL-CLASSIC', NOW(), NOW());
 
 INSERT INTO "bundle_items" (bundle_id, variant_id)
-SELECT b.id, v.id 
-FROM "bundles" b, "product_variants" v 
-WHERE b.slug = 'classic-bundle' AND v.sku = 'FH-White-S-OVERSIZED';
+SELECT b.id, v.id
+FROM "bundles" b, "product_variants" v
+WHERE b.slug = 'classic-bundle' AND v.sku IN ('FH-White-S-OVERSIZED', 'EK-Natural/Blue-ONESIZE-REGULAR');
 
 INSERT INTO "orders" (user_id, status, total_price, delivery_address, delivery_type, payment_method, created_at, updated_at)
 SELECT 
