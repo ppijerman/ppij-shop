@@ -23,7 +23,7 @@ export default function ProductList({ initialProducts }: { initialProducts: any[
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const deleteProduct = (id: string) => {
+  const removeFromList = (id: string) => {
     setProducts(products.filter(p => p.id !== id));
   };
 
@@ -98,7 +98,7 @@ export default function ProductList({ initialProducts }: { initialProducts: any[
                         onClick={async () => {
                           try {
                             await deleteProduct(product.id);
-                            deleteProduct(product.id);
+                            removeFromList(product.id);
 
                             showToast(`deleted · ${product.name}`);
                             
