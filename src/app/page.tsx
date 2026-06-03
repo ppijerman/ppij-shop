@@ -6,6 +6,8 @@ import CatalogWrapper from "@/components/catalog/CatalogWrapper";
 import { getAllProductsWithVariants } from "@/lib/dal/products";
 import { getAllBundles } from "@/lib/dal/bundles";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const [products, bundles] = await Promise.all([
     getAllProductsWithVariants(),
