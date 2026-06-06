@@ -15,6 +15,7 @@ const SHIPPING_PROVIDERS = ['DHL', 'Hermes', 'DPD', 'UPS', 'FedEx', 'Deutsche Po
 
 type OrderStatusLog = {
   id: string;
+  changed_by_user_id: string | null;
   status: string;
   note: string;
   created_at: string | Date;
@@ -32,6 +33,10 @@ function getActorLabel(log: OrderStatusLog) {
   }
 
   return log.changed_by_email ?? 'System';
+}
+
+function getActorFilterValue(log: OrderStatusLog) {
+  return log.changed_by_user_id ?? `system:${getActorLabel(log)}`;
 }
 
 function getActorName(log: OrderStatusLog) {
@@ -64,6 +69,10 @@ function formatLogDate(value: string | Date) {
   }).format(new Date(value));
 }
 
+function getDateInputValue(value: string | Date) {
+  return new Date(value).toISOString().slice(0, 10);
+}
+
 export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { initialOrder: any, items: any[], statusLogs: OrderStatusLog[] }) {
   const router = useRouter();
   const [status, setStatus] = useState<string>(initialOrder.status);
@@ -76,10 +85,40 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [proofPreviewOpen, setProofPreviewOpen] = useState(false);
+  const [timelineStatusFilter, setTimelineStatusFilter] = useState('');
+  const [timelineActorFilter, setTimelineActorFilter] = useState('');
+  const [timelineFromDate, setTimelineFromDate] = useState('');
+  const [timelineToDate, setTimelineToDate] = useState('');
 
   const isPickup = initialOrder.delivery_type === 'PICKUP';
   const statuses: string[] = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', ...(isPickup ? [] : ['SHIPPED']), 'DONE', 'CANCELLED'];
   const canEditShippingNumber = !isPickup && (initialOrder.status === 'PROCESSING' || initialOrder.status === 'SHIPPED');
+  const timelineStatusOptions = Array.from(new Set(statusLogs.map((log) => log.status)));
+  const timelineActorOptions = Array.from(
+    new Map(statusLogs.map((log) => [getActorFilterValue(log), getActorLabel(log)])).entries(),
+  );
+  const hasTimelineFilters = Boolean(timelineStatusFilter || timelineActorFilter || timelineFromDate || timelineToDate);
+  const filteredStatusLogs = statusLogs.filter((log) => {
+    const logTime = new Date(log.created_at).getTime();
+
+    if (timelineStatusFilter && log.status !== timelineStatusFilter) {
+      return false;
+    }
+
+    if (timelineActorFilter && getActorFilterValue(log) !== timelineActorFilter) {
+      return false;
+    }
+
+    if (timelineFromDate && logTime < new Date(`${timelineFromDate}T00:00:00`).getTime()) {
+      return false;
+    }
+
+    if (timelineToDate && logTime > new Date(`${timelineToDate}T23:59:59.999`).getTime()) {
+      return false;
+    }
+
+    return true;
+  });
 
   useEffect(() => {
     if (!proofPreviewOpen) {
@@ -238,10 +277,86 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
 
         <section style={sectionStyle}>
           <h2 style={h2Style}>Status Timeline</h2>
-          <div style={{ background: 'white', padding: 24, borderRadius: 8, border: '1px solid var(--line)', maxHeight: 520, overflowY: 'auto' }}>
-            {statusLogs.length > 0 ? (
+          <div style={{ background: 'white', borderRadius: 8, border: '1px solid var(--line)', overflow: 'hidden' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr)) auto', gap: 10, padding: 16, borderBottom: '1px solid var(--line)', background: 'var(--cream-2)' }}>
+              <label style={timelineFilterLabelStyle}>
+                Status
+                <select
+                  value={timelineStatusFilter}
+                  onChange={(event) => setTimelineStatusFilter(event.target.value)}
+                  style={timelineFilterControlStyle}
+                >
+                  <option value="">All statuses</option>
+                  {timelineStatusOptions.map((option) => (
+                    <option key={option} value={option}>{getOrderStatusLabel(option)}</option>
+                  ))}
+                </select>
+              </label>
+              <label style={timelineFilterLabelStyle}>
+                User
+                <select
+                  value={timelineActorFilter}
+                  onChange={(event) => setTimelineActorFilter(event.target.value)}
+                  style={timelineFilterControlStyle}
+                >
+                  <option value="">All users</option>
+                  {timelineActorOptions.map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </label>
+              <label style={timelineFilterLabelStyle}>
+                From
+                <input
+                  type="date"
+                  value={timelineFromDate}
+                  onChange={(event) => setTimelineFromDate(event.target.value)}
+                  max={timelineToDate || undefined}
+                  style={timelineFilterControlStyle}
+                />
+              </label>
+              <label style={timelineFilterLabelStyle}>
+                To
+                <input
+                  type="date"
+                  value={timelineToDate}
+                  onChange={(event) => setTimelineToDate(event.target.value)}
+                  min={timelineFromDate || undefined}
+                  style={timelineFilterControlStyle}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setTimelineStatusFilter('');
+                  setTimelineActorFilter('');
+                  setTimelineFromDate('');
+                  setTimelineToDate('');
+                }}
+                disabled={!hasTimelineFilters}
+                style={{
+                  alignSelf: 'end',
+                  height: 37,
+                  padding: '0 14px',
+                  border: '1px solid var(--line)',
+                  borderRadius: 4,
+                  background: hasTimelineFilters ? 'white' : 'var(--cream-2)',
+                  color: hasTimelineFilters ? 'var(--black)' : 'var(--muted)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  cursor: hasTimelineFilters ? 'pointer' : 'not-allowed',
+                }}
+              >
+                Clear
+              </button>
+            </div>
+            <div style={{ padding: 24, maxHeight: 520, overflowY: 'auto' }}>
+            {filteredStatusLogs.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {statusLogs.map((log, index) => {
+                {filteredStatusLogs.map((log, index) => {
                   const actorMeta = getActorMeta(log);
 
                   return (
@@ -252,10 +367,10 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
                         display: 'grid',
                         gridTemplateColumns: '18px 1fr',
                         gap: 12,
-                        paddingBottom: index === statusLogs.length - 1 ? 0 : 18,
+                        paddingBottom: index === filteredStatusLogs.length - 1 ? 0 : 18,
                       }}
                     >
-                      {index !== statusLogs.length - 1 && (
+                      {index !== filteredStatusLogs.length - 1 && (
                         <span
                           aria-hidden="true"
                           style={{
@@ -303,9 +418,10 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
               </div>
             ) : (
               <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.5 }}>
-                No status changes have been logged yet.
+                {statusLogs.length > 0 ? 'No status changes match these filters.' : 'No status changes have been logged yet.'}
               </p>
             )}
+            </div>
           </div>
         </section>
       </div>
@@ -636,6 +752,31 @@ const thStyle: React.CSSProperties = { padding: '12px 16px', fontFamily: 'var(--
 const tdStyle: React.CSSProperties = { padding: '16px', fontSize: 14 };
 const infoLabel: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 4 };
 const infoValue: React.CSSProperties = { fontSize: 15, marginBottom: 16, fontWeight: 500 };
+const timelineFilterLabelStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+  fontFamily: 'var(--font-mono)',
+  fontSize: 9,
+  fontWeight: 700,
+  letterSpacing: '0.12em',
+  textTransform: 'uppercase',
+  color: 'var(--muted)',
+};
+const timelineFilterControlStyle: React.CSSProperties = {
+  width: '100%',
+  height: 37,
+  border: '1px solid var(--line)',
+  borderRadius: 4,
+  background: 'white',
+  color: 'var(--black)',
+  fontFamily: 'inherit',
+  fontSize: 11,
+  letterSpacing: 0,
+  textTransform: 'none',
+  padding: '0 10px',
+  boxSizing: 'border-box',
+};
 const timelineNoteStyle: React.CSSProperties = {
   display: '-webkit-box',
   WebkitLineClamp: 2,

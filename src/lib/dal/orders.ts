@@ -118,7 +118,7 @@ export async function getOrderStatusLogs(orderId: string) {
     FROM order_status_logs osl
     LEFT JOIN users u ON u.id = osl.changed_by_user_id
     WHERE osl.order_id = $1
-    ORDER BY osl.created_at ASC, osl.id ASC
+    ORDER BY osl.created_at DESC, osl.id DESC
     `,
     [orderId],
   )
