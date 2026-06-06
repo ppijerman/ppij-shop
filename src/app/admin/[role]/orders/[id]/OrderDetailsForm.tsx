@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getOrderStatusLabel } from '@/lib/orderStatus';
+import { getOrderStatusColor, getOrderStatusLabel } from '@/lib/orderStatus';
 import {
   approvePaymentAction,
   rejectPaymentAction,
@@ -13,7 +13,58 @@ import {
 
 const SHIPPING_PROVIDERS = ['DHL', 'Hermes', 'DPD', 'UPS', 'FedEx', 'Deutsche Post', 'Pickup / Manual'] as const;
 
-export default function OrderDetailsForm({ initialOrder, items }: { initialOrder: any, items: any[] }) {
+type OrderStatusLog = {
+  id: string;
+  status: string;
+  note: string;
+  created_at: string | Date;
+  changed_by_first_name: string | null;
+  changed_by_last_name: string | null;
+  changed_by_email: string | null;
+  changed_by_role: string | null;
+};
+
+function getActorLabel(log: OrderStatusLog) {
+  const fullName = [log.changed_by_first_name, log.changed_by_last_name].filter(Boolean).join(' ').trim();
+
+  if (fullName) {
+    return fullName;
+  }
+
+  return log.changed_by_email ?? 'System';
+}
+
+function getActorName(log: OrderStatusLog) {
+  return [log.changed_by_first_name, log.changed_by_last_name].filter(Boolean).join(' ').trim();
+}
+
+function formatActorRole(role: string) {
+  return role
+    .replace('ADMIN_', 'Admin ')
+    .replace('BUYER', 'Buyer')
+    .replace('_', ' ');
+}
+
+function getActorMeta(log: OrderStatusLog) {
+  if (!log.changed_by_role && !log.changed_by_email) {
+    return null;
+  }
+
+  const fullName = getActorName(log);
+  const role = log.changed_by_role ? formatActorRole(log.changed_by_role) : null;
+  const email = fullName ? log.changed_by_email : null;
+
+  return [role, email].filter(Boolean).join(' / ');
+}
+
+function formatLogDate(value: string | Date) {
+  return new Intl.DateTimeFormat('en-DE', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value));
+}
+
+export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { initialOrder: any, items: any[], statusLogs: OrderStatusLog[] }) {
   const router = useRouter();
   const [status, setStatus] = useState<string>(initialOrder.status);
   const [shippingProvider, setShippingProvider] = useState<string>(initialOrder.shipping_provider ?? '');
@@ -29,6 +80,19 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
   const isPickup = initialOrder.delivery_type === 'PICKUP';
   const statuses: string[] = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', ...(isPickup ? [] : ['SHIPPED']), 'DONE', 'CANCELLED'];
   const canEditShippingNumber = !isPickup && (initialOrder.status === 'PROCESSING' || initialOrder.status === 'SHIPPED');
+
+  useEffect(() => {
+    if (!proofPreviewOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [proofPreviewOpen]);
 
   const handleUpdateStatus = async () => {
     try {
@@ -169,6 +233,79 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
                 </tr>
               </tfoot>
             </table>
+          </div>
+        </section>
+
+        <section style={sectionStyle}>
+          <h2 style={h2Style}>Status Timeline</h2>
+          <div style={{ background: 'white', padding: 24, borderRadius: 8, border: '1px solid var(--line)', maxHeight: 520, overflowY: 'auto' }}>
+            {statusLogs.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {statusLogs.map((log, index) => {
+                  const actorMeta = getActorMeta(log);
+
+                  return (
+                    <div
+                      key={log.id}
+                      style={{
+                        position: 'relative',
+                        display: 'grid',
+                        gridTemplateColumns: '18px 1fr',
+                        gap: 12,
+                        paddingBottom: index === statusLogs.length - 1 ? 0 : 18,
+                      }}
+                    >
+                      {index !== statusLogs.length - 1 && (
+                        <span
+                          aria-hidden="true"
+                          style={{
+                            position: 'absolute',
+                            top: 18,
+                            bottom: 0,
+                            left: 7,
+                            width: 1,
+                            background: 'var(--line)',
+                          }}
+                        />
+                      )}
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          position: 'relative',
+                          zIndex: 1,
+                          width: 15,
+                          height: 15,
+                          marginTop: 2,
+                          borderRadius: '50%',
+                          background: getOrderStatusColor(log.status),
+                          border: '3px solid white',
+                          boxShadow: '0 0 0 1px var(--line)',
+                        }}
+                      />
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', marginBottom: 4 }}>
+                          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                            {getOrderStatusLabel(log.status)}
+                          </p>
+                          <time dateTime={new Date(log.created_at).toISOString()} style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                            {formatLogDate(log.created_at)}
+                          </time>
+                        </div>
+                        <p style={timelineNoteStyle}>{log.note}</p>
+                        <p style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.35 }}>
+                          Changed by <span style={{ color: 'var(--black)', fontWeight: 600 }}>{getActorLabel(log)}</span>
+                          {actorMeta ? ` (${actorMeta})` : ''}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.5 }}>
+                No status changes have been logged yet.
+              </p>
+            )}
           </div>
         </section>
       </div>
@@ -499,3 +636,13 @@ const thStyle: React.CSSProperties = { padding: '12px 16px', fontFamily: 'var(--
 const tdStyle: React.CSSProperties = { padding: '16px', fontSize: 14 };
 const infoLabel: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 4 };
 const infoValue: React.CSSProperties = { fontSize: 15, marginBottom: 16, fontWeight: 500 };
+const timelineNoteStyle: React.CSSProperties = {
+  display: '-webkit-box',
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: 'vertical',
+  overflow: 'hidden',
+  wordBreak: 'break-word',
+  fontSize: 13,
+  lineHeight: 1.45,
+  marginBottom: 6,
+};

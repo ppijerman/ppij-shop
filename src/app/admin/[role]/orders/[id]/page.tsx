@@ -1,4 +1,4 @@
-import { getOrderById, getOrderItems } from '@/lib/dal/orders';
+import { getOrderById, getOrderItems, getOrderStatusLogs } from '@/lib/dal/orders';
 import { notFound } from 'next/navigation';
 import OrderDetailsForm from './OrderDetailsForm';
 
@@ -8,7 +8,10 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 
   if (!order) notFound();
 
-  const items = await getOrderItems(id);
+  const [items, statusLogs] = await Promise.all([
+    getOrderItems(id),
+    getOrderStatusLogs(id),
+  ]);
 
   return (
     <div>
@@ -16,7 +19,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>ORDERS / {id.substring(0, 8)}</p>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 48 }}>ORDER DETAILS</h1>
       </div>
-      <OrderDetailsForm initialOrder={order} items={items} />
+      <OrderDetailsForm initialOrder={order} items={items} statusLogs={statusLogs} />
     </div>
   );
 }
