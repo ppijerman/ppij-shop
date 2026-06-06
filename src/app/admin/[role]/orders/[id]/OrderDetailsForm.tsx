@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getOrderStatusColor, getOrderStatusLabel } from '@/lib/orderStatus';
 import {
+  addOrderTimelineCommentAction,
   approvePaymentAction,
   rejectPaymentAction,
   updateOrderStatusAction,
@@ -85,6 +86,10 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [proofPreviewOpen, setProofPreviewOpen] = useState(false);
+  const [statusComment, setStatusComment] = useState('');
+  const [timelineComment, setTimelineComment] = useState('');
+  const [timelineCommentError, setTimelineCommentError] = useState<string | null>(null);
+  const [timelineCommentSuccess, setTimelineCommentSuccess] = useState<string | null>(null);
   const [timelineStatusFilter, setTimelineStatusFilter] = useState('');
   const [timelineActorFilter, setTimelineActorFilter] = useState('');
   const [timelineFromDate, setTimelineFromDate] = useState('');
@@ -138,17 +143,40 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
       setLoading(true);
       setError(null);
       setSuccess(null);
-      const result = await updateOrderStatusAction(initialOrder.id, status);
+      const result = await updateOrderStatusAction(initialOrder.id, status, statusComment);
 
       if (!result.ok) {
         setError(result.message);
         return;
       }
 
+      setStatusComment('');
       setSuccess(result.message ?? 'Status updated.');
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update status. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleAddTimelineComment = async () => {
+    try {
+      setLoading(true);
+      setTimelineCommentError(null);
+      setTimelineCommentSuccess(null);
+      const result = await addOrderTimelineCommentAction(initialOrder.id, timelineComment);
+
+      if (!result.ok) {
+        setTimelineCommentError(result.message);
+        return;
+      }
+
+      setTimelineComment('');
+      setTimelineCommentSuccess(result.message ?? 'Comment added.');
+      router.refresh();
+    } catch (err) {
+      setTimelineCommentError(err instanceof Error ? err.message : 'Failed to add comment. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -437,6 +465,17 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
             >
               {statuses.map(s => <option key={s} value={s}>{getOrderStatusLabel(s)}</option>)}
             </select>
+            <label htmlFor="status-comment" style={infoLabel}>Optional comment</label>
+            <textarea
+              id="status-comment"
+              value={statusComment}
+              onChange={(event) => setStatusComment(event.target.value)}
+              disabled={loading}
+              placeholder="e.g. Buyer sent proof via Email"
+              rows={3}
+              maxLength={500}
+              style={textareaStyle}
+            />
             {error && (
             <div style={{
               background: '#fef2f2',
@@ -482,6 +521,68 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
           >
             {loading ? 'UPDATING...' : 'UPDATE STATUS'}
           </button>
+          </div>
+        </section>
+
+        <section style={sectionStyle}>
+          <h2 style={h2Style}>Add Comment</h2>
+          <div style={{ background: 'white', padding: 24, borderRadius: 8, border: '1px solid var(--line)' }}>
+            <label htmlFor="timeline-comment" style={infoLabel}>Timeline Note</label>
+            <textarea
+              id="timeline-comment"
+              value={timelineComment}
+              onChange={(event) => setTimelineComment(event.target.value)}
+              disabled={loading}
+              placeholder="Add an note without changing status"
+              rows={4}
+              maxLength={500}
+              style={textareaStyle}
+            />
+            {timelineCommentError && (
+              <div style={{
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                color: '#b91c1c',
+                padding: '8px 12px',
+                borderRadius: 4,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                marginBottom: 12,
+              }}>
+                {timelineCommentError}
+              </div>
+            )}
+            {timelineCommentSuccess && (
+              <div style={{
+                background: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                color: '#166534',
+                padding: '8px 12px',
+                borderRadius: 4,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                marginBottom: 12,
+              }}>
+                {timelineCommentSuccess}
+              </div>
+            )}
+            <button
+              onClick={handleAddTimelineComment}
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: loading ? 'var(--muted)' : 'var(--black)',
+                color: 'var(--cream)',
+                border: 'none',
+                borderRadius: 4,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 12,
+                cursor: loading ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {loading ? 'ADDING...' : 'ADD COMMENT'}
+            </button>
           </div>
         </section>
 
@@ -568,17 +669,7 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
                 disabled={loading}
                 placeholder="e.g. Saturday 14 June, 14:00 at Mensa TU Berlin"
                 rows={4}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: 4,
-                  border: '1px solid var(--line)',
-                  fontSize: 14,
-                  marginBottom: 12,
-                  resize: 'vertical',
-                  fontFamily: 'inherit',
-                  boxSizing: 'border-box',
-                }}
+                style={textareaStyle}
               />
               <button
                 onClick={handleSavePickupDetails}
@@ -752,6 +843,17 @@ const thStyle: React.CSSProperties = { padding: '12px 16px', fontFamily: 'var(--
 const tdStyle: React.CSSProperties = { padding: '16px', fontSize: 14 };
 const infoLabel: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 4 };
 const infoValue: React.CSSProperties = { fontSize: 15, marginBottom: 16, fontWeight: 500 };
+const textareaStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '12px',
+  borderRadius: 4,
+  border: '1px solid var(--line)',
+  fontSize: 14,
+  marginBottom: 12,
+  resize: 'vertical',
+  fontFamily: 'inherit',
+  boxSizing: 'border-box',
+};
 const timelineFilterLabelStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
@@ -782,6 +884,7 @@ const timelineNoteStyle: React.CSSProperties = {
   WebkitLineClamp: 2,
   WebkitBoxOrient: 'vertical',
   overflow: 'hidden',
+  whiteSpace: 'pre-line',
   wordBreak: 'break-word',
   fontSize: 13,
   lineHeight: 1.45,

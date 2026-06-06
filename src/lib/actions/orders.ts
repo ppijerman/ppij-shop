@@ -10,6 +10,7 @@ const ORDER_STATUSES = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', 'SHI
 const PAYMENT_METHODS = ['IBAN'] as const;
 const DELIVERY_TYPES = ['PICKUP', 'DELIVERY'] as const;
 const MAX_PROOF_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_TIMELINE_COMMENT_LENGTH = 500;
 const PROOF_MIME_TO_EXT: Record<string, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
@@ -18,6 +19,7 @@ const PROOF_MIME_TO_EXT: Record<string, string> = {
 
 type OrderStatus = (typeof ORDER_STATUSES)[number];
 type DeliveryType = (typeof DELIVERY_TYPES)[number];
+type TimelineCommentValidationResult = { ok: true; comment: string } | { ok: false; message: string };
 
 export type CreateOrderResult =
   | { ok: true; orderId: string }
@@ -63,6 +65,20 @@ function parseDeliveryAddress(formData: FormData, deliveryType: DeliveryType) {
 
 function truncateLogValue(value: string, maxLength: number): string {
   return value.length > maxLength ? `${value.slice(0, maxLength - 3)}...` : value;
+}
+
+function normalizeTimelineComment(commentInput: string): TimelineCommentValidationResult {
+  const comment = commentInput.trim();
+
+  if (!comment) {
+    return { ok: false, message: 'Enter a comment.' };
+  }
+
+  if (comment.length > MAX_TIMELINE_COMMENT_LENGTH) {
+    return { ok: false, message: `Comment must be ${MAX_TIMELINE_COMMENT_LENGTH} characters or fewer.` };
+  }
+
+  return { ok: true, comment };
 }
 
 export async function createOrder(formData: FormData): Promise<CreateOrderResult> {
@@ -333,11 +349,16 @@ export async function uploadPaymentProofAction(formData: FormData): Promise<Simp
   });
 }
 
-export async function updateOrderStatusAction(orderId: string, status: string): Promise<SimpleActionResult> {
+export async function updateOrderStatusAction(orderId: string, status: string, commentInput = ''): Promise<SimpleActionResult> {
   const admin = await requireOrderAdmin();
+  const comment = commentInput.trim();
 
   if (!isOrderStatus(status)) {
     return { ok: false, message: 'Invalid order status.' };
+  }
+
+  if (comment.length > MAX_TIMELINE_COMMENT_LENGTH) {
+    return { ok: false, message: `Comment must be ${MAX_TIMELINE_COMMENT_LENGTH} characters or fewer.` };
   }
 
   const result = await withTransaction(async (query) => {
@@ -376,7 +397,12 @@ export async function updateOrderStatusAction(orderId: string, status: string): 
       INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
       VALUES ($1, $2::order_status, $3, $4)
       `,
-      [orderId, status, `Status manually changed to ${status}.`, admin.id],
+      [
+        orderId,
+        status,
+        comment ? `Status manually changed to ${status}.\nReason: ${comment}` : `Status manually changed to ${status}.`,
+        admin.id,
+      ],
     );
 
     return { ok: true, message: 'Status updated.' };
@@ -386,6 +412,49 @@ export async function updateOrderStatusAction(orderId: string, status: string): 
     revalidatePath(`/admin/kk/orders/${orderId}`);
     revalidatePath(`/admin/it/orders/${orderId}`);
     revalidatePath(`/account/orders/${orderId}`);
+  }
+
+  return result;
+}
+
+export async function addOrderTimelineCommentAction(orderId: string, commentInput: string): Promise<SimpleActionResult> {
+  const admin = await requireOrderAdmin();
+  const normalized = normalizeTimelineComment(commentInput);
+
+  if (!normalized.ok) {
+    return normalized;
+  }
+
+  const result = await withTransaction(async (query) => {
+    const orderResult = await query(
+      `
+      SELECT id, status
+      FROM orders
+      WHERE id = $1
+      FOR UPDATE
+      `,
+      [orderId],
+    );
+    const order = orderResult.rows[0];
+
+    if (!order) {
+      return { ok: false, message: 'Order not found.' };
+    }
+
+    await query(
+      `
+      INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+      VALUES ($1, $2::order_status, $3, $4)
+      `,
+      [orderId, order.status, `Admin comment: ${normalized.comment}`, admin.id],
+    );
+
+    return { ok: true, message: 'Comment added.' };
+  });
+
+  if (result.ok) {
+    revalidatePath(`/admin/kk/orders/${orderId}`);
+    revalidatePath(`/admin/it/orders/${orderId}`);
   }
 
   return result;
