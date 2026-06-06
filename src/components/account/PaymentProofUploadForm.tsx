@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { uploadPaymentProofAction } from '@/lib/actions/orders';
 
+const MAX_PROOF_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_PROOF_SIZE_LABEL = '5 MB';
+
 export default function PaymentProofUploadForm({ orderId }: { orderId: string }) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
@@ -15,8 +18,8 @@ export default function PaymentProofUploadForm({ orderId }: { orderId: string })
     setError(null);
 
     const file = formData.get('paymentProof');
-    if (file instanceof File && file.size > 5 * 1024 * 1024) {
-      setError('Payment proof must be 5 MB or smaller.');
+    if (file instanceof File && file.size > MAX_PROOF_SIZE_BYTES) {
+      setError(`Payment proof must be ${MAX_PROOF_SIZE_LABEL} or smaller.`);
       return;
     }
 
@@ -41,6 +44,18 @@ export default function PaymentProofUploadForm({ orderId }: { orderId: string })
         type="file"
         accept="image/jpeg,image/png,image/webp"
         required
+        onChange={(event) => {
+          const file = event.currentTarget.files?.[0];
+
+          if (file && file.size > MAX_PROOF_SIZE_BYTES) {
+            event.currentTarget.value = '';
+            setMessage(null);
+            setError(`Payment proof must be ${MAX_PROOF_SIZE_LABEL} or smaller.`);
+            return;
+          }
+
+          setError(null);
+        }}
         style={{ border: '1px solid var(--line)', background: 'white', padding: 12, fontSize: 13 }}
       />
       {error && <p style={{ color: '#b91c1c', fontSize: 12 }}>{error}</p>}
