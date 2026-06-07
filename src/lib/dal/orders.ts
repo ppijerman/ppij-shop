@@ -100,3 +100,27 @@ export async function getOrderItems(orderId: string) {
   )
   return res.rows
 }
+
+export async function getOrderStatusLogs(orderId: string) {
+  const res = await db.query(
+    `
+    SELECT
+      osl.id,
+      osl.order_id,
+      osl.changed_by_user_id,
+      osl.status,
+      osl.note,
+      osl.created_at,
+      u.first_name AS changed_by_first_name,
+      u.last_name AS changed_by_last_name,
+      u.email AS changed_by_email,
+      u.role AS changed_by_role
+    FROM order_status_logs osl
+    LEFT JOIN users u ON u.id = osl.changed_by_user_id
+    WHERE osl.order_id = $1
+    ORDER BY osl.created_at DESC, osl.id DESC
+    `,
+    [orderId],
+  )
+  return res.rows
+}

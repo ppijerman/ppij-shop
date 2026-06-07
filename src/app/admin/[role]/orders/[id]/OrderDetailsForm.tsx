@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getOrderStatusLabel } from '@/lib/orderStatus';
+import { getOrderStatusColor, getOrderStatusLabel } from '@/lib/orderStatus';
 import {
+  addOrderTimelineCommentAction,
   approvePaymentAction,
   rejectPaymentAction,
   updateOrderStatusAction,
@@ -13,7 +14,67 @@ import {
 
 const SHIPPING_PROVIDERS = ['DHL', 'Hermes', 'DPD', 'UPS', 'FedEx', 'Deutsche Post', 'Pickup / Manual'] as const;
 
-export default function OrderDetailsForm({ initialOrder, items }: { initialOrder: any, items: any[] }) {
+type OrderStatusLog = {
+  id: string;
+  changed_by_user_id: string | null;
+  status: string;
+  note: string;
+  created_at: string | Date;
+  changed_by_first_name: string | null;
+  changed_by_last_name: string | null;
+  changed_by_email: string | null;
+  changed_by_role: string | null;
+};
+
+function getActorLabel(log: OrderStatusLog) {
+  const fullName = [log.changed_by_first_name, log.changed_by_last_name].filter(Boolean).join(' ').trim();
+
+  if (fullName) {
+    return fullName;
+  }
+
+  return log.changed_by_email ?? 'System';
+}
+
+function getActorFilterValue(log: OrderStatusLog) {
+  return log.changed_by_user_id ?? `system:${getActorLabel(log)}`;
+}
+
+function getActorName(log: OrderStatusLog) {
+  return [log.changed_by_first_name, log.changed_by_last_name].filter(Boolean).join(' ').trim();
+}
+
+function formatActorRole(role: string) {
+  return role
+    .replace('ADMIN_', 'Admin ')
+    .replace('BUYER', 'Buyer')
+    .replace('_', ' ');
+}
+
+function getActorMeta(log: OrderStatusLog) {
+  if (!log.changed_by_role && !log.changed_by_email) {
+    return null;
+  }
+
+  const fullName = getActorName(log);
+  const role = log.changed_by_role ? formatActorRole(log.changed_by_role) : null;
+  const email = fullName ? log.changed_by_email : null;
+
+  return [role, email].filter(Boolean).join(' / ');
+}
+
+function formatLogDate(value: string | Date) {
+  return new Intl.DateTimeFormat('en-DE', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value));
+}
+
+function getDateInputValue(value: string | Date) {
+  return new Date(value).toISOString().slice(0, 10);
+}
+
+export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { initialOrder: any, items: any[], statusLogs: OrderStatusLog[] }) {
   const router = useRouter();
   const [status, setStatus] = useState<string>(initialOrder.status);
   const [shippingProvider, setShippingProvider] = useState<string>(initialOrder.shipping_provider ?? '');
@@ -25,27 +86,97 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [proofPreviewOpen, setProofPreviewOpen] = useState(false);
+  const [statusComment, setStatusComment] = useState('');
+  const [timelineComment, setTimelineComment] = useState('');
+  const [timelineCommentError, setTimelineCommentError] = useState<string | null>(null);
+  const [timelineCommentSuccess, setTimelineCommentSuccess] = useState<string | null>(null);
+  const [timelineStatusFilter, setTimelineStatusFilter] = useState('');
+  const [timelineActorFilter, setTimelineActorFilter] = useState('');
+  const [timelineFromDate, setTimelineFromDate] = useState('');
+  const [timelineToDate, setTimelineToDate] = useState('');
 
   const isPickup = initialOrder.delivery_type === 'PICKUP';
   const statuses: string[] = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', ...(isPickup ? [] : ['SHIPPED']), 'DONE', 'CANCELLED'];
   const canEditShippingNumber = !isPickup && (initialOrder.status === 'PROCESSING' || initialOrder.status === 'SHIPPED');
+  const timelineStatusOptions = Array.from(new Set(statusLogs.map((log) => log.status)));
+  const timelineActorOptions = Array.from(
+    new Map(statusLogs.map((log) => [getActorFilterValue(log), getActorLabel(log)])).entries(),
+  );
+  const hasTimelineFilters = Boolean(timelineStatusFilter || timelineActorFilter || timelineFromDate || timelineToDate);
+  const filteredStatusLogs = statusLogs.filter((log) => {
+    const logTime = new Date(log.created_at).getTime();
+
+    if (timelineStatusFilter && log.status !== timelineStatusFilter) {
+      return false;
+    }
+
+    if (timelineActorFilter && getActorFilterValue(log) !== timelineActorFilter) {
+      return false;
+    }
+
+    if (timelineFromDate && logTime < new Date(`${timelineFromDate}T00:00:00`).getTime()) {
+      return false;
+    }
+
+    if (timelineToDate && logTime > new Date(`${timelineToDate}T23:59:59.999`).getTime()) {
+      return false;
+    }
+
+    return true;
+  });
+
+  useEffect(() => {
+    if (!proofPreviewOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [proofPreviewOpen]);
 
   const handleUpdateStatus = async () => {
     try {
       setLoading(true);
       setError(null);
       setSuccess(null);
-      const result = await updateOrderStatusAction(initialOrder.id, status);
+      const result = await updateOrderStatusAction(initialOrder.id, status, statusComment);
 
       if (!result.ok) {
         setError(result.message);
         return;
       }
 
+      setStatusComment('');
       setSuccess(result.message ?? 'Status updated.');
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update status. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleAddTimelineComment = async () => {
+    try {
+      setLoading(true);
+      setTimelineCommentError(null);
+      setTimelineCommentSuccess(null);
+      const result = await addOrderTimelineCommentAction(initialOrder.id, timelineComment);
+
+      if (!result.ok) {
+        setTimelineCommentError(result.message);
+        return;
+      }
+
+      setTimelineComment('');
+      setTimelineCommentSuccess(result.message ?? 'Comment added.');
+      router.refresh();
+    } catch (err) {
+      setTimelineCommentError(err instanceof Error ? err.message : 'Failed to add comment. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -171,6 +302,156 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
             </table>
           </div>
         </section>
+
+        <section style={sectionStyle}>
+          <h2 style={h2Style}>Status Timeline</h2>
+          <div style={{ background: 'white', borderRadius: 8, border: '1px solid var(--line)', overflow: 'hidden' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr)) auto', gap: 10, padding: 16, borderBottom: '1px solid var(--line)', background: 'var(--cream-2)' }}>
+              <label style={timelineFilterLabelStyle}>
+                Status
+                <select
+                  value={timelineStatusFilter}
+                  onChange={(event) => setTimelineStatusFilter(event.target.value)}
+                  style={timelineFilterControlStyle}
+                >
+                  <option value="">All statuses</option>
+                  {timelineStatusOptions.map((option) => (
+                    <option key={option} value={option}>{getOrderStatusLabel(option)}</option>
+                  ))}
+                </select>
+              </label>
+              <label style={timelineFilterLabelStyle}>
+                User
+                <select
+                  value={timelineActorFilter}
+                  onChange={(event) => setTimelineActorFilter(event.target.value)}
+                  style={timelineFilterControlStyle}
+                >
+                  <option value="">All users</option>
+                  {timelineActorOptions.map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </label>
+              <label style={timelineFilterLabelStyle}>
+                From
+                <input
+                  type="date"
+                  value={timelineFromDate}
+                  onChange={(event) => setTimelineFromDate(event.target.value)}
+                  max={timelineToDate || undefined}
+                  style={timelineFilterControlStyle}
+                />
+              </label>
+              <label style={timelineFilterLabelStyle}>
+                To
+                <input
+                  type="date"
+                  value={timelineToDate}
+                  onChange={(event) => setTimelineToDate(event.target.value)}
+                  min={timelineFromDate || undefined}
+                  style={timelineFilterControlStyle}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setTimelineStatusFilter('');
+                  setTimelineActorFilter('');
+                  setTimelineFromDate('');
+                  setTimelineToDate('');
+                }}
+                disabled={!hasTimelineFilters}
+                style={{
+                  alignSelf: 'end',
+                  height: 37,
+                  padding: '0 14px',
+                  border: '1px solid var(--line)',
+                  borderRadius: 4,
+                  background: hasTimelineFilters ? 'white' : 'var(--cream-2)',
+                  color: hasTimelineFilters ? 'var(--black)' : 'var(--muted)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  cursor: hasTimelineFilters ? 'pointer' : 'not-allowed',
+                }}
+              >
+                Clear
+              </button>
+            </div>
+            <div style={{ padding: 24, maxHeight: 520, overflowY: 'auto' }}>
+            {filteredStatusLogs.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {filteredStatusLogs.map((log, index) => {
+                  const actorMeta = getActorMeta(log);
+
+                  return (
+                    <div
+                      key={log.id}
+                      style={{
+                        position: 'relative',
+                        display: 'grid',
+                        gridTemplateColumns: '18px 1fr',
+                        gap: 12,
+                        paddingBottom: index === filteredStatusLogs.length - 1 ? 0 : 18,
+                      }}
+                    >
+                      {index !== filteredStatusLogs.length - 1 && (
+                        <span
+                          aria-hidden="true"
+                          style={{
+                            position: 'absolute',
+                            top: 18,
+                            bottom: 0,
+                            left: 7,
+                            width: 1,
+                            background: 'var(--line)',
+                          }}
+                        />
+                      )}
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          position: 'relative',
+                          zIndex: 1,
+                          width: 15,
+                          height: 15,
+                          marginTop: 2,
+                          borderRadius: '50%',
+                          background: getOrderStatusColor(log.status),
+                          border: '3px solid white',
+                          boxShadow: '0 0 0 1px var(--line)',
+                        }}
+                      />
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', marginBottom: 4 }}>
+                          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                            {getOrderStatusLabel(log.status)}
+                          </p>
+                          <time dateTime={new Date(log.created_at).toISOString()} style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                            {formatLogDate(log.created_at)}
+                          </time>
+                        </div>
+                        <p style={timelineNoteStyle}>{log.note}</p>
+                        <p style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.35 }}>
+                          Changed by <span style={{ color: 'var(--black)', fontWeight: 600 }}>{getActorLabel(log)}</span>
+                          {actorMeta ? ` (${actorMeta})` : ''}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.5 }}>
+                {statusLogs.length > 0 ? 'No status changes match these filters.' : 'No status changes have been logged yet.'}
+              </p>
+            )}
+            </div>
+          </div>
+        </section>
       </div>
 
       <div>
@@ -184,6 +465,17 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
             >
               {statuses.map(s => <option key={s} value={s}>{getOrderStatusLabel(s)}</option>)}
             </select>
+            <label htmlFor="status-comment" style={infoLabel}>Optional comment</label>
+            <textarea
+              id="status-comment"
+              value={statusComment}
+              onChange={(event) => setStatusComment(event.target.value)}
+              disabled={loading}
+              placeholder="e.g. Buyer sent proof via Email"
+              rows={3}
+              maxLength={500}
+              style={textareaStyle}
+            />
             {error && (
             <div style={{
               background: '#fef2f2',
@@ -229,6 +521,68 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
           >
             {loading ? 'UPDATING...' : 'UPDATE STATUS'}
           </button>
+          </div>
+        </section>
+
+        <section style={sectionStyle}>
+          <h2 style={h2Style}>Add Comment</h2>
+          <div style={{ background: 'white', padding: 24, borderRadius: 8, border: '1px solid var(--line)' }}>
+            <label htmlFor="timeline-comment" style={infoLabel}>Timeline Note</label>
+            <textarea
+              id="timeline-comment"
+              value={timelineComment}
+              onChange={(event) => setTimelineComment(event.target.value)}
+              disabled={loading}
+              placeholder="Add an note without changing status"
+              rows={4}
+              maxLength={500}
+              style={textareaStyle}
+            />
+            {timelineCommentError && (
+              <div style={{
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                color: '#b91c1c',
+                padding: '8px 12px',
+                borderRadius: 4,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                marginBottom: 12,
+              }}>
+                {timelineCommentError}
+              </div>
+            )}
+            {timelineCommentSuccess && (
+              <div style={{
+                background: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                color: '#166534',
+                padding: '8px 12px',
+                borderRadius: 4,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                marginBottom: 12,
+              }}>
+                {timelineCommentSuccess}
+              </div>
+            )}
+            <button
+              onClick={handleAddTimelineComment}
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: loading ? 'var(--muted)' : 'var(--black)',
+                color: 'var(--cream)',
+                border: 'none',
+                borderRadius: 4,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 12,
+                cursor: loading ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {loading ? 'ADDING...' : 'ADD COMMENT'}
+            </button>
           </div>
         </section>
 
@@ -315,17 +669,7 @@ export default function OrderDetailsForm({ initialOrder, items }: { initialOrder
                 disabled={loading}
                 placeholder="e.g. Saturday 14 June, 14:00 at Mensa TU Berlin"
                 rows={4}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: 4,
-                  border: '1px solid var(--line)',
-                  fontSize: 14,
-                  marginBottom: 12,
-                  resize: 'vertical',
-                  fontFamily: 'inherit',
-                  boxSizing: 'border-box',
-                }}
+                style={textareaStyle}
               />
               <button
                 onClick={handleSavePickupDetails}
@@ -499,3 +843,50 @@ const thStyle: React.CSSProperties = { padding: '12px 16px', fontFamily: 'var(--
 const tdStyle: React.CSSProperties = { padding: '16px', fontSize: 14 };
 const infoLabel: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 4 };
 const infoValue: React.CSSProperties = { fontSize: 15, marginBottom: 16, fontWeight: 500 };
+const textareaStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '12px',
+  borderRadius: 4,
+  border: '1px solid var(--line)',
+  fontSize: 14,
+  marginBottom: 12,
+  resize: 'vertical',
+  fontFamily: 'inherit',
+  boxSizing: 'border-box',
+};
+const timelineFilterLabelStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+  fontFamily: 'var(--font-mono)',
+  fontSize: 9,
+  fontWeight: 700,
+  letterSpacing: '0.12em',
+  textTransform: 'uppercase',
+  color: 'var(--muted)',
+};
+const timelineFilterControlStyle: React.CSSProperties = {
+  width: '100%',
+  height: 37,
+  border: '1px solid var(--line)',
+  borderRadius: 4,
+  background: 'white',
+  color: 'var(--black)',
+  fontFamily: 'inherit',
+  fontSize: 11,
+  letterSpacing: 0,
+  textTransform: 'none',
+  padding: '0 10px',
+  boxSizing: 'border-box',
+};
+const timelineNoteStyle: React.CSSProperties = {
+  display: '-webkit-box',
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: 'vertical',
+  overflow: 'hidden',
+  whiteSpace: 'pre-line',
+  wordBreak: 'break-word',
+  fontSize: 13,
+  lineHeight: 1.45,
+  marginBottom: 6,
+};

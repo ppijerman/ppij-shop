@@ -3,6 +3,7 @@ import { getCurrentDbUserOrThrow } from '@/lib/users';
 import { getPaymentInstruction } from '@/lib/payment';
 import { getOrderStatusLabel } from '@/lib/orderStatus';
 import PaymentProofUploadForm from '@/components/account/PaymentProofUploadForm';
+import PaymentProofPreviewButton from '@/components/account/PaymentProofPreviewButton';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
@@ -83,9 +84,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   <p style={{ fontSize: 13, color: 'var(--muted)' }}>Payment review is complete or no longer editable.</p>
                 )}
                 {order.payment_proof_url && (
-                  <a href={order.payment_proof_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 12, fontSize: 13, color: 'var(--black)', fontWeight: 700, textDecoration: 'underline' }}>
-                    View uploaded proof
-                  </a>
+                  <PaymentProofPreviewButton proofUrl={order.payment_proof_url} orderId={order.id} />
                 )}
               </div>
             </div>

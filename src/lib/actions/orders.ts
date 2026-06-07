@@ -10,6 +10,7 @@ const ORDER_STATUSES = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', 'SHI
 const PAYMENT_METHODS = ['IBAN'] as const;
 const DELIVERY_TYPES = ['PICKUP', 'DELIVERY'] as const;
 const MAX_PROOF_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_TIMELINE_COMMENT_LENGTH = 500;
 const PROOF_MIME_TO_EXT: Record<string, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
@@ -18,6 +19,7 @@ const PROOF_MIME_TO_EXT: Record<string, string> = {
 
 type OrderStatus = (typeof ORDER_STATUSES)[number];
 type DeliveryType = (typeof DELIVERY_TYPES)[number];
+type TimelineCommentValidationResult = { ok: true; comment: string } | { ok: false; message: string };
 
 export type CreateOrderResult =
   | { ok: true; orderId: string }
@@ -59,6 +61,24 @@ function parseDeliveryAddress(formData: FormData, deliveryType: DeliveryType) {
   }
 
   return address;
+}
+
+function truncateLogValue(value: string, maxLength: number): string {
+  return value.length > maxLength ? `${value.slice(0, maxLength - 3)}...` : value;
+}
+
+function normalizeTimelineComment(commentInput: string): TimelineCommentValidationResult {
+  const comment = commentInput.trim();
+
+  if (!comment) {
+    return { ok: false, message: 'Enter a comment.' };
+  }
+
+  if (comment.length > MAX_TIMELINE_COMMENT_LENGTH) {
+    return { ok: false, message: `Comment must be ${MAX_TIMELINE_COMMENT_LENGTH} characters or fewer.` };
+  }
+
+  return { ok: true, comment };
 }
 
 export async function createOrder(formData: FormData): Promise<CreateOrderResult> {
@@ -237,10 +257,10 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
 
     await query(
       `
-      INSERT INTO order_status_logs (order_id, status, note)
-      VALUES ($1, 'AWAITING_PAYMENT', $2)
+      INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+      VALUES ($1, 'AWAITING_PAYMENT', $2, $3)
       `,
-      [orderId, 'Order created. Waiting for payment proof.'],
+      [orderId, 'Order created. Waiting for payment proof.', user.id],
     );
 
     await query(
@@ -315,10 +335,10 @@ export async function uploadPaymentProofAction(formData: FormData): Promise<Simp
 
     await query(
       `
-      INSERT INTO order_status_logs (order_id, status, note)
-      VALUES ($1, 'PAYMENT_REVIEW', $2)
+      INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+      VALUES ($1, 'PAYMENT_REVIEW', $2, $3)
       `,
-      [orderId, 'Payment proof uploaded. Waiting for admin review.'],
+      [orderId, 'Payment proof uploaded. Waiting for admin review.', user.id],
     );
 
     revalidatePath(`/account/orders/${orderId}`);
@@ -329,11 +349,16 @@ export async function uploadPaymentProofAction(formData: FormData): Promise<Simp
   });
 }
 
-export async function updateOrderStatusAction(orderId: string, status: string): Promise<SimpleActionResult> {
-  await requireOrderAdmin();
+export async function updateOrderStatusAction(orderId: string, status: string, commentInput = ''): Promise<SimpleActionResult> {
+  const admin = await requireOrderAdmin();
+  const comment = commentInput.trim();
 
   if (!isOrderStatus(status)) {
     return { ok: false, message: 'Invalid order status.' };
+  }
+
+  if (comment.length > MAX_TIMELINE_COMMENT_LENGTH) {
+    return { ok: false, message: `Comment must be ${MAX_TIMELINE_COMMENT_LENGTH} characters or fewer.` };
   }
 
   const result = await withTransaction(async (query) => {
@@ -369,10 +394,15 @@ export async function updateOrderStatusAction(orderId: string, status: string): 
 
     await query(
       `
-      INSERT INTO order_status_logs (order_id, status, note)
-      VALUES ($1, $2::order_status, $3)
+      INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+      VALUES ($1, $2::order_status, $3, $4)
       `,
-      [orderId, status, `Status manually changed to ${status}.`],
+      [
+        orderId,
+        status,
+        comment ? `Status manually changed to ${status}.\nReason: ${comment}` : `Status manually changed to ${status}.`,
+        admin.id,
+      ],
     );
 
     return { ok: true, message: 'Status updated.' };
@@ -387,11 +417,54 @@ export async function updateOrderStatusAction(orderId: string, status: string): 
   return result;
 }
 
+export async function addOrderTimelineCommentAction(orderId: string, commentInput: string): Promise<SimpleActionResult> {
+  const admin = await requireOrderAdmin();
+  const normalized = normalizeTimelineComment(commentInput);
+
+  if (!normalized.ok) {
+    return normalized;
+  }
+
+  const result = await withTransaction(async (query) => {
+    const orderResult = await query(
+      `
+      SELECT id, status
+      FROM orders
+      WHERE id = $1
+      FOR UPDATE
+      `,
+      [orderId],
+    );
+    const order = orderResult.rows[0];
+
+    if (!order) {
+      return { ok: false, message: 'Order not found.' };
+    }
+
+    await query(
+      `
+      INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+      VALUES ($1, $2::order_status, $3, $4)
+      `,
+      [orderId, order.status, `Admin comment: ${normalized.comment}`, admin.id],
+    );
+
+    return { ok: true, message: 'Comment added.' };
+  });
+
+  if (result.ok) {
+    revalidatePath(`/admin/kk/orders/${orderId}`);
+    revalidatePath(`/admin/it/orders/${orderId}`);
+  }
+
+  return result;
+}
+
 export async function updatePickupDetailsAction(
   orderId: string,
   detailsInput: string,
 ): Promise<SimpleActionResult> {
-  await requireOrderAdmin();
+  const admin = await requireOrderAdmin();
 
   const details = detailsInput.trim();
 
@@ -409,7 +482,7 @@ export async function updatePickupDetailsAction(
       UPDATE orders
       SET pickup_details = $2
       WHERE id = $1 AND delivery_type = 'PICKUP'
-      RETURNING id
+      RETURNING id, status
       `,
       [orderId, details],
     );
@@ -417,6 +490,16 @@ export async function updatePickupDetailsAction(
     if (result.rowCount === 0) {
       return { ok: false, message: 'Order not found or not a pickup order.' };
     }
+
+    const order = result.rows[0];
+
+    await query(
+      `
+      INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+      VALUES ($1, $2::order_status, $3, $4)
+      `,
+      [orderId, order.status, `Pickup details updated: ${truncateLogValue(details, 120)}`, admin.id],
+    );
 
     revalidatePath(`/admin/kk/orders/${orderId}`);
     revalidatePath(`/admin/it/orders/${orderId}`);
@@ -431,7 +514,7 @@ export async function updateShippingTrackingNumberAction(
   providerInput: string,
   trackingNumberInput: string,
 ): Promise<SimpleActionResult> {
-  await requireOrderAdmin();
+  const admin = await requireOrderAdmin();
 
   const provider = providerInput.trim();
   const trackingNumber = trackingNumberInput.trim();
@@ -469,10 +552,10 @@ export async function updateShippingTrackingNumberAction(
 
     await query(
       `
-      INSERT INTO order_status_logs (order_id, status, note)
-      VALUES ($1, 'SHIPPED', $2)
+      INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+      VALUES ($1, 'SHIPPED', $2, $3)
       `,
-      [orderId, `Shipping saved: ${provider} ${trackingNumber}`],
+      [orderId, `Shipping saved: ${provider} ${trackingNumber}`, admin.id],
     );
 
     revalidatePath(`/admin/kk/orders/${orderId}`);
@@ -484,7 +567,7 @@ export async function updateShippingTrackingNumberAction(
 }
 
 export async function approvePaymentAction(orderId: string): Promise<SimpleActionResult> {
-  await requireOrderAdmin();
+  const admin = await requireOrderAdmin();
 
   return withTransaction(async (query) => {
     const result = await query(
@@ -503,10 +586,10 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
 
     await query(
       `
-      INSERT INTO order_status_logs (order_id, status, note)
-      VALUES ($1, 'PROCESSING', $2)
+      INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+      VALUES ($1, 'PROCESSING', $2, $3)
       `,
-      [orderId, 'Payment approved by admin.'],
+      [orderId, 'Payment approved by admin.', admin.id],
     );
 
     revalidatePath('/admin/kk/payments');
@@ -520,7 +603,7 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
 }
 
 export async function rejectPaymentAction(orderId: string): Promise<SimpleActionResult> {
-  await requireOrderAdmin();
+  const admin = await requireOrderAdmin();
 
   return withTransaction(async (query) => {
     const result = await query(
@@ -543,10 +626,10 @@ export async function rejectPaymentAction(orderId: string): Promise<SimpleAction
 
     await query(
       `
-      INSERT INTO order_status_logs (order_id, status, note)
-      VALUES ($1, 'AWAITING_PAYMENT', $2)
+      INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+      VALUES ($1, 'AWAITING_PAYMENT', $2, $3)
       `,
-      [orderId, 'Payment proof rejected. Waiting for a new upload.'],
+      [orderId, 'Payment proof rejected. Waiting for a new upload.', admin.id],
     );
 
     revalidatePath('/admin/kk/payments');

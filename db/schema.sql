@@ -1,6 +1,6 @@
 \restrict dbmate
 
--- Dumped from database version 18.3 (Homebrew)
+-- Dumped from database version 16.14 (Debian 16.14-1.pgdg13+1)
 -- Dumped by pg_dump version 18.3 (Homebrew)
 
 SET statement_timeout = 0;
@@ -162,7 +162,8 @@ CREATE TABLE public.order_status_logs (
     order_id uuid NOT NULL,
     status public.order_status NOT NULL,
     note character varying(255) NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    changed_by_user_id uuid
 );
 
 
@@ -637,6 +638,14 @@ ALTER TABLE ONLY public.product_images
 
 
 --
+-- Name: order_status_logs fk_status_logs_changed_by_user; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.order_status_logs
+    ADD CONSTRAINT fk_status_logs_changed_by_user FOREIGN KEY (changed_by_user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: order_status_logs fk_status_logs_order; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -669,4 +678,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260526233645'),
     ('20260527000100'),
     ('20260531012302'),
-    ('20260602154031');
+    ('20260602154031'),
+    ('20260606000100');
