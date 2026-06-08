@@ -1,4 +1,3 @@
-import { Order } from "@/types";
 import {
   Body, Container, Head, Heading, Html, Row, Section, Text
 } from "@react-email/components";

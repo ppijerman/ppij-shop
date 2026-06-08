@@ -1,5 +1,3 @@
-"use server";
-
 import { resend } from "@/lib/resend";
 import { OrderConfirmationEmail } from "@/lib/emails/order-confirmation";
 
