@@ -6,6 +6,7 @@ import { uploadPaymentProofAction } from '@/lib/actions/orders';
 
 const MAX_PROOF_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_PROOF_SIZE_LABEL = '5 MB';
+const PAYMENT_WINDOW_MS = 30 * 60 * 1000;
 
 function formatTimeRemaining(milliseconds: number) {
   const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
@@ -21,19 +22,24 @@ export default function PaymentProofUploadForm({ orderId, paymentExpiresAt }: { 
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const expiresAtTime = useMemo(() => paymentExpiresAt ? new Date(paymentExpiresAt).getTime() : null, [paymentExpiresAt]);
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState<number | null>(null);
   const refreshedAfterExpiry = useRef(false);
-  const timeRemaining = expiresAtTime === null ? null : expiresAtTime - now;
+  const timeRemaining = expiresAtTime === null || now === null ? null : expiresAtTime - now;
   const isExpired = timeRemaining !== null && timeRemaining <= 0;
+  const progress = timeRemaining === null
+    ? 0
+    : Math.max(0, Math.min(100, (timeRemaining / PAYMENT_WINDOW_MS) * 100));
+  const isUrgent = timeRemaining !== null && timeRemaining <= 5 * 60 * 1000;
 
   useEffect(() => {
-    if (expiresAtTime === null || isExpired) {
+    if (expiresAtTime === null) {
       return;
     }
 
+    setNow(Date.now());
     const intervalId = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(intervalId);
-  }, [expiresAtTime, isExpired]);
+  }, [expiresAtTime]);
 
   useEffect(() => {
     if (!isExpired || refreshedAfterExpiry.current) {
@@ -76,6 +82,68 @@ export default function PaymentProofUploadForm({ orderId, paymentExpiresAt }: { 
   return (
     <form action={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <input type="hidden" name="orderId" value={orderId} />
+      {timeRemaining !== null && (
+        <div
+          aria-live="polite"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr auto',
+            gap: 16,
+            alignItems: 'center',
+            background: isExpired ? '#fff1f1' : '#fff8e8',
+            border: `1px solid ${isExpired ? '#f4b8b8' : isUrgent ? 'var(--orange)' : '#f0c36a'}`,
+            borderRadius: 4,
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)',
+            padding: '14px 16px',
+          }}
+        >
+          <div>
+            <p
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: isExpired ? '#b91c1c' : '#8a5a00',
+                marginBottom: 8,
+              }}
+            >
+              Time left to upload proof
+            </p>
+            <div
+              aria-hidden="true"
+              style={{
+                height: 8,
+                background: isExpired ? '#fee2e2' : '#f4dfad',
+                border: `1px solid ${isExpired ? '#fecaca' : '#ddb060'}`,
+                borderRadius: 999,
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  width: `${progress}%`,
+                  height: '100%',
+                  background: isExpired ? '#b91c1c' : isUrgent ? 'var(--orange)' : '#d97d00',
+                  transition: 'width 0.3s linear',
+                }}
+              />
+            </div>
+          </div>
+          <strong
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 22,
+              color: isExpired ? '#b91c1c' : '#2f2412',
+              fontVariantNumeric: 'tabular-nums',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {isExpired ? '00:00' : formatTimeRemaining(timeRemaining)}
+          </strong>
+        </div>
+      )}
       <input
         name="paymentProof"
         type="file"
@@ -95,13 +163,6 @@ export default function PaymentProofUploadForm({ orderId, paymentExpiresAt }: { 
         }}
         style={{ border: '1px solid var(--line)', background: 'white', padding: 12, fontSize: 13 }}
       />
-      {timeRemaining !== null && (
-        <p style={{ color: isExpired ? '#b91c1c' : 'var(--muted)', fontSize: 12, lineHeight: 1.4 }}>
-          {isExpired
-            ? 'Payment time limit expired.'
-            : `Upload proof within ${formatTimeRemaining(timeRemaining)}.`}
-        </p>
-      )}
       {error && <p style={{ color: '#b91c1c', fontSize: 12 }}>{error}</p>}
       {message && <p style={{ color: '#166534', fontSize: 12 }}>{message}</p>}
       <button
