@@ -475,6 +475,13 @@ CREATE INDEX idx_orders_user_id ON public.orders USING btree (user_id);
 
 
 --
+-- Name: idx_orders_awaiting_payment_expires_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_orders_awaiting_payment_expires_at ON public.orders USING btree (payment_expires_at) WHERE (status = 'AWAITING_PAYMENT'::public.order_status);
+
+
+--
 -- Name: idx_product_images_only_one_primary; Type: INDEX; Schema: public; Owner: -
 --
 
