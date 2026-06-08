@@ -461,17 +461,17 @@ CREATE INDEX idx_order_status_logs_order_id ON public.order_status_logs USING bt
 
 
 --
--- Name: idx_orders_user_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_orders_user_id ON public.orders USING btree (user_id);
-
-
---
 -- Name: idx_orders_awaiting_payment_expires_at; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_orders_awaiting_payment_expires_at ON public.orders USING btree (payment_expires_at) WHERE (status = 'AWAITING_PAYMENT'::public.order_status);
+
+
+--
+-- Name: idx_orders_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_orders_user_id ON public.orders USING btree (user_id);
 
 
 --
@@ -687,4 +687,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260527000100'),
     ('20260531012302'),
     ('20260602154031'),
-    ('20260606000100');
+    ('20260606000100'),
+    ('20260608000100');
