@@ -187,6 +187,7 @@ CREATE TABLE public.orders (
     payment_proof_data bytea,
     payment_proof_content_type character varying(100),
     pickup_details text,
+    payment_expires_at timestamp with time zone,
     CONSTRAINT chk_delivery_address_logic CHECK (((delivery_type = 'PICKUP'::public.delivery_type) OR ((delivery_type = 'DELIVERY'::public.delivery_type) AND (delivery_address ? 'street'::text) AND (delivery_address ? 'city'::text) AND (delivery_address ? 'postcode'::text) AND (delivery_address ? 'country'::text)))),
     CONSTRAINT chk_order_total_price CHECK ((total_price >= (0)::numeric)),
     CONSTRAINT orders_payment_method_iban_only CHECK ((payment_method = 'IBAN'::public.payment_method))
@@ -460,6 +461,13 @@ CREATE INDEX idx_order_status_logs_order_id ON public.order_status_logs USING bt
 
 
 --
+-- Name: idx_orders_awaiting_payment_expires_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_orders_awaiting_payment_expires_at ON public.orders USING btree (payment_expires_at) WHERE (status = 'AWAITING_PAYMENT'::public.order_status);
+
+
+--
 -- Name: idx_orders_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -679,4 +687,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260527000100'),
     ('20260531012302'),
     ('20260602154031'),
-    ('20260606000100');
+    ('20260606000100'),
+    ('20260608000100');

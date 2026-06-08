@@ -132,6 +132,7 @@ export interface Order {
   payment_proof_url: string | null;
   payment_proof_content_type: string | null;
   payment_proof_data?: unknown;
+  payment_expires_at: string | null;
   shipping_tracking_number: string | null;
   shipping_provider: string | null;
   pickup_details: string | null;

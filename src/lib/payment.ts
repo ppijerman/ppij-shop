@@ -6,7 +6,6 @@ const IBAN_PAYMENT_DETAILS = {
   bic: 'BELADEBEXXX',
   bankName: 'Berliner Sparkasse',
   purposeTemplate: 'Merch 26 - Full Name - Order Number',
-  purposeExample: 'Merch 26 - Max Mustermann - 12345678',
 };
 
 export interface PaymentInstruction {
@@ -44,7 +43,6 @@ export function getPaymentInstruction(
           : `Merch 26 - ${buyerName} - ${orderReference}`,
         strong: true,
       },
-      { label: 'Example', value: IBAN_PAYMENT_DETAILS.purposeExample },
     ],
     note: 'Upload a screenshot or receipt after the transfer.',
   };

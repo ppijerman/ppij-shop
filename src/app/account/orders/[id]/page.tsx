@@ -16,6 +16,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const items = await getOrderItems(id);
   const buyerName = [user.first_name, user.last_name].filter(Boolean).join(' ');
   const paymentInstruction = getPaymentInstruction(order.payment_method, order.id.substring(0, 8), buyerName);
+  const paymentExpiresAt = order.payment_expires_at ? new Date(order.payment_expires_at) : null;
 
   return (
     <div>
@@ -74,12 +75,19 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 ))}
               </div>
               <p style={{ color: 'var(--muted)', fontSize: 13, lineHeight: 1.6, marginTop: 14 }}>{paymentInstruction.note}</p>
+              {order.status === 'AWAITING_PAYMENT' && paymentExpiresAt && (
+                <p style={{ color: 'var(--black)', fontSize: 13, fontWeight: 700, lineHeight: 1.5, marginTop: 10 }}>
+                  Payment proof must be uploaded by {paymentExpiresAt.toLocaleString('en-DE', { dateStyle: 'medium', timeStyle: 'short' })}.
+                </p>
+              )}
 
               <div style={{ borderTop: '1px solid var(--line)', paddingTop: 18, marginTop: 18 }}>
                 {order.status === 'AWAITING_PAYMENT' ? (
-                  <PaymentProofUploadForm orderId={order.id} />
+                  <PaymentProofUploadForm orderId={order.id} paymentExpiresAt={order.payment_expires_at} />
                 ) : order.status === 'PAYMENT_REVIEW' ? (
                   <p style={{ fontSize: 13, color: 'var(--muted)' }}>Payment proof uploaded. Waiting for admin review.</p>
+                ) : order.status === 'CANCELLED' ? (
+                  <p style={{ fontSize: 13, color: 'var(--muted)' }}>This order was cancelled because the payment window expired.</p>
                 ) : (
                   <p style={{ fontSize: 13, color: 'var(--muted)' }}>Payment review is complete or no longer editable.</p>
                 )}
