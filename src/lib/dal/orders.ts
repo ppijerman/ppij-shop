@@ -1,4 +1,5 @@
 import { db } from "../db"
+import { expireOverdueAwaitingPaymentOrdersNow } from '@/lib/orderExpiry';
 
 const ORDER_COLUMNS = `
   o.id,
@@ -12,12 +13,15 @@ const ORDER_COLUMNS = `
   o.shipping_tracking_number,
   o.shipping_provider,
   o.pickup_details,
+  o.payment_expires_at,
   o.created_at,
   o.updated_at,
   o.payment_method
 `;
 
 export async function getAllOrders() {
+  await expireOverdueAwaitingPaymentOrdersNow();
+
   const res = await db.query(
     `
     SELECT
@@ -34,6 +38,8 @@ export async function getAllOrders() {
 }
 
 export async function getOrdersByUser(userId: string) {
+  await expireOverdueAwaitingPaymentOrdersNow({ userId });
+
   const res = await db.query(
     `
     SELECT ${ORDER_COLUMNS}
@@ -47,6 +53,8 @@ export async function getOrdersByUser(userId: string) {
 }
 
 export async function getOrderById(id: string) {
+  await expireOverdueAwaitingPaymentOrdersNow({ orderId: id });
+
   const res = await db.query(
     `
     SELECT ${ORDER_COLUMNS}
@@ -59,6 +67,8 @@ export async function getOrderById(id: string) {
 }
 
 export async function getOrderByIdForUser(id: string, userId: string) {
+  await expireOverdueAwaitingPaymentOrdersNow({ orderId: id, userId });
+
   const res = await db.query(
     `
     SELECT ${ORDER_COLUMNS}

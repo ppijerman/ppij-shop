@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { db, withTransaction } from '@/lib/db';
 import { requireOrderAdmin } from '@/lib/auth';
 import { getCurrentDbUserOrThrow } from '@/lib/users';
+import { expireOverdueAwaitingPaymentOrders, getPaymentExpiresAtExpression } from '@/lib/orderExpiry';
 import type { PaymentMethod } from '@/types';
 
 const ORDER_STATUSES = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'] as const;
@@ -207,8 +208,8 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
 
     const orderResult = await query(
       `
-      INSERT INTO orders (user_id, status, total_price, delivery_address, delivery_type, payment_method)
-      VALUES ($1, 'AWAITING_PAYMENT', $2, $3::jsonb, $4::delivery_type, $5::payment_method)
+      INSERT INTO orders (user_id, status, total_price, delivery_address, delivery_type, payment_method, payment_expires_at)
+      VALUES ($1, 'AWAITING_PAYMENT', $2, $3::jsonb, $4::delivery_type, $5::payment_method, ${getPaymentExpiresAtExpression()})
       RETURNING id
       `,
       [
@@ -298,9 +299,11 @@ export async function uploadPaymentProofAction(formData: FormData): Promise<Simp
   }
 
   return withTransaction(async (query) => {
+    await expireOverdueAwaitingPaymentOrders(query, { orderId, userId: user.id });
+
     const orderResult = await query(
       `
-      SELECT id, status
+      SELECT id, status, payment_expires_at
       FROM orders
       WHERE id = $1 AND user_id = $2
       FOR UPDATE
@@ -613,7 +616,8 @@ export async function rejectPaymentAction(orderId: string): Promise<SimpleAction
         status = 'AWAITING_PAYMENT',
         payment_proof_url = NULL,
         payment_proof_data = NULL,
-        payment_proof_content_type = NULL
+        payment_proof_content_type = NULL,
+        payment_expires_at = ${getPaymentExpiresAtExpression()}
       WHERE id = $1 AND status = 'PAYMENT_REVIEW'
       RETURNING id
       `,
