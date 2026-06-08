@@ -6,6 +6,7 @@ import { requireOrderAdmin } from '@/lib/auth';
 import { getCurrentDbUserOrThrow } from '@/lib/users';
 import { expireOverdueAwaitingPaymentOrders, getPaymentExpiresAtExpression } from '@/lib/orderExpiry';
 import type { PaymentMethod } from '@/types';
+import { SendOrderConfirmationEmail } from './send-order-email';
 
 const ORDER_STATUSES = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'] as const;
 const PAYMENT_METHODS = ['IBAN'] as const;
@@ -100,7 +101,9 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
     return { ok: false, code: 'VALIDATION_ERROR', message: 'Delivery address is incomplete.' };
   }
 
-  return withTransaction(async (query) => {
+  const emailDataRef: { value: { total: number; items: { name: string; quantity: number; price: string }[] } | null } = { value: null };
+
+  const result = await withTransaction<CreateOrderResult>(async (query) => {
     const cartResult = await query(
       `
       SELECT
@@ -272,8 +275,33 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
     revalidatePath('/cart');
     revalidatePath('/account/orders');
 
+    emailDataRef.value = {
+      total,
+      items: cartRows.map((item) => ({
+        name: item.bundle_name ?? item.product_name,
+        quantity: Number(item.quantity),
+        price: String(item.bundle_price ?? item.variant_price ?? 0),
+      })),
+    };
+
     return { ok: true, orderId };
   });
+
+  if (result.ok && emailDataRef.value) {
+    try {
+      await SendOrderConfirmationEmail({
+        to: user.email,
+        customerName: user.first_name,
+        orderId: result.orderId,
+        total: String(emailDataRef.value.total),
+        items: emailDataRef.value.items,
+      });
+    } catch (err) {
+      console.error('Failed to send order confirmation email:', err);
+    }
+  }
+
+  return result;
 }
 
 export async function uploadPaymentProofAction(formData: FormData): Promise<SimpleActionResult> {
