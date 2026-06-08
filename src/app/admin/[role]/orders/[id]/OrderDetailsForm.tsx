@@ -70,8 +70,19 @@ function formatLogDate(value: string | Date) {
   }).format(new Date(value));
 }
 
-function getDateInputValue(value: string | Date) {
-  return new Date(value).toISOString().slice(0, 10);
+function useBodyScrollLock(locked: boolean) {
+  useEffect(() => {
+    if (!locked) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [locked]);
 }
 
 export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { initialOrder: any, items: any[], statusLogs: OrderStatusLog[] }) {
@@ -95,7 +106,10 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
   const [timelineFromDate, setTimelineFromDate] = useState('');
   const [timelineToDate, setTimelineToDate] = useState('');
 
+  useBodyScrollLock(proofPreviewOpen);
+
   const isPickup = initialOrder.delivery_type === 'PICKUP';
+  const paymentExpiresAt = initialOrder.payment_expires_at ? new Date(initialOrder.payment_expires_at) : null;
   const statuses: string[] = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', ...(isPickup ? [] : ['SHIPPED']), 'DONE', 'CANCELLED'];
   const canEditShippingNumber = !isPickup && (initialOrder.status === 'PROCESSING' || initialOrder.status === 'SHIPPED');
   const timelineStatusOptions = Array.from(new Set(statusLogs.map((log) => log.status)));
@@ -124,19 +138,6 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
 
     return true;
   });
-
-  useEffect(() => {
-    if (!proofPreviewOpen) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [proofPreviewOpen]);
 
   const handleUpdateStatus = async () => {
     try {
@@ -533,7 +534,7 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
               value={timelineComment}
               onChange={(event) => setTimelineComment(event.target.value)}
               disabled={loading}
-              placeholder="Add an note without changing status"
+              placeholder="Add a note without changing status"
               rows={4}
               maxLength={500}
               style={textareaStyle}
@@ -622,6 +623,14 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
               <p style={infoLabel}>Payment Method</p>
               <p style={infoValue}>{initialOrder.payment_method ?? '—'}</p>
             </div>
+            {paymentExpiresAt && (
+              <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}>
+                <p style={infoLabel}>Payment Deadline</p>
+                <p style={infoValue}>
+                  {paymentExpiresAt.toLocaleString('en-DE', { dateStyle: 'medium', timeStyle: 'short' })}
+                </p>
+              </div>
+            )}
             <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}>
               <p style={infoLabel}>Payment Proof</p>
               {initialOrder.payment_proof_url ? (
