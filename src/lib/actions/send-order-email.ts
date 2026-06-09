@@ -1,5 +1,5 @@
 import { resend } from "@/lib/resend";
-import { OrderConfirmationEmail } from "@/lib/emails/order-confirmation";
+import OrderConfirmationEmail from "@/lib/emails/order-confirmation";
 
 interface SendOrderEmailParams {
   to: string;

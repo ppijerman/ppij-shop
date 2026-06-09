@@ -9,7 +9,7 @@ interface OrderConfirmationEmailProps {
   items: { name: string; quantity : number; price: string }[];
 }
 
-export function OrderConfirmationEmail({ customerName, orderId, total, items, }: OrderConfirmationEmailProps) {
+export default function OrderConfirmationEmail({ customerName, orderId, total, items }: OrderConfirmationEmailProps) {
   return (
     <Html>
       <Head />
@@ -21,7 +21,7 @@ export function OrderConfirmationEmail({ customerName, orderId, total, items, }:
             <strong>Order ID:</strong> {orderId}
           </Text>
           <Section>
-            {items.map((item) => (
+            {(items ?? []).map((item) => (
               <Row key={item.name}>
                 <Text>
                   {item.name} x {item.quantity} - {item.price}
