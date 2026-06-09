@@ -17,10 +17,10 @@ export async function SendOrderConfirmationEmail(params: {
   const { data, error } = await getResend().emails.send({
     from: getFromEmail(),
     to: params.to,
-    subject: `Order Confirmed - #${params.orderId}`,
+    subject: `Order Confirmed - #${params.orderId.substring(0, 8)}`,
     react: OrderConfirmationEmail({
       customerName: params.customerName,
-      orderId: params.orderId,
+      orderId: params.orderId.substring(0, 8),
       total: params.total,
       items: params.items,
     }),
@@ -42,10 +42,10 @@ export async function SendOrderCancelledEmail(params: {
   const { data, error } = await getResend().emails.send({
     from: getFromEmail(),
     to: params.to,
-    subject: `Order Cancelled - #${params.orderId}`,
+    subject: `Order Cancelled - #${params.orderId.substring(0, 8)}`,
     react: OrderCancelledEmail({
       customerName: params.customerName,
-      orderId: params.orderId,
+      orderId: params.orderId.substring(0, 8),
     }),
   });
 
@@ -65,10 +65,10 @@ export async function SendOrderExpiredEmail(params: {
   const { data, error } = await getResend().emails.send({
     from: getFromEmail(),
     to: params.to,
-    subject: `Order Cancelled — Payment Window Expired - #${params.orderId}`,
+    subject: `Order Cancelled — Payment Window Expired - #${params.orderId.substring(0, 8)}`,
     react: OrderExpiredEmail({
       customerName: params.customerName,
-      orderId: params.orderId,
+      orderId: params.orderId.substring(0, 8),
     }),
   });
 
@@ -88,10 +88,10 @@ export async function SendPaymentApprovedEmail(params: {
   const { data, error } = await getResend().emails.send({
     from: getFromEmail(),
     to: params.to,
-    subject: `Payment Approved - Order #${params.orderId}`,
+    subject: `Payment Approved - Order #${params.orderId.substring(0, 8)}`,
     react: PaymentApprovedEmail({
       customerName: params.customerName,
-      orderId: params.orderId,
+      orderId: params.orderId.substring(0, 8),
     }),
   });
 
@@ -111,10 +111,10 @@ export async function SendPaymentProofUploadedEmail(params: {
   const { data, error } = await getResend().emails.send({
     from: getFromEmail(),
     to: params.to,
-    subject: `Payment Proof has been uploaded - Order #${params.orderId}`,
+    subject: `Payment Proof has been uploaded - Order #${params.orderId.substring(0, 8)}`,
     react: PaymentProofUploadedEmail({
       customerName: params.customerName,
-      orderId: params.orderId,
+      orderId: params.orderId.substring(0, 8),
     }),
   });
 
@@ -134,10 +134,10 @@ export async function SendPaymentRejectedEmail(params: {
   const { data, error } = await getResend().emails.send({
     from: getFromEmail(),
     to: params.to,
-    subject: `Payment Proof has been rejected - Order #${params.orderId}`,
+    subject: `Payment Proof has been rejected - Order #${params.orderId.substring(0, 8)}`,
     react: PaymentRejectedEmail({
       customerName: params.customerName,
-      orderId: params.orderId
+      orderId: params.orderId.substring(0, 8),
     })
   })
 
@@ -159,10 +159,10 @@ export async function SendOrderShippedEmail(params: {
   const { data, error } = await getResend().emails.send({
     from: getFromEmail(),
     to: params.to,
-    subject: `Your Order Has Been Shipped - #${params.orderId}`,
+    subject: `Your Order Has Been Shipped - #${params.orderId.substring(0, 8)}`,
     react: OrderShippedEmail({
       customerName: params.customerName,
-      orderId: params.orderId,
+      orderId: params.orderId.substring(0, 8),
       shippingProvider: params.shippingProvider,
       trackingNumber: params.trackingNumber,
     })
