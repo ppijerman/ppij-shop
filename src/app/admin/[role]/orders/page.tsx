@@ -1,6 +1,5 @@
 import { getAllOrders } from '@/lib/dal/orders';
-import { getOrderStatusColor, getOrderStatusLabel } from '@/lib/orderStatus';
-import Link from 'next/link';
+import AdminOrdersList from '@/components/admin/AdminOrdersList';
 
 export default async function AdminOrders({ params }: { params: Promise<{ role: string }> }) {
   const { role } = await params;
@@ -12,64 +11,7 @@ export default async function AdminOrders({ params }: { params: Promise<{ role: 
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 48 }}>ORDERS</h1>
       </div>
 
-      <div style={{ background: 'white', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--line)', background: 'var(--cream-2)' }}>
-              <th style={thStyle}>Customer</th>
-              <th style={thStyle}>Order Id</th>
-              <th style={thStyle}>Total</th>
-              <th style={thStyle}>Date</th>
-              <th style={thStyle}>Status</th>
-              <th style={thStyle}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order: any) => (
-              <tr key={order.id} style={{ borderBottom: '1px solid var(--line)' }}>
-                <td style={tdStyle}>{order.first_name} {order.last_name}</td>
-                <td style={tdStyle}>{order.id.substring(0, 8)}</td>
-                <td style={tdStyle}>€{Number(order.total_price).toFixed(2)}</td>
-                <td style={tdStyle}>{new Date(order.created_at).toLocaleDateString()}</td>
-                <td style={tdStyle}>
-                  <span style={{ 
-                    padding: '4px 8px', 
-                    borderRadius: 4, 
-                    fontSize: 10, 
-                    fontWeight: 600, 
-                    background: getOrderStatusColor(order.status),
-                    color: 'white'
-                  }}>
-                    {getOrderStatusLabel(order.status)}
-                  </span>
-                </td>
-                <td style={tdStyle}>
-                  <Link 
-                    href={`/admin/${role}/orders/${order.id}`}
-                    style={{ color: 'var(--orange-deep)', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}
-                  >
-                    DETAILS →
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <AdminOrdersList orders={orders} role={role} />
     </div>
   );
 }
-
-const thStyle: React.CSSProperties = {
-  padding: '16px 24px',
-  fontFamily: 'var(--font-mono)',
-  fontSize: 11,
-  textTransform: 'uppercase',
-  letterSpacing: '0.1em',
-  color: 'var(--muted)'
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: '20px 24px',
-  fontSize: 14
-};
