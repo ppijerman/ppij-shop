@@ -1,12 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { db, withTransaction } from '@/lib/db';
+import { withTransaction } from '@/lib/db';
 import { requireOrderAdmin } from '@/lib/auth';
 import { getCurrentDbUserOrThrow } from '@/lib/users';
 import { expireOverdueAwaitingPaymentOrders, getPaymentExpiresAtExpression } from '@/lib/orderExpiry';
 import type { PaymentMethod } from '@/types';
-import { SendOrderConfirmationEmail } from './send-order-email';
+import { SendOrderConfirmationEmail, SendPaymentApprovedEmail, SendPaymentProofUploadedEmail, SendPaymentRejectedEmail } from './send-order-email';
 
 const ORDER_STATUSES = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'] as const;
 const PAYMENT_METHODS = ['IBAN'] as const;
@@ -326,7 +326,7 @@ export async function uploadPaymentProofAction(formData: FormData): Promise<Simp
     return { ok: false, message: 'Payment proof must be a JPEG, PNG, or WebP image.' };
   }
 
-  return withTransaction(async (query) => {
+  const result = await withTransaction(async (query) => {
     await expireOverdueAwaitingPaymentOrders(query, { orderId, userId: user.id });
 
     const orderResult = await query(
@@ -378,6 +378,20 @@ export async function uploadPaymentProofAction(formData: FormData): Promise<Simp
 
     return { ok: true, message: 'Payment proof uploaded.' };
   });
+
+  if (result.ok && user.email) {
+    try {
+      await SendPaymentProofUploadedEmail({
+        to: user.email,
+        customerName: user.first_name,
+        orderId,
+      });
+    } catch (err) {
+      console.error("Failed to send payment proof uploaded email: ", err);
+    }
+  }
+
+  return result;
 }
 
 export async function updateOrderStatusAction(orderId: string, status: string, commentInput = ''): Promise<SimpleActionResult> {
@@ -566,8 +580,10 @@ export async function updateShippingTrackingNumberAction(
     return { ok: false, message: 'Shipping number must be 120 characters or fewer.' };
   }
 
-  return withTransaction(async (query) => {
-    const result = await query(
+  const buyerRef = { value: null as { email: string; first_name: string } | null };
+
+  const result = await withTransaction(async (query) => {
+    const updateResult = await query(
       `
       UPDATE orders
       SET shipping_provider = $2, shipping_tracking_number = $3, status = 'SHIPPED'
@@ -577,7 +593,7 @@ export async function updateShippingTrackingNumberAction(
       [orderId, provider, trackingNumber],
     );
 
-    if (result.rowCount === 0) {
+    if (updateResult.rowCount === 0) {
       return { ok: false, message: 'Only delivery orders in processing or shipped status can receive a shipping number.' };
     }
 
@@ -589,19 +605,46 @@ export async function updateShippingTrackingNumberAction(
       [orderId, `Shipping saved: ${provider} ${trackingNumber}`, admin.id],
     );
 
+    const buyerResult = await query(
+      `
+      SELECT u.email, u.first_name
+      FROM orders o Join users u ON u.id = o.user_id
+      WHERE o.id = $1
+      `,
+      [orderId]
+    )
+
     revalidatePath(`/admin/kk/orders/${orderId}`);
     revalidatePath(`/admin/it/orders/${orderId}`);
     revalidatePath(`/account/orders/${orderId}`);
 
     return { ok: true, message: 'Shipping number saved.' };
   });
+
+  if (result.ok && buyerRef.value?.email) {
+    try {
+      await SendOrderShippedEmail({
+        to: buyerRef.value.email,
+        customerName: buyerRef.value.first_name,
+        orderId,
+        shippingProvider: provider,
+        trackingNumber,
+      })
+    } catch (err) {
+      console.error("Failed to send order shipped email: ", err);
+    }
+  }
+
+  return result;
 }
 
 export async function approvePaymentAction(orderId: string): Promise<SimpleActionResult> {
   const admin = await requireOrderAdmin();
 
-  return withTransaction(async (query) => {
-    const result = await query(
+  const buyerRef = { value: null as { email: string; first_name: string } | null };
+
+  const result = await withTransaction(async (query) => {
+    const updateResult = await query(
       `
       UPDATE orders
       SET status = 'PROCESSING'
@@ -611,7 +654,7 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
       [orderId],
     );
 
-    if (result.rowCount === 0) {
+    if (updateResult.rowCount === 0) {
       return { ok: false, message: 'Only confirmed orders with proof can be approved.' };
     }
 
@@ -623,6 +666,16 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
       [orderId, 'Payment approved by admin.', admin.id],
     );
 
+    const buyerResult = await query(
+      `
+      SELECT u.email, u.first_name 
+      FROM orders o JOIN users u ON u.id = o.user_id 
+      WHERE o.id = $1
+      `,
+      [orderId],
+    );
+    buyerRef.value = buyerResult.rows[0] ?? null;
+
     revalidatePath('/admin/kk/payments');
     revalidatePath('/admin/it/payments');
     revalidatePath(`/admin/kk/orders/${orderId}`);
@@ -631,13 +684,29 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
 
     return { ok: true, message: 'Payment approved.' };
   });
+
+  if (result.ok && buyerRef.value?.email) {
+    try {
+      await SendPaymentApprovedEmail({
+        to: buyerRef.value.email,
+        customerName: buyerRef.value.first_name,
+        orderId,
+      });
+    } catch (err) {
+      console.error('Failed to send payment approved email: ', err);
+    }
+  }
+
+  return result;
 }
 
 export async function rejectPaymentAction(orderId: string): Promise<SimpleActionResult> {
   const admin = await requireOrderAdmin();
 
-  return withTransaction(async (query) => {
-    const result = await query(
+  const buyerRef = { value: null as { email: string; first_name: string} | null };
+
+  const result = await withTransaction(async (query) => {
+    const updateResult = await query(
       `
       UPDATE orders
       SET
@@ -652,7 +721,7 @@ export async function rejectPaymentAction(orderId: string): Promise<SimpleAction
       [orderId],
     );
 
-    if (result.rowCount === 0) {
+    if (updateResult.rowCount === 0) {
       return { ok: false, message: 'Only confirmed orders can be rejected.' };
     }
 
@@ -664,6 +733,16 @@ export async function rejectPaymentAction(orderId: string): Promise<SimpleAction
       [orderId, 'Payment proof rejected. Waiting for a new upload.', admin.id],
     );
 
+    const buyerResult = await query(
+      `
+      SELECT u.email, u.first_name
+      FROM orders o JOIN users u on u.id = o.user_id
+      WHERE 0.id = $1
+      `,
+      [orderId],
+    );
+    buyerRef.value = buyerResult.rows[0] ?? null;
+
     revalidatePath('/admin/kk/payments');
     revalidatePath('/admin/it/payments');
     revalidatePath(`/admin/kk/orders/${orderId}`);
@@ -672,4 +751,18 @@ export async function rejectPaymentAction(orderId: string): Promise<SimpleAction
 
     return { ok: true, message: 'Payment rejected.' };
   });
+
+  if (result.ok && buyerRef.value?.email) {
+    try {
+      await SendPaymentRejectedEmail({
+        to: buyerRef.value.email,
+        customerName: buyerRef.value.first_name,
+        orderId,
+      });
+    } catch (err) {
+      console.error("Failed to send payment rejected email: ", err);
+    }
+  }
+
+  return result;
 }
