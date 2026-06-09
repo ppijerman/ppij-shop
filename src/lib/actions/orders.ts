@@ -613,6 +613,7 @@ export async function updateShippingTrackingNumberAction(
       `,
       [orderId]
     )
+    buyerRef.value = buyerResult.rows[0] ?? null;
 
     revalidatePath(`/admin/kk/orders/${orderId}`);
     revalidatePath(`/admin/it/orders/${orderId}`);
@@ -737,7 +738,7 @@ export async function rejectPaymentAction(orderId: string): Promise<SimpleAction
       `
       SELECT u.email, u.first_name
       FROM orders o JOIN users u on u.id = o.user_id
-      WHERE 0.id = $1
+      WHERE o.id = $1
       `,
       [orderId],
     );

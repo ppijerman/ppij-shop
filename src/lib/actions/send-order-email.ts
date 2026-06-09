@@ -1,4 +1,4 @@
-import { resend } from "@/lib/resend";
+import { getResend } from "@/lib/resend";
 import OrderConfirmationEmail from "@/lib/emails/order-confirmation";
 import PaymentApprovedEmail from "../emails/payment-approved";
 import PaymentProofUploadedEmail from "../emails/payment-proof-uploaded";
@@ -12,7 +12,7 @@ export async function SendOrderConfirmationEmail(params: {
   total: string;
   items: { name: string; quantity: number; price: string }[];
 }) {
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: process.env.RESEND_FROM_EMAIL!,
     to: params.to,
     subject: `Order Confirmed - #${params.orderId}`,
@@ -37,7 +37,7 @@ export async function SendPaymentApprovedEmail(params: {
   customerName: string;
   orderId: string;
 }) {
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: process.env.RESEND_FROM_EMAIL!,
     to: params.to,
     subject: `Payment Approved - Order #${params.orderId}`,
@@ -60,7 +60,7 @@ export async function SendPaymentProofUploadedEmail(params: {
   customerName: string;
   orderId: string;
 }) {
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: process.env.RESEND_FROM_EMAIL!,
     to: params.to,
     subject: `Payment Proof has been uploaded - Order #${params.orderId}`,
@@ -83,7 +83,7 @@ export async function SendPaymentRejectedEmail(params: {
   customerName: string;
   orderId: string;
 }) {
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: process.env.RESEND_FROM_EMAIL!,
     to: params.to,
     subject: `Payment Proof has been rejected - Order #${params.orderId}`,
@@ -108,7 +108,7 @@ export async function SendOrderShippedEmail(params: {
   shippingProvider: string;
   trackingNumber: string;
 }) {
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: process.env.RESEND_FROM_EMAIL!,
     to: params.to,
     subject: `Your Order Has Been Shipped - #${params.orderId}`,
@@ -117,7 +117,6 @@ export async function SendOrderShippedEmail(params: {
       orderId: params.orderId,
       shippingProvider: params.shippingProvider,
       trackingNumber: params.trackingNumber,
-      postcode: '',
     })
   })
 

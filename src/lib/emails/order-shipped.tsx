@@ -7,7 +7,6 @@ export default function OrderShippedEmail(params: {
   orderId: string;
   shippingProvider: string;
   trackingNumber: string;
-  postcode: string;
 }) {
   const trackingUrl = '#';
 
