@@ -80,7 +80,7 @@ export default function AdminOrdersList({ orders, role }: { orders: AdminOrder[]
 
   return (
     <>
-      <div style={{ background: 'white', border: '1px solid var(--line)', borderRadius: 12, padding: 16, marginBottom: 20 }}>
+      <div style={{ background: 'var(--cream-2)', border: '1px solid var(--line)', borderRadius: 8, padding: 16, marginBottom: 20 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '2fr repeat(5, minmax(0, 1fr)) auto', gap: 10, alignItems: 'end' }}>
           <label style={filterLabelStyle}>
             Search
@@ -153,8 +153,8 @@ export default function AdminOrdersList({ orders, role }: { orders: AdminOrder[]
               height: 38,
               padding: '0 14px',
               border: '1px solid var(--line)',
-              borderRadius: 6,
-              background: hasFilters ? 'white' : 'var(--cream-2)',
+              borderRadius: 4,
+              background: hasFilters ? 'white' : 'transparent',
               color: hasFilters ? 'var(--black)' : 'var(--muted)',
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
@@ -231,22 +231,22 @@ const filterLabelStyle: React.CSSProperties = {
   flexDirection: 'column',
   gap: 6,
   fontFamily: 'var(--font-mono)',
-  fontSize: 10,
+  fontSize: 9,
   fontWeight: 700,
-  letterSpacing: '0.1em',
+  letterSpacing: '0.12em',
   textTransform: 'uppercase',
   color: 'var(--muted)',
 };
 
 const filterControlStyle: React.CSSProperties = {
   width: '100%',
-  height: 38,
+  height: 37,
   border: '1px solid var(--line)',
-  borderRadius: 6,
+  borderRadius: 4,
   background: 'white',
   color: 'var(--black)',
   fontFamily: 'inherit',
-  fontSize: 12,
+  fontSize: 11,
   letterSpacing: 0,
   textTransform: 'none',
   padding: '0 10px',
