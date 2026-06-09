@@ -1,4 +1,5 @@
-import { withTransaction } from '@/lib/db';
+import { db, withTransaction } from '@/lib/db';
+import { SendOrderExpiredEmail } from '@/lib/actions/send-order-email';
 
 const PAYMENT_WINDOW_MINUTES = 30;
 export const PAYMENT_WINDOW_LABEL = '30 minutes';
@@ -87,5 +88,27 @@ export async function expireOverdueAwaitingPaymentOrders(
 }
 
 export async function expireOverdueAwaitingPaymentOrdersNow(options: ExpireOptions = {}) {
-  return withTransaction((query) => expireOverdueAwaitingPaymentOrders(query, options));
+  const expiredOrderIds = await withTransaction((query) => expireOverdueAwaitingPaymentOrders(query, options));
+
+  if (expiredOrderIds.length > 0) {
+    const buyerResult = await db.query(
+      `SELECT o.id AS order_id, u.email, u.first_name
+       FROM orders o JOIN users u ON u.id = o.user_id
+       WHERE o.id = ANY($1::uuid[])`,
+      [expiredOrderIds],
+    );
+    for (const buyer of buyerResult.rows as { order_id: string; email: string; first_name: string }[]) {
+      try {
+        await SendOrderExpiredEmail({
+          to: buyer.email,
+          customerName: buyer.first_name,
+          orderId: buyer.order_id,
+        });
+      } catch (err) {
+        console.error(`Failed to send order cancelled email for order ${buyer.order_id}:`, err);
+      }
+    }
+  }
+
+  return expiredOrderIds;
 }

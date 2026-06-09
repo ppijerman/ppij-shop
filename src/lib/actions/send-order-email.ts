@@ -1,5 +1,7 @@
-import { getResend } from "@/lib/resend";
+import { getResend, getFromEmail } from "@/lib/resend";
 import OrderConfirmationEmail from "@/lib/emails/order-confirmation";
+import OrderCancelledEmail from "@/lib/emails/order-cancelled";
+import OrderExpiredEmail from "@/lib/emails/order-expired";
 import PaymentApprovedEmail from "../emails/payment-approved";
 import PaymentProofUploadedEmail from "../emails/payment-proof-uploaded";
 import PaymentRejectedEmail from "../emails/payment-rejected";
@@ -13,7 +15,7 @@ export async function SendOrderConfirmationEmail(params: {
   items: { name: string; quantity: number; price: string }[];
 }) {
   const { data, error } = await getResend().emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
+    from: getFromEmail(),
     to: params.to,
     subject: `Order Confirmed - #${params.orderId}`,
     react: OrderConfirmationEmail({
@@ -32,13 +34,59 @@ export async function SendOrderConfirmationEmail(params: {
   return data;
 }
 
+export async function SendOrderCancelledEmail(params: {
+  to: string;
+  customerName: string;
+  orderId: string;
+}) {
+  const { data, error } = await getResend().emails.send({
+    from: getFromEmail(),
+    to: params.to,
+    subject: `Order Cancelled - #${params.orderId}`,
+    react: OrderCancelledEmail({
+      customerName: params.customerName,
+      orderId: params.orderId,
+    }),
+  });
+
+  if (error) {
+    console.error("Resend error: ", error);
+    throw new Error("Failed to send order cancelled email");
+  }
+
+  return data;
+}
+
+export async function SendOrderExpiredEmail(params: {
+  to: string;
+  customerName: string;
+  orderId: string;
+}) {
+  const { data, error } = await getResend().emails.send({
+    from: getFromEmail(),
+    to: params.to,
+    subject: `Order Cancelled — Payment Window Expired - #${params.orderId}`,
+    react: OrderExpiredEmail({
+      customerName: params.customerName,
+      orderId: params.orderId,
+    }),
+  });
+
+  if (error) {
+    console.error("Resend error: ", error);
+    throw new Error("Failed to send order expired email");
+  }
+
+  return data;
+}
+
 export async function SendPaymentApprovedEmail(params: {
   to: string;
   customerName: string;
   orderId: string;
 }) {
   const { data, error } = await getResend().emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
+    from: getFromEmail(),
     to: params.to,
     subject: `Payment Approved - Order #${params.orderId}`,
     react: PaymentApprovedEmail({
@@ -61,7 +109,7 @@ export async function SendPaymentProofUploadedEmail(params: {
   orderId: string;
 }) {
   const { data, error } = await getResend().emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
+    from: getFromEmail(),
     to: params.to,
     subject: `Payment Proof has been uploaded - Order #${params.orderId}`,
     react: PaymentProofUploadedEmail({
@@ -84,7 +132,7 @@ export async function SendPaymentRejectedEmail(params: {
   orderId: string;
 }) {
   const { data, error } = await getResend().emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
+    from: getFromEmail(),
     to: params.to,
     subject: `Payment Proof has been rejected - Order #${params.orderId}`,
     react: PaymentRejectedEmail({
@@ -109,7 +157,7 @@ export async function SendOrderShippedEmail(params: {
   trackingNumber: string;
 }) {
   const { data, error } = await getResend().emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
+    from: getFromEmail(),
     to: params.to,
     subject: `Your Order Has Been Shipped - #${params.orderId}`,
     react: OrderShippedEmail({

@@ -10,3 +10,9 @@ export function getResend(): Resend {
   }
   return _resend;
 }
+
+export function getFromEmail(): string {
+  const from = process.env.RESEND_FROM_EMAIL;
+  if (!from) throw new Error('Missing RESEND_FROM_EMAIL environment variable');
+  return from;
+}
