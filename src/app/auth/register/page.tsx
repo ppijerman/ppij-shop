@@ -27,10 +27,12 @@ export default function RegisterPage() {
   const [verificationEmail, setVerificationEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const passwordMismatchMessage = "Konfirmasi password tidak cocok.";
   const hasPasswordMismatch = password.length > 0 && confirmPassword.length > 0 && password !== confirmPassword;
   const visibleError = error === passwordMismatchMessage ? null : error;
+  const canSubmit = !hasPasswordMismatch && agreedToTerms;
 
   useEffect(() => {
     if (authLoaded && isSignedIn) {
@@ -253,12 +255,57 @@ export default function RegisterPage() {
               {passwordMismatchMessage}
             </div>
           )}
+          <label
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              style={{
+                marginTop: 2,
+                width: 16,
+                height: 16,
+                flexShrink: 0,
+                cursor: "pointer",
+                accentColor: "var(--black)",
+              }}
+            />
+            <span
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 13,
+                color: "var(--muted)",
+                lineHeight: 1.6,
+              }}
+            >
+              I have read and agree to the{" "}
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "var(--black)",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  borderBottom: "1px solid var(--black)",
+                }}
+              >
+                Terms and Conditions
+              </a>
+            </span>
+          </label>
           <div id="clerk-captcha" />
           <AuthSubmitButton
             loading={loading || fetchStatus === "fetching"}
             loadingLabel="Creating Account..."
             idleLabel="Create Account"
-            disabled={hasPasswordMismatch}
+            disabled={!canSubmit}
           />
         </form>
       )}
