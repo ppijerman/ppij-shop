@@ -10,7 +10,7 @@ interface BundleFormProps {
 
 const getFieldStyle = (isChanged: boolean) => ({
   ...inputStyle,
-  borderColor: isChanged ? 'var(--orange)' : 'var(--line)',
+  borderColor: isChanged ? 'var(--accent)' : 'var(--line)',
   backgroundColor: isChanged ? '#fff7ed' : 'white',
 });
 
@@ -103,7 +103,7 @@ export default function BundleForm({ initialData, products, action }: BundleForm
       </div>
 
       <div style={{ marginTop: 32, marginBottom: 40 }}>
-        <label style={{ ...labelStyle, color: areProductsChanged ? 'var(--orange)' : 'var(--muted)' }}>Included Products {areProductsChanged && '*'}</label>
+        <label style={{ ...labelStyle, color: areProductsChanged ? 'var(--accent)' : 'var(--muted)' }}>Included Products {areProductsChanged && '*'}</label>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
           {products.map(product => {
             const isSelected = product.variants?.some((v: any) => selectedVariantIds.includes(v.id));

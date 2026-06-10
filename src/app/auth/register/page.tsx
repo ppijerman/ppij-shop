@@ -247,7 +247,7 @@ export default function RegisterPage() {
                 marginTop: -12,
                 fontFamily: "var(--font-body)",
                 fontSize: 12,
-                color: "var(--orange-deep)",
+                color: "var(--accent-deep)",
               }}
             >
               {passwordMismatchMessage}

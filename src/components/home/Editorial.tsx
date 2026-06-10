@@ -24,7 +24,7 @@ export default function Editorial() {
 
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', color: 'var(--cream)' }}>
           <h2 style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 'clamp(64px, 8vw, 120px)', lineHeight: 0.95, letterSpacing: '-0.02em' }}>
-            Komilitonen<br /><span style={{ color: 'var(--orange)' }}>im Feld</span>
+            Komilitonen<br /><span style={{ color: 'var(--accent)' }}>im Feld</span>
           </h2>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', marginTop: 14, opacity: 0.8 }}>
             captured by · @ppijerman

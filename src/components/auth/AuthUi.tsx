@@ -91,7 +91,7 @@ export function AuthError({ message }: { message: string | null }) {
     <div
       style={{
         background: "rgba(243, 146, 0, 0.1)",
-        border: "1px solid var(--orange)",
+        border: "1px solid var(--accent)",
         padding: "14px 18px",
         color: "var(--black)",
         fontSize: 13,
@@ -223,8 +223,8 @@ export function AuthSubmitButton({ loading, loadingLabel, idleLabel, disabled = 
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        background: isDisabled ? "var(--muted)" : hovered ? "var(--orange)" : "var(--black)",
-        color: hovered && !isDisabled ? "var(--black)" : "var(--cream)",
+        background: isDisabled ? "var(--muted)" : hovered ? "var(--accent)" : "var(--black)",
+        color: "var(--cream)",
         border: "none",
         padding: "18px",
         fontFamily: "var(--font-mono)",

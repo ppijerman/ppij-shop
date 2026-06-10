@@ -10,7 +10,7 @@ interface ProductFormProps {
 
 const getFieldStyle = (isChanged: boolean) => ({
   ...inputStyle,
-  borderColor: isChanged ? 'var(--orange)' : 'var(--line)',
+  borderColor: isChanged ? 'var(--accent)' : 'var(--line)',
   backgroundColor: isChanged ? '#fff7ed' : 'white',
 });
 
@@ -260,7 +260,7 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
 
       {(['REGULAR', 'OVERSIZED'] as FitType[]).map(f => fits[f].enabled && (
         <div key={f} style={{ marginBottom: 40, padding: 24, border: '1px solid var(--line)', borderRadius: 12, background: '#fafafa' }}>
-          <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: 13, marginBottom: 20, color: 'var(--orange-deep)' }}>{f} FIT CONFIGURATION</h3>
+          <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: 13, marginBottom: 20, color: 'var(--accent-deep)' }}>{f} FIT CONFIGURATION</h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
             <div style={fieldGroup}>
@@ -397,7 +397,7 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
                   marginTop: 8, 
                   width: '100%', 
                   padding: '6px', 
-                  background: image.is_primary ? 'var(--orange)' : 'var(--cream)', 
+                  background: image.is_primary ? 'var(--accent)' : 'var(--cream)', 
                   color: image.is_primary ? 'white' : 'var(--black)', 
                   border: 'none', 
                   borderRadius: 4, 

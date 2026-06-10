@@ -7,9 +7,9 @@ export default function CtaStrip() {
   const [hovered, setHovered] = useState(false);
 
   return (
-    <section style={{ background: 'var(--orange)', padding: '56px 28px', position: 'relative', overflow: 'hidden' }}>
+    <section style={{ background: 'var(--accent)', padding: '56px 28px', position: 'relative', overflow: 'hidden' }}>
       <div style={{ maxWidth: 1440, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 30, flexWrap: 'wrap' }}>
-        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(40px, 5vw, 72px)', color: 'var(--black)', lineHeight: 0.95, letterSpacing: '0.01em' }}>
+        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(40px, 5vw, 72px)', color: '#fff', lineHeight: 0.95, letterSpacing: '0.01em' }}>
           REPRESENT.<br />WEAR YOUR ROOTS.
         </h3>
         <Link

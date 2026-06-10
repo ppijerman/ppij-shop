@@ -55,7 +55,7 @@ export default function CartView() {
         <Link href="/catalog" style={{ textDecoration: 'none', display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 28 }}>← lanjut belanja</Link>
 
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', paddingBottom: 20, borderBottom: '1px solid var(--line)', marginBottom: 36 }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(56px, 7.5vw, 96px)', color: 'var(--black)', letterSpacing: '0.01em' }}>YOUR CART<span style={{ color: 'var(--orange)' }}>.</span></h1>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(56px, 7.5vw, 96px)', color: 'var(--black)', letterSpacing: '0.01em' }}>YOUR CART<span style={{ color: 'var(--accent)' }}>.</span></h1>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--muted)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>{cart.length} item{cart.length !== 1 ? 's' : ''}</span>
         </div>
 
@@ -150,7 +150,7 @@ export default function CartView() {
             </div>
 
             <div style={{ background: 'var(--black)', color: 'var(--cream)', padding: 24, position: 'sticky', top: 86 }}>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, marginBottom: 18 }}>SUMMARY<span style={{ color: 'var(--orange)' }}>.</span></div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, marginBottom: 18 }}>SUMMARY<span style={{ color: 'var(--accent)' }}>.</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(239,234,224,0.6)', marginBottom: 8 }}>
                 <span>SUBTOTAL</span><span style={{ color: 'var(--cream)' }}>€{total.toFixed(2)}</span>
               </div>
@@ -158,14 +158,14 @@ export default function CartView() {
                 <span>SHIPPING</span><span style={{ color: '#7CD992' }}>FREE</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-display)', fontSize: 24, marginTop: 14, paddingTop: 14, borderTop: '1px solid #222' }}>
-                <span>TOTAL</span><span style={{ color: 'var(--orange)' }}>€{total.toFixed(2)}</span>
+                <span>TOTAL</span><span style={{ color: '#fff' }}>€{total.toFixed(2)}</span>
               </div>
               {(checkoutError || error) && (
                 <div style={{ background: '#fee2e2', color: '#991b1b', padding: 12, marginTop: 16, fontSize: 12, lineHeight: 1.5 }}>
                   {checkoutError ?? error}
                 </div>
               )}
-              <button disabled={submitting || loading} type="submit" style={{ width: '100%', background: submitting || loading ? 'var(--muted)' : 'var(--orange)', color: 'var(--black)', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: submitting || loading ? 'not-allowed' : 'pointer', marginTop: 18, borderRadius: 999, fontWeight: 600 }}>
+              <button disabled={submitting || loading} type="submit" style={{ width: '100%', background: submitting || loading ? 'var(--muted)' : 'var(--accent)', color: '#fff', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: submitting || loading ? 'not-allowed' : 'pointer', marginTop: 18, borderRadius: 999, fontWeight: 600 }}>
                 {submitting ? 'creating order...' : 'place order ↗'}
               </button>
             </div>

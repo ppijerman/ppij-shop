@@ -9,11 +9,9 @@ import {
 } from "next/font/google";
 import { CartProvider } from "@/context/CartContext";
 import { ToastProvider } from "@/context/ToastContext";
-import { TweaksProvider } from "@/context/TweaksContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Toast from "@/components/ui/Toast";
-import TweaksPanel from "@/components/ui/tweaks/TweaksPanel";
 import ClerkUserSync from "@/components/auth/ClerkUserSync";
 import "./globals.css";
 
@@ -70,17 +68,14 @@ export default function RootLayout({
           <ClerkUserSync />
           <CartProvider>
             <ToastProvider>
-              <TweaksProvider>
-                <div
-                  style={{ position: "relative", zIndex: 2, minHeight: "100vh" }}
-                >
-                  <Navbar />
-                  <main>{children}</main>
-                  <Footer />
-                </div>
-                <Toast />
-                <TweaksPanel />
-              </TweaksProvider>
+              <div
+                style={{ position: "relative", zIndex: 2, minHeight: "100vh" }}
+              >
+                <Navbar />
+                <main>{children}</main>
+                <Footer />
+              </div>
+              <Toast />
             </ToastProvider>
           </CartProvider>
         </ClerkProvider>
