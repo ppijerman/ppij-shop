@@ -161,7 +161,7 @@ export default function ProductDetailPage({
         <p style={{ fontFamily: 'var(--font-body)', fontSize: 18, color: 'var(--muted)', marginTop: 20 }}>
           This product is currently unavailable.
         </p>
-        <Link href="/catalog" style={{ display: 'inline-block', marginTop: 30, textDecoration: 'underline', color: 'var(--orange-deep)' }}>
+        <Link href="/catalog" style={{ display: 'inline-block', marginTop: 30, textDecoration: 'underline', color: 'var(--accent-deep)' }}>
           ← Back to Catalog
         </Link>
       </div>
@@ -302,7 +302,7 @@ export default function ProductDetailPage({
                   position: 'absolute',
                   top: 18,
                   right: 18,
-                  background: 'var(--orange)',
+                  background: 'var(--accent)',
                   color: 'var(--black)',
                   padding: '6px 14px',
                   fontFamily: 'var(--font-mono)',
@@ -346,7 +346,7 @@ export default function ProductDetailPage({
                   aspectRatio: '1',
                   border:
                     activeImg === i
-                      ? '2px solid var(--orange)'
+                      ? '2px solid var(--accent)'
                       : '1px solid var(--line)',
                   padding: 0,
                   cursor: 'pointer',
@@ -370,7 +370,7 @@ export default function ProductDetailPage({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              color: 'var(--orange-deep)',
+              color: 'var(--accent-deep)',
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
               marginBottom: 14,
@@ -388,7 +388,7 @@ export default function ProductDetailPage({
             }}
           >
             {product.name.toUpperCase()}
-            <span style={{ color: 'var(--orange)' }}>.</span>
+            <span style={{ color: 'var(--accent)' }}>.</span>
           </h1>
           <div
             style={{
@@ -475,7 +475,7 @@ export default function ProductDetailPage({
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 11,
-                    background: 'var(--orange)',
+                    background: 'var(--accent)',
                     color: 'var(--black)',
                     padding: '4px 9px',
                     letterSpacing: '0.18em',
@@ -527,7 +527,7 @@ export default function ProductDetailPage({
                     border: 'none',
                     outline:
                       selColor?.hex === c.hex
-                        ? '2px solid var(--orange)'
+                        ? '2px solid var(--accent)'
                         : '1px solid var(--line)',
                     outlineOffset: 3,
                     cursor: 'pointer',
@@ -610,7 +610,7 @@ export default function ProductDetailPage({
                     fontSize: 10,
                     letterSpacing: '0.18em',
                     textTransform: 'uppercase',
-                    color: 'var(--orange-deep)',
+                    color: 'var(--accent-deep)',
                     textDecoration: 'underline',
                   }}
                 >
@@ -735,7 +735,7 @@ export default function ProductDetailPage({
                 textTransform: 'uppercase',
                 color: activeTab === k ? 'var(--black)' : 'var(--muted)',
                 borderBottom:
-                  activeTab === k ? '2px solid var(--orange)' : '2px solid transparent',
+                  activeTab === k ? '2px solid var(--accent)' : '2px solid transparent',
                 marginBottom: -1,
                 fontWeight: activeTab === k ? 700 : 500,
               }}
@@ -880,7 +880,7 @@ export default function ProductDetailPage({
                     fontSize: 10,
                     letterSpacing: '0.22em',
                     textTransform: 'uppercase',
-                    color: 'var(--orange-deep)',
+                    color: 'var(--accent-deep)',
                     marginBottom: 8,
                   }}
                 >
@@ -897,7 +897,7 @@ export default function ProductDetailPage({
                     fontSize: 10,
                     letterSpacing: '0.22em',
                     textTransform: 'uppercase',
-                    color: 'var(--orange-deep)',
+                    color: 'var(--accent-deep)',
                     marginBottom: 8,
                   }}
                 >
@@ -942,7 +942,7 @@ export default function ProductDetailPage({
                 letterSpacing: '0.01em',
               }}
             >
-              MORE FROM THE DROP<span style={{ color: 'var(--orange)' }}>.</span>
+              MORE FROM THE DROP<span style={{ color: 'var(--accent)' }}>.</span>
             </h2>
           </div>
           <Link
@@ -1080,7 +1080,7 @@ function AddToCartBtn({
       onMouseLeave={() => setHovered(false)}
       style={{
         flex: 1,
-        background: (disabled || isAdmin) ? 'var(--muted)' : hovered ? 'var(--orange)' : 'var(--black)',
+        background: (disabled || isAdmin) ? 'var(--muted)' : hovered ? 'var(--accent)' : 'var(--black)',
         color: (disabled || isAdmin) ? 'var(--cream)' : hovered ? 'var(--black)' : 'var(--cream)',
         border: 'none',
         padding: '15px',

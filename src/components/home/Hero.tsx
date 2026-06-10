@@ -24,7 +24,7 @@ export default function Hero() {
 
           <div style={{ position: 'absolute', top: 24, left: 30, right: 30, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', color: 'var(--cream)' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--orange)' }} />
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)' }} />
               MERCH DROP — VOL. 01
             </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', textAlign: 'right' }}>
@@ -34,13 +34,13 @@ export default function Hero() {
           </div>
 
           <div style={{ position: 'absolute', top: '6%', left: '4%', animation: 'fadeUp 0.8s ease both' }}>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(110px, 14vw, 220px)', color: 'var(--orange)', lineHeight: 0.85, letterSpacing: '-0.01em' }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(110px, 14vw, 220px)', color: 'var(--accent)', lineHeight: 0.85, letterSpacing: '-0.01em' }}>
               MERCH
             </h1>
           </div>
 
           <div style={{ position: 'absolute', bottom: '4%', right: '4%', textAlign: 'right', animation: 'fadeUp 0.8s 0.1s ease both' }}>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(110px, 14vw, 220px)', color: 'var(--orange)', lineHeight: 0.85, letterSpacing: '-0.01em' }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(110px, 14vw, 220px)', color: 'var(--accent)', lineHeight: 0.85, letterSpacing: '-0.01em' }}>
               DROP
             </h1>
           </div>
@@ -60,7 +60,7 @@ export default function Hero() {
               onMouseEnter={() => setHovered(true)}
               onMouseLeave={() => setHovered(false)}
               style={{
-                background: hovered ? 'var(--orange)' : 'var(--cream)',
+                background: hovered ? 'var(--accent)' : 'var(--cream)',
                 color: 'var(--black)', border: 'none', padding: '14px 26px',
                 borderRadius: 999, cursor: 'pointer', textDecoration: 'none',
                 fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase',
@@ -73,7 +73,7 @@ export default function Hero() {
             </Link>
           </div>
 
-          <div style={{ position: 'absolute', top: '36%', right: '6%', color: 'var(--orange)', fontSize: 48, fontFamily: 'var(--font-display)' }}>↗</div>
+          <div style={{ position: 'absolute', top: '36%', right: '6%', color: 'var(--accent)', fontSize: 48, fontFamily: 'var(--font-display)' }}>↗</div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', padding: '22px 6px', gap: 30, borderBottom: '1px solid var(--line)' }}>

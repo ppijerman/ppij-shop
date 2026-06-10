@@ -206,7 +206,7 @@ export default function AdminOrdersList({ orders, role }: { orders: AdminOrder[]
                 <td style={tdStyle}>
                   <Link
                     href={`/admin/${role}/orders/${order.id}`}
-                    style={{ color: 'var(--orange-deep)', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}
+                    style={{ color: 'var(--accent-deep)', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}
                   >
                     DETAILS →
                   </Link>

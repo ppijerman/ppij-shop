@@ -7,7 +7,7 @@ export function getOrderStatusLabel(status: string): string {
 
 export function getOrderStatusColor(status: string) {
   switch (status) {
-    case 'AWAITING_PAYMENT': return '#f39200';
+    case 'AWAITING_PAYMENT': return '#3d5a80';
     case 'PAYMENT_REVIEW': return '#2196f3';
     case 'PROCESSING': return '#9c27b0';
     case 'SHIPPED': return '#3f51b5';

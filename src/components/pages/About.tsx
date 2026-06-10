@@ -6,9 +6,9 @@ export default function About() {
   return (
     <section style={{ background: 'var(--cream)', padding: '60px 28px 80px' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--orange-deep)', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 14 }}>—— about ——</div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent-deep)', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 14 }}>—— about ——</div>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(64px, 9vw, 140px)', color: 'var(--black)', lineHeight: 0.92, letterSpacing: '0.01em', marginBottom: 48 }}>
-          PERHIMPUNAN PELAJAR<br />INDONESIA <span style={{ color: 'var(--orange)' }}>— DI JERMAN.</span>
+          PERHIMPUNAN PELAJAR<br />INDONESIA <span style={{ color: 'var(--accent)' }}>— DI JERMAN.</span>
         </h1>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 36, marginBottom: 48 }}>
@@ -27,7 +27,7 @@ export default function About() {
             <div style={{ display: 'flex', gap: 24, marginTop: 28 }}>
               {STATS.map(([n, l]) => (
                 <div key={l}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 42, color: 'var(--orange)' }}>{n}</div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 42, color: 'var(--accent)' }}>{n}</div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase' }}>{l}</div>
                 </div>
               ))}

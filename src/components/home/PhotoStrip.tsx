@@ -6,7 +6,7 @@ export default function PhotoStrip() {
       <div style={{ maxWidth: 1440, margin: '0 auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.85fr 1fr', gap: 24, alignItems: 'start', marginBottom: 40 }}>
           <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--orange-deep)', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 14 }}>—— stories ——</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-deep)', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 14 }}>—— stories ——</div>
             <h3 style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 42, lineHeight: 1.15, color: 'var(--black)' }}>
               Cerita pelajar Indonesia di tanah Jerman.
             </h3>

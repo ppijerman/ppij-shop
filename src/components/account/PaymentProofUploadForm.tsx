@@ -91,7 +91,7 @@ export default function PaymentProofUploadForm({ orderId, paymentExpiresAt }: { 
             gap: 16,
             alignItems: 'center',
             background: isExpired ? '#fff1f1' : '#fff8e8',
-            border: `1px solid ${isExpired ? '#f4b8b8' : isUrgent ? 'var(--orange)' : '#f0c36a'}`,
+            border: `1px solid ${isExpired ? '#f4b8b8' : isUrgent ? 'var(--accent)' : '#f0c36a'}`,
             borderRadius: 4,
             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)',
             padding: '14px 16px',
@@ -125,7 +125,7 @@ export default function PaymentProofUploadForm({ orderId, paymentExpiresAt }: { 
                 style={{
                   width: `${progress}%`,
                   height: '100%',
-                  background: isExpired ? '#b91c1c' : isUrgent ? 'var(--orange)' : '#d97d00',
+                  background: isExpired ? '#b91c1c' : isUrgent ? 'var(--accent)' : '#d97d00',
                   transition: 'width 0.3s linear',
                 }}
               />
@@ -169,7 +169,7 @@ export default function PaymentProofUploadForm({ orderId, paymentExpiresAt }: { 
         type="submit"
         disabled={submitting || isExpired}
         style={{
-          background: submitting || isExpired ? 'var(--muted)' : 'var(--orange)',
+          background: submitting || isExpired ? 'var(--muted)' : 'var(--accent)',
           color: 'var(--black)',
           border: 'none',
           padding: '13px 16px',

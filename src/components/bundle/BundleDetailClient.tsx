@@ -52,7 +52,7 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
         <div style={{ 
           fontFamily: 'var(--font-mono)', 
           fontSize: 10, 
-          color: 'var(--orange-deep)', 
+          color: 'var(--accent-deep)', 
           letterSpacing: '0.3em', 
           textTransform: 'uppercase', 
           marginBottom: 14 
@@ -66,7 +66,7 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
           lineHeight: 0.85,
           letterSpacing: '-0.01em'
         }}>
-          {bundle.name.toUpperCase()}<span style={{ color: 'var(--orange)' }}>.</span>
+          {bundle.name.toUpperCase()}<span style={{ color: 'var(--accent)' }}>.</span>
         </h1>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 40, alignItems: 'baseline', marginTop: 24 }}>
           <p style={{ 
@@ -131,7 +131,7 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
               width: '100%',
               maxWidth: 800,
               padding: '24px',
-              background: isComplete ? 'var(--orange)' : '#333',
+              background: isComplete ? 'var(--accent)' : '#333',
               color: isComplete ? 'var(--black)' : '#666',
               border: 'none',
               fontFamily: 'var(--font-mono)',
@@ -350,7 +350,7 @@ function BundleProductCard({
                     borderRadius: '50%',
                     background: c.hex,
                     border: 'none',
-                    outline: selColor?.hex === c.hex ? '2px solid var(--orange)' : '1px solid var(--line)',
+                    outline: selColor?.hex === c.hex ? '2px solid var(--accent)' : '1px solid var(--line)',
                     outlineOffset: 2,
                     cursor: 'pointer',
                     transition: 'transform 0.15s',

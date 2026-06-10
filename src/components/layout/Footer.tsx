@@ -23,7 +23,7 @@ export default function Footer() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
                 <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--cream)', letterSpacing: '0.04em' }}>PPI</span>
-                <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--orange)', letterSpacing: '0.04em' }}>JERMAN</span>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--accent)', letterSpacing: '0.04em' }}>JERMAN</span>
               </div>
             </Link>
             <p style={{ fontSize: 13, lineHeight: 1.7, color: 'rgba(239,234,224,0.6)', maxWidth: 300 }}>
@@ -36,7 +36,7 @@ export default function Footer() {
 
           {COLUMNS.map(col => (
             <div key={col.title}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--orange)', marginBottom: 14 }}>— {col.title}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 14 }}>— {col.title}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {col.links.map((l, j) => <FooterLink key={j} href={l.href}>{l.label}</FooterLink>)}
               </div>
@@ -57,7 +57,7 @@ function SocialBtn({ label }: { label: string }) {
   const [hovered, setHovered] = useState(false);
   return (
     <button
-      style={{ width: 32, height: 32, borderRadius: '50%', border: `1px solid ${hovered ? 'var(--orange)' : '#333'}`, background: hovered ? 'var(--orange)' : 'transparent', color: hovered ? 'var(--black)' : 'var(--cream)', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', cursor: 'pointer', transition: 'all 0.2s' }}
+      style={{ width: 32, height: 32, borderRadius: '50%', border: `1px solid ${hovered ? 'var(--accent)' : '#333'}`, background: hovered ? 'var(--accent)' : 'transparent', color: hovered ? 'var(--black)' : 'var(--cream)', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', cursor: 'pointer', transition: 'all 0.2s' }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >

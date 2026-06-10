@@ -38,7 +38,7 @@ function StatCard({ label, value, highlight = false }: { label: string; value: n
   return (
     <div style={{ 
       padding: '32px', 
-      background: highlight ? 'var(--orange)' : 'white', 
+      background: highlight ? 'var(--accent)' : 'white', 
       borderRadius: 12, 
       border: '1px solid var(--line)',
       boxShadow: '0 4px 12px rgba(0,0,0,0.05)'

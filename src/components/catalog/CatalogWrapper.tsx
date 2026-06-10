@@ -14,12 +14,12 @@ export default function CatalogWrapper({ products, bundles }: { products: any[],
         <section style={{ padding: '80px 28px 40px', borderBottom: '1px solid var(--line)' }}>
           <div style={{ maxWidth: 1440, margin: '0 auto' }}>
             <div style={{ marginBottom: 32 }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--orange-deep)', letterSpacing: '0.3em', textTransform:
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-deep)', letterSpacing: '0.3em', textTransform:
       'uppercase', marginBottom: 8 }}>
                 -- excluesive deals --
               </div>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 48, color: 'var(--black)' }}>
-                CURATED BUNDLES<span style={{ color: 'var(--orange)' }}>.</span>
+                CURATED BUNDLES<span style={{ color: 'var(--accent)' }}>.</span>
               </h2>
             </div>
 
@@ -48,7 +48,7 @@ export default function CatalogWrapper({ products, bundles }: { products: any[],
                 </div>
                 <div style={{ marginTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 24 }}>€{Number(bundle.price).toFixed(2)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', border: '1px solid var(--orange)', color: 'var(--orange)', padding: '4px 8px' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', border: '1px solid var(--accent)', color: 'var(--accent)', padding: '4px 8px' }}>
                     view bundle ↗
                   </span>
                 </div>

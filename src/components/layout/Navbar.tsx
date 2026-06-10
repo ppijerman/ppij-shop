@@ -51,7 +51,7 @@ export default function Navbar() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--black)', letterSpacing: '0.04em' }}>PPI</span>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--orange)', letterSpacing: '0.04em' }}>JERMAN</span>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--accent)', letterSpacing: '0.04em' }}>JERMAN</span>
           </div>
         </Link>
 
@@ -234,7 +234,7 @@ function AccountControl({ authLoaded, isSignedIn, triggerName, signedInName, sig
           display: 'flex',
           alignItems: 'center',
           gap: 8,
-          background: isOpen ? 'var(--orange)' : 'transparent',
+          background: isOpen ? 'var(--accent)' : 'transparent',
           color: 'var(--black)',
           border: '1px solid var(--line)',
           borderRadius: 999,
@@ -347,12 +347,12 @@ function NavLink({ href, active, children }: { href: string; active: boolean; ch
       style={{
         textDecoration: 'none', padding: '8px 16px',
         fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13,
-        color: hovered ? 'var(--orange-deep)' : active ? 'var(--black)' : 'var(--ink)',
+        color: hovered ? 'var(--accent-deep)' : active ? 'var(--black)' : 'var(--ink)',
         letterSpacing: '0.04em', position: 'relative', transition: 'color 0.15s',
       }}
     >
       {children}
-      {active && <span style={{ position: 'absolute', bottom: -1, left: '50%', transform: 'translateX(-50%)', width: 5, height: 5, borderRadius: '50%', background: 'var(--orange)' }} />}
+      {active && <span style={{ position: 'absolute', bottom: -1, left: '50%', transform: 'translateX(-50%)', width: 5, height: 5, borderRadius: '50%', background: 'var(--accent)' }} />}
     </Link>
   );
 }
@@ -366,7 +366,7 @@ function CartPill({ count }: { count: number }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8,
-        background: hovered ? 'var(--orange)' : 'var(--black)',
+        background: hovered ? 'var(--accent)' : 'var(--black)',
         color: hovered ? 'var(--black)' : 'var(--cream)',
         padding: '9px 18px', borderRadius: 999,
         fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase',

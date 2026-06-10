@@ -144,7 +144,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
         <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 0.85fr' }}>
           <div style={{ background: 'var(--cream-2)', position: 'relative', minHeight: 520 }}>
             <ProductCrop src={product.primary_image ?? 'editorial-color.jpeg'} height={560} scale={2.4} />
-            {product.tag && <div style={{ position: 'absolute', top: 18, right: 18, background: 'var(--orange)', color: 'var(--black)', padding: '5px 12px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase' }}>{product.tag}</div>}
+            {product.tag && <div style={{ position: 'absolute', top: 18, right: 18, background: 'var(--accent)', color: 'var(--black)', padding: '5px 12px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase' }}>{product.tag}</div>}
           </div>
 
           <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 18, position: 'relative' }}>
@@ -188,7 +188,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
                       borderRadius: '50%',
                       background: c.hex,
                       border: 'none',
-                      outline: selColor?.name === c.name ? '2px solid var(--orange)' : '1px solid var(--line)',
+                      outline: selColor?.name === c.name ? '2px solid var(--accent)' : '1px solid var(--line)',
                       outlineOffset: 2,
                       cursor: 'pointer',
                     }}
@@ -300,7 +300,7 @@ function AddBtn({
       disabled={disabled || isAdmin}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{ background: (disabled || isAdmin) ? 'var(--muted)' : hovered ? 'var(--orange)' : 'var(--black)', color: (disabled || isAdmin) ? 'var(--cream)' : hovered ? 'var(--black)' : 'var(--cream)', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: (disabled || isAdmin) ? 'not-allowed' : 'pointer', borderRadius: 999, transition: 'background 0.2s, color 0.2s' }}
+      style={{ background: (disabled || isAdmin) ? 'var(--muted)' : hovered ? 'var(--accent)' : 'var(--black)', color: (disabled || isAdmin) ? 'var(--cream)' : hovered ? 'var(--black)' : 'var(--cream)', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: (disabled || isAdmin) ? 'not-allowed' : 'pointer', borderRadius: 999, transition: 'background 0.2s, color 0.2s' }}
     >
       {isAdmin ? 'ADMIN MODE' : (disabled ? (soldOut ? 'sold out' : 'max in cart') : `add to cart — €${price.toFixed(2)} ↗`)}
     </button>

@@ -25,7 +25,7 @@ export default async function AdminSettingsPage() {
             </div>
             <div>
               <label style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Management Access</label>
-              <p style={{ fontSize: 16, fontWeight: 500, color: 'var(--orange-deep)' }}>{user.role}</p>
+              <p style={{ fontSize: 16, fontWeight: 500, color: 'var(--accent-deep)' }}>{user.role}</p>
             </div>
           </div>
         </section>

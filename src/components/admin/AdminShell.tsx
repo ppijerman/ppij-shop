@@ -43,7 +43,7 @@ export default function AdminShell({
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 28, letterSpacing: '0.02em', color: 'var(--black)', lineHeight: 1 }}>
               {isItAdmin ? 'IT ADMIN' : 'KK ADMIN'}
             </h2>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--orange-deep)', textTransform: 'uppercase', marginTop: 8, letterSpacing: '0.1em' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent-deep)', textTransform: 'uppercase', marginTop: 8, letterSpacing: '0.1em' }}>
               Management Portal
             </div>
           </div>
