@@ -24,6 +24,16 @@ export async function updateUserRoleAction(userId: string, role: Role) {
   );
 }
 
+export async function deleteOwnAccountAction() {
+  const { getCurrentDbUserOrThrow } = await import('../users');
+  const user = await getCurrentDbUserOrThrow();
+
+  await db.query(`DELETE FROM users WHERE id = $1`, [user.id]);
+
+  const client = await clerkClient();
+  await client.users.deleteUser(user.clerk_user_id);
+}
+
 export async function deleteUserAction(userId: string) {
   await requireAdmin();
 
