@@ -12,7 +12,7 @@ export default function TermsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 40, fontFamily: 'var(--font-body)', color: 'var(--ink)', lineHeight: 1.8 }}>
           <div>
             <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24 }}>
-              Last updated: June 2025
+              Last updated: June 2026
             </p>
             <p style={{ fontSize: 15 }}>
               These Terms and Conditions govern your use of the PPI Jerman Merch Shop and the purchase of merchandise offered through this platform. By creating an account, you agree to be bound by these terms.
