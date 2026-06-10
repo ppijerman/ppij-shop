@@ -30,7 +30,7 @@ export default function FAQ() {
             >
               <span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 22, color: 'var(--black)', textAlign: 'left' }}>{item.q}</span>
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: open === i ? 'var(--accent)' : 'transparent', border: open === i ? 'none' : '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}>
-                <span style={{ fontSize: 16, transform: open === i ? 'rotate(45deg)' : 'rotate(0)', transition: 'transform 0.2s', display: 'block' }}>+</span>
+                <span style={{ fontSize: 16, transform: open === i ? 'rotate(45deg)' : 'rotate(0)', transition: 'transform 0.2s', display: 'block', color: open === i ? '#fff' : 'var(--black)' }}>+</span>
               </div>
             </button>
             {open === i && (

@@ -224,7 +224,7 @@ export function AuthSubmitButton({ loading, loadingLabel, idleLabel, disabled = 
       onMouseLeave={() => setHovered(false)}
       style={{
         background: isDisabled ? "var(--muted)" : hovered ? "var(--accent)" : "var(--black)",
-        color: hovered && !isDisabled ? "var(--black)" : "var(--cream)",
+        color: "var(--cream)",
         border: "none",
         padding: "18px",
         fontFamily: "var(--font-mono)",

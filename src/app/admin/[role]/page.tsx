@@ -43,8 +43,8 @@ function StatCard({ label, value, highlight = false }: { label: string; value: n
       border: '1px solid var(--line)',
       boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
     }}>
-      <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8, color: highlight ? 'var(--black)' : 'var(--muted)' }}>{label}</p>
-      <p style={{ fontSize: 42, fontWeight: 800, fontFamily: 'var(--font-display)' }}>{value}</p>
+      <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8, color: highlight ? 'rgba(255,255,255,0.75)' : 'var(--muted)' }}>{label}</p>
+      <p style={{ fontSize: 42, fontWeight: 800, fontFamily: 'var(--font-display)', color: highlight ? '#fff' : 'var(--black)' }}>{value}</p>
     </div>
   );
 }

@@ -110,46 +110,40 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
         ))}
       </div>
 
-      {isAdmin ? (
-        <div style={{ marginTop: 60, padding: '24px', background: 'var(--line)', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 12,
-          textAlign: 'center' }}>
-          ADMINISTRATIVE PREVIEW MODE — CHECKOUT DISABLED
-        </div>
-      ) : (
-      <div style={{ 
-        marginTop: 60, 
-        padding: '60px 40px', 
-        background: 'var(--black)', 
-        color: 'var(--cream)',
-        textAlign: 'center',
-        border: '1px solid #222'
+      <div style={{
+        marginTop: 48,
+        paddingTop: 40,
+        borderTop: '1px solid var(--line)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
       }}>
-          <button
-            onClick={handleAdd}
-            disabled={!isComplete}
-            style={{
-              width: '100%',
-              maxWidth: 800,
-              padding: '24px',
-              background: isComplete ? 'var(--accent)' : '#333',
-              color: isComplete ? 'var(--black)' : '#666',
-              border: 'none',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 14,
-              letterSpacing: '0.25em',
-              cursor: isComplete ? 'pointer' : 'not-allowed',
-              textTransform: 'uppercase',
-              fontWeight: 700,
-              transition: 'all 0.3s'
-            }}
-          >
-            {isComplete 
-              ? `CONFIRM BUNDLE & ADD TO CART — €${Number(bundle.price).toFixed(2)} ↗` 
-              : 'SELECT ALL PRODUCT VARIANTS TO UNLOCK'
-            }
-          </button>
+        <button
+          onClick={handleAdd}
+          disabled={!isComplete || isAdmin}
+          style={{
+            width: '100%',
+            maxWidth: 640,
+            padding: '18px 32px',
+            background: isComplete ? 'var(--accent)' : 'var(--line)',
+            color: isComplete ? '#fff' : 'var(--muted)',
+            border: 'none',
+            borderRadius: 999,
+            fontFamily: 'var(--font-mono)',
+            fontSize: 12,
+            letterSpacing: '0.22em',
+            cursor: isComplete ? 'pointer' : 'not-allowed',
+            textTransform: 'uppercase',
+            fontWeight: 700,
+            transition: 'all 0.3s',
+          }}
+        >
+          {isComplete
+            ? `Add bundle to cart — €${Number(bundle.price).toFixed(2)} ↗`
+            : 'Select all variants to continue'
+          }
+        </button>
       </div>
-        )}
     </div>
   )
 }

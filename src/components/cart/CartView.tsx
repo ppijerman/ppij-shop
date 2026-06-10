@@ -158,14 +158,14 @@ export default function CartView() {
                 <span>SHIPPING</span><span style={{ color: '#7CD992' }}>FREE</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-display)', fontSize: 24, marginTop: 14, paddingTop: 14, borderTop: '1px solid #222' }}>
-                <span>TOTAL</span><span style={{ color: 'var(--accent)' }}>€{total.toFixed(2)}</span>
+                <span>TOTAL</span><span style={{ color: '#fff' }}>€{total.toFixed(2)}</span>
               </div>
               {(checkoutError || error) && (
                 <div style={{ background: '#fee2e2', color: '#991b1b', padding: 12, marginTop: 16, fontSize: 12, lineHeight: 1.5 }}>
                   {checkoutError ?? error}
                 </div>
               )}
-              <button disabled={submitting || loading} type="submit" style={{ width: '100%', background: submitting || loading ? 'var(--muted)' : 'var(--accent)', color: 'var(--black)', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: submitting || loading ? 'not-allowed' : 'pointer', marginTop: 18, borderRadius: 999, fontWeight: 600 }}>
+              <button disabled={submitting || loading} type="submit" style={{ width: '100%', background: submitting || loading ? 'var(--muted)' : 'var(--accent)', color: '#fff', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: submitting || loading ? 'not-allowed' : 'pointer', marginTop: 18, borderRadius: 999, fontWeight: 600 }}>
                 {submitting ? 'creating order...' : 'place order ↗'}
               </button>
             </div>

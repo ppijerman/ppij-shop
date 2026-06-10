@@ -61,7 +61,7 @@ export default function Hero() {
               onMouseLeave={() => setHovered(false)}
               style={{
                 background: hovered ? 'var(--accent)' : 'var(--cream)',
-                color: 'var(--black)', border: 'none', padding: '14px 26px',
+                color: hovered ? '#fff' : 'var(--black)', border: 'none', padding: '14px 26px',
                 borderRadius: 999, cursor: 'pointer', textDecoration: 'none',
                 fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase',
                 display: 'flex', alignItems: 'center', gap: 10,

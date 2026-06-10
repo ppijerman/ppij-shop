@@ -59,7 +59,7 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
                       </div>
                     )}
                     <div style={{ position: 'absolute', inset: 0, background: 'rgba(14,14,14,0.55)', backdropFilter: 'blur(2px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, opacity: isHovered ? 1 : 0, transition: 'opacity 0.25s' }}>
-                      <span style={{ background: 'var(--accent)', color: 'var(--black)', padding: '10px 18px', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
+                      <span style={{ background: 'var(--accent)', color: '#fff', padding: '10px 18px', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
                         view details <span style={{ fontSize: 13 }}>↗</span>
                       </span>
                       <button
