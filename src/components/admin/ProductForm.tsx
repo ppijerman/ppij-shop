@@ -8,10 +8,10 @@ interface ProductFormProps {
   action: (formData: FormData) => Promise<void>;
 }
 
-const getFieldStyle = (isChanged: boolean) => ({
+const getFieldStyle = (isChanged: boolean, isEmpty = false) => ({
   ...inputStyle,
-  borderColor: isChanged ? 'var(--accent)' : 'var(--line)',
-  backgroundColor: isChanged ? '#fff7ed' : 'white',
+  borderColor: isEmpty ? '#ef4444' : isChanged ? 'var(--accent)' : 'var(--line)',
+  backgroundColor: isEmpty ? '#fef2f2' : isChanged ? '#fff7ed' : 'white',
 });
 
 const DEFAULT_SIZES = ['S', 'M', 'L', 'XL', 'XXL', 'ONE SIZE'];
@@ -25,7 +25,7 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
     category: initialData?.category || 'TSHIRT',
     tag: initialData?.tag || '',
     skuPrefix: initialData?.sku_prefix || '',
-    weight: initialData?.weight_g || 0,
+    weight: initialData?.weight_g ?? '',
     desc: initialData?.desc || ''
   });
   
@@ -58,6 +58,12 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
 
   const [images, setImages] = useState<{ url: string; is_primary: boolean; }[]>(initialData?.images || []);
   const [fileInputKey, setFileInputKey] = useState(0);
+  const [attempted, setAttempted] = useState(false);
+
+  const isEmpty = (val: any) => val === '' || val === null || val === undefined;
+  const enabledFits = (['REGULAR', 'OVERSIZED'] as FitType[]).filter(f => fits[f].enabled);
+  const fitsValid = enabledFits.length > 0 && enabledFits.every(f => !isEmpty(fits[f].price) && fits[f].sizes.length > 0);
+  const colorsValid = colors.length > 0 && colors.every(c => c.name.trim() !== '');
 
   const handleUpdateFit = (type: FitType, updates: Partial<FitConfig>) => {
     setFits(prev => ({
@@ -84,11 +90,15 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    formData.set('images', JSON.stringify(images));
-    formData.set('colors', JSON.stringify(colors));
-    formData.set('fits', JSON.stringify(fits));
-    action(formData);
+    setAttempted(true);
+    if (isEmpty(formData.name) || isEmpty(formData.skuPrefix) || isEmpty(formData.weight) || isEmpty(formData.desc) || !colorsValid || !fitsValid) {
+      return;
+    }
+    const fd = new FormData(e.currentTarget);
+    fd.set('images', JSON.stringify(images));
+    fd.set('colors', JSON.stringify(colors));
+    fd.set('fits', JSON.stringify(fits));
+    action(fd);
   };
 
   return (
@@ -98,13 +108,14 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
         <div style={fieldGroup}>
           <label style={labelStyle}>Product Name</label>
-          <input 
-            name="name" 
-            value={formData.name} 
+          <input
+            name="name"
+            value={formData.name}
             onChange={e => setFormData({...formData, name: e.target.value})}
-            style={getFieldStyle(formData.name !== (initialData?.name || ''))} 
-            placeholder="e.g. Fang & Horn" 
+            style={getFieldStyle(formData.name !== (initialData?.name || ''), attempted && isEmpty(formData.name))}
+            placeholder="e.g. Fang & Horn"
           />
+          {attempted && isEmpty(formData.name) && <span style={errorText}>Required</span>}
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Subtitle</label>
@@ -150,41 +161,45 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>SKU Prefix</label>
-          <input 
-            name="skuPrefix" 
-            value={formData.skuPrefix} 
+          <input
+            name="skuPrefix"
+            value={formData.skuPrefix}
             onChange={e => setFormData({...formData, skuPrefix: e.target.value})}
-            style={getFieldStyle(formData.skuPrefix !== (initialData?.sku_prefix || ''))}
-            placeholder="e.g. FH-TEE" 
+            style={getFieldStyle(formData.skuPrefix !== (initialData?.sku_prefix || ''), attempted && isEmpty(formData.skuPrefix))}
+            placeholder="e.g. FH-TEE"
           />
+          {attempted && isEmpty(formData.skuPrefix) && <span style={errorText}>Required</span>}
         </div>
         <div style={fieldGroup}>
           <label style={labelStyle}>Weight (kg)</label>
-          <input 
-            name="weight" 
-            type="number" 
-            step="0.01" 
-            value={formData.weight} 
-            onChange={e => setFormData({...formData, weight: parseFloat(e.target.value) || 0})}
-            style={getFieldStyle(formData.weight !== (initialData?.weight_g || 0))}
-            placeholder="e.g. 0.25" 
+          <input
+            name="weight"
+            type="number"
+            step="0.01"
+            value={formData.weight}
+            onChange={e => setFormData({...formData, weight: e.target.value})}
+            style={getFieldStyle(String(formData.weight) !== String(initialData?.weight_g ?? ''), attempted && isEmpty(formData.weight))}
+            placeholder="e.g. 0.25"
           />
+          {attempted && isEmpty(formData.weight) && <span style={errorText}>Required</span>}
         </div>
       </div>
 
       <div style={{ ...fieldGroup, marginBottom: 24 }}>
         <label style={labelStyle}>Description</label>
-        <textarea 
-          name="desc" 
-          value={formData.desc} 
+        <textarea
+          name="desc"
+          value={formData.desc}
           onChange={e => setFormData({...formData, desc: e.target.value})}
-          style={{ ...getFieldStyle(formData.desc !== (initialData?.desc || '')), minHeight: 100, resize: 'vertical' }} 
+          style={{ ...getFieldStyle(formData.desc !== (initialData?.desc || ''), attempted && isEmpty(formData.desc)), minHeight: 100, resize: 'vertical' }}
         />
+        {attempted && isEmpty(formData.desc) && <span style={errorText}>Required</span>}
       </div>
 
       {formData.category !== 'TOTEBAG' && (
         <div  style={{ marginBottom: 32 }}>
-          <label style={labelStyle}>Enabled Fits</label>
+          <label style={{ ...labelStyle, color: attempted && !fitsValid ? '#ef4444' : 'var(--muted)' }}>Enabled Fits</label>
+          {attempted && !fitsValid && <span style={errorText}>{enabledFits.length === 0 ? 'Enable at least one fit' : 'Each enabled fit needs a price and at least one size'}</span>}
           <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
             {(['REGULAR', 'OVERSIZED'] as FitType[]).map(f => (
               <label key={f} style={{ 
@@ -218,8 +233,9 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
       )}
 
       <div style={{ marginBottom: 32 }}>
-        <label style={labelStyle}>Global Colors</label>
-        <div style={{ display: 'flex', gap: 12, flexDirection: 'column', marginTop: 8 }}>
+        <label style={{ ...labelStyle, color: attempted && !colorsValid ? '#ef4444' : 'var(--muted)' }}>Global Colors</label>
+        {attempted && !colorsValid && <span style={errorText}>{colors.length === 0 ? 'Add at least one color' : 'All colors must have a name'}</span>}
+        <div style={{ display: 'flex', gap: 12, flexDirection: 'column', marginTop: 8, borderRadius: 8, border: attempted && !colorsValid ? '1px solid #ef4444' : 'none', padding: attempted && !colorsValid ? 8 : 0 }}>
           {colors.map((c, i) => (
             <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <input 
@@ -265,9 +281,10 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
             <div style={fieldGroup}>
               <label style={labelStyle}>{f} Price (€)</label>
-              <input type="number" value={fits[f].price} 
-                onChange={e => handleUpdateFit(f, { price: parseFloat(e.target.value) || 0 })} 
-                style={inputStyle}/>
+              <input type="number" value={fits[f].price}
+                onChange={e => handleUpdateFit(f, { price: e.target.value })}
+                style={getFieldStyle(false, attempted && isEmpty(fits[f].price))} />
+              {attempted && isEmpty(fits[f].price) && <span style={errorText}>Required</span>}
             </div>
             <div style={fieldGroup}>
               <label style={labelStyle}>{f} Original Price (€)</label>
@@ -457,3 +474,4 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
 const fieldGroup: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 8 };
 const labelStyle: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '0.05em' };
 const inputStyle: React.CSSProperties = { padding: '12px', borderRadius: 6, border: '1px solid var(--line)', fontSize: 14, fontFamily: 'inherit' };
+const errorText: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 11, color: '#ef4444' };

@@ -39,12 +39,6 @@ export default async function AdminSettingsPage() {
           </p>
           
           <SettingsForm user={user} />
-          
-          <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
-             <p style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
-               Internal Security Level: High
-             </p>
-          </div>
         </section>
       </div>
     </div>

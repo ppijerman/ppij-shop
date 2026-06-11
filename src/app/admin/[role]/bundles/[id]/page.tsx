@@ -35,7 +35,6 @@ export default async function EditBundle({ params }: { params: Promise<{ id: str
     const variantIds = JSON.parse(formData.get('selectedVariantIds') as string);
 
     await updateBundle(bundleId, { name, skuPrefix, price, originalPrice, description, slug: newSlug, variantIds });
-    alert('Bundle updated successfully!');
     redirect(`/admin/${role}/bundles`);
   }
 

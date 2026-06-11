@@ -17,11 +17,23 @@ export interface BundleData {
 export async function createBundle(bundleData: BundleData) {
   await requireAdmin();
   return withTransaction(async (query) => {
-    const slug = generateSlug(bundleData.name);
+    const base = generateSlug(bundleData.name);
+    const existingSlugs = await query(
+      `SELECT slug FROM bundles WHERE slug ~ $1`,
+      [`^${base}(-[0-9]+)?$`]
+    );
+    const slug = existingSlugs.rows.length === 0 ? base : `${base}-${existingSlugs.rows.length}`;
+
+    const baseSku = `BDL-${bundleData.skuPrefix}`;
+    const existingSkus = await query(
+      `SELECT sku FROM bundles WHERE sku ~ $1`,
+      [`^${baseSku}(-[0-9]+)?$`]
+    );
+    const sku = existingSkus.rows.length === 0 ? baseSku : `${baseSku}-${existingSkus.rows.length}`;
 
     const res = await query(
       `
-      INSERT INTO bundles (name, "desc", price, original_price, slug, sku) 
+      INSERT INTO bundles (name, "desc", price, original_price, slug, sku)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id
       `,
@@ -31,7 +43,7 @@ export async function createBundle(bundleData: BundleData) {
         bundleData.price,
         bundleData.originalPrice,
         slug,
-        `BDL-${bundleData.skuPrefix}`
+        sku,
       ]
     );
   
@@ -52,11 +64,23 @@ export async function createBundle(bundleData: BundleData) {
 export async function updateBundle(bundleId: string, bundleData: BundleData) {
   await requireAdmin();
   await withTransaction(async (query) => {
-    const slug = generateSlug(bundleData.name);
+    const base = generateSlug(bundleData.name);
+    const existingSlugs = await query(
+      `SELECT slug FROM bundles WHERE slug ~ $1 AND id != $2`,
+      [`^${base}(-[0-9]+)?$`, bundleId]
+    );
+    const slug = existingSlugs.rows.length === 0 ? base : `${base}-${existingSlugs.rows.length}`;
+
+    const baseSku = `BDL-${bundleData.skuPrefix}`;
+    const existingSkus = await query(
+      `SELECT sku FROM bundles WHERE sku ~ $1 AND id != $2`,
+      [`^${baseSku}(-[0-9]+)?$`, bundleId]
+    );
+    const sku = existingSkus.rows.length === 0 ? baseSku : `${baseSku}-${existingSkus.rows.length}`;
 
     await query(
       `
-      UPDATE bundles 
+      UPDATE bundles
       SET name = $2, "desc" = $3, price = $4, original_price = $5, slug = $6, sku = $7
       WHERE id = $1
       `,
@@ -67,7 +91,7 @@ export async function updateBundle(bundleId: string, bundleData: BundleData) {
         bundleData.price,
         bundleData.originalPrice,
         slug,
-        bundleData.skuPrefix
+        sku,
       ]
     );
 

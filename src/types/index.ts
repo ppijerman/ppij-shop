@@ -78,7 +78,7 @@ export type FitType = 'REGULAR' | 'OVERSIZED';
 
 export interface FitConfig {
   enabled: boolean;
-  price: number;
+  price: number | string;
   originalPrice: number | null;
   sizes: string[];
   stock: Record<string, Record<string, number>>;

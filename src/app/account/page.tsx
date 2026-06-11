@@ -28,23 +28,6 @@ export default async function AccountPage() {
           <div>
             <label style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Account Role</label>
             <p style={{ fontSize: 16, fontWeight: 500 }}>{user.role}</p>
-            <Link
-              href={`/admin/${user.role === 'ADMIN_IT' ? 'it' : 'kk'}`}
-              style={{
-                display: 'inline-block',
-                marginTop: 12,
-                padding: '8px 16px',
-                background: 'var(--black)',
-                color: 'var(--cream)',
-                textDecoration: 'none',
-                fontSize: 12,
-                fontWeight: 600,
-                letterSpacing: '0.1em',
-                fontFamily: 'var(--font-mono)',
-              }}
-            >
-              GO TO DASHBOARD →
-            </Link>
           </div>
           )}
           </div>
