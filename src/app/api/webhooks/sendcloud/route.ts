@@ -13,17 +13,9 @@ function verifySignature(body: string, signature: string): boolean {
     return crypto.timingSafeEqual(expectedBuf, signatureBuf);
 }
 
-function toOrderStatus(parcelStatus: { id?: number; code?: string } | undefined): string | null {
-    // V2: numeric status IDs
-    if (parcelStatus?.id !== undefined) {
-        if ([11, 12, 13, 14, 15].includes(parcelStatus.id)) return 'SHIPPED';
-        if (parcelStatus.id === 2000) return 'DONE';
-    }
-    // V3: string status codes
-    if (parcelStatus?.code !== undefined) {
-        if (['IN_TRANSIT', 'AT_SORTING_CENTER', 'DELIVERY_ATTEMPT', 'OUT_FOR_DELIVERY'].includes(parcelStatus.code)) return 'SHIPPED';
-        if (['DELIVERED'].includes(parcelStatus.code)) return 'DONE';
-    }
+function toOrderStatus(parcelStatus: { code?: string } | undefined): string | null {
+    if (['IN_TRANSIT', 'AT_SORTING_CENTER', 'DELIVERY_ATTEMPT', 'OUT_FOR_DELIVERY'].includes(parcelStatus?.code ?? '')) return 'SHIPPED';
+    if (parcelStatus?.code === 'DELIVERED') return 'DONE';
     return null;
 }
 

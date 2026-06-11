@@ -934,6 +934,14 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
         console.error(`SendCloud parcel ${parcel.id} created but failed to save to order ${orderId}:`, dbErr);
         throw dbErr;
       }
+
+      await db.query(
+        `
+        INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+        VALUES ($1, 'PROCESSING', $2, $3)
+        `,
+        [orderId, `Shipping label created via SendCloud (parcel #${parcel.id}, tracking: ${parcel.tracking_number || 'pending'})`, admin.id],
+      );
     } catch (err) {
       console.error('Failed to create/save parcel: ', err);
 

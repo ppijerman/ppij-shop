@@ -108,12 +108,18 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
   const [cancelReason, setCancelReason] = useState('');
   const [cancelReasonError, setCancelReasonError] = useState<string | null>(null);
   const [cancelConfirming, setCancelConfirming] = useState(false);
+  const [confirmStatusOpen, setConfirmStatusOpen] = useState(false);
 
   useBodyScrollLock(proofPreviewOpen);
 
   const isPickup = initialOrder.delivery_type === 'PICKUP';
   const paymentExpiresAt = initialOrder.payment_expires_at ? new Date(initialOrder.payment_expires_at) : null;
-  const statuses: string[] = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', ...(isPickup ? [] : ['SHIPPED']), 'DONE'];
+  const STATUS_FLOW = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', ...(isPickup ? [] : ['SHIPPED']), 'DONE', 'CANCELLED'];
+  const currentIdx = STATUS_FLOW.indexOf(initialOrder.status);
+  const statuses = STATUS_FLOW.map((s) => ({
+    value: s,
+    disabled: STATUS_FLOW.indexOf(s) < currentIdx,
+  }));
   const canAdminCancel = !['CANCELLED', 'DONE', 'SHIPPED'].includes(initialOrder.status);
   const canEditShippingNumber = !isPickup && (initialOrder.status === 'PROCESSING' || initialOrder.status === 'SHIPPED');
   const timelineStatusOptions = Array.from(new Set(statusLogs.map((log) => log.status)));
@@ -500,7 +506,9 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
               onChange={(e) => setStatus(e.target.value)}
               style={{ width: '100%', padding: '12px', borderRadius: 4, border: '1px solid var(--line)', fontFamily: 'var(--font-mono)', fontSize: 12, marginBottom: 16 }}
             >
-              {statuses.map(s => <option key={s} value={s}>{getOrderStatusLabel(s)}</option>)}
+              {statuses.map(({ value, disabled }) => (
+                <option key={value} value={value} disabled={disabled}>{getOrderStatusLabel(value)}</option>
+              ))}
             </select>
             <label htmlFor="status-comment" style={infoLabel}>Optional comment</label>
             <textarea
@@ -542,18 +550,18 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
               </div>
             )}
           <button
-            onClick={handleUpdateStatus}
-            disabled={loading}
+            onClick={() => setConfirmStatusOpen(true)}
+            disabled={loading || status === initialOrder.status}
             style={{
               width: '100%',
               padding: '12px',
-              background: loading ? 'var(--muted)' : 'var(--black)',
+              background: loading || status === initialOrder.status ? 'var(--muted)' : 'var(--black)',
               color: 'var(--cream)',
               border: 'none',
               borderRadius: 4,
               fontFamily: 'var(--font-mono)',
               fontSize: 12,
-              cursor: loading ? 'not-allowed' : 'pointer',
+              cursor: loading || status === initialOrder.status ? 'not-allowed' : 'pointer',
             }}
           >
             {loading ? 'UPDATING...' : 'UPDATE STATUS'}
@@ -918,6 +926,41 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
           </section>
         )}
       </div>
+
+      {confirmStatusOpen && (
+        <div
+          onClick={() => setConfirmStatusOpen(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(14,14,14,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 8, padding: 32, width: 'min(420px, 92vw)', boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
+          >
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--muted)', marginBottom: 8 }}>Confirm status change</p>
+            <p style={{ fontFamily: 'var(--font-display)', fontSize: 22, marginBottom: 6 }}>
+              {getOrderStatusLabel(initialOrder.status)} → {getOrderStatusLabel(status)}
+            </p>
+            {statusComment && (
+              <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.5 }}>"{statusComment}"</p>
+            )}
+            <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+              <button
+                onClick={() => setConfirmStatusOpen(false)}
+                style={{ flex: 1, padding: '12px', border: '1px solid var(--line)', borderRadius: 4, background: 'white', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={() => { setConfirmStatusOpen(false); void handleUpdateStatus(); }}
+                disabled={loading}
+                style={{ flex: 1, padding: '12px', border: 'none', borderRadius: 4, background: 'var(--black)', color: 'var(--cream)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
+              >
+                CONFIRM
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {proofPreviewOpen && initialOrder.payment_proof_url && (
         <div
