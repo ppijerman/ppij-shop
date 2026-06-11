@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
@@ -8,7 +8,6 @@ import { useToast } from '@/context/ToastContext';
 import ProductCrop from '@/components/product/ProductCrop';
 import { createOrder, getShippingOptionsAction } from '@/lib/actions/orders';
 import { getPaymentInstruction } from '@/lib/payment';
-import { useCallback } from 'react';
 
 import type { ShippingOption } from '@/lib/actions/orders';
 
@@ -57,12 +56,18 @@ export default function CartView() {
     }
   };
 
+  const fetchSeqRef = useRef(0);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const fetchShippingOptions = useCallback(async (toCountry: string) => {
     if (!toCountry.trim()) return;
+    // Drop out-of-order responses: only the latest request may update state.
+    const seq = ++fetchSeqRef.current;
     setShippingLoading(true);
     setShippingError(null);
     try {
       const result = await getShippingOptionsAction(toCountry);
+      if (seq !== fetchSeqRef.current) return;
       if (result.ok) {
         setShippingOptions(result.options);
         setSelectedMethodId(result.options[0]?.methodId ?? null);
@@ -72,13 +77,19 @@ export default function CartView() {
         setShippingError(result.message);
       }
     } catch {
+      if (seq !== fetchSeqRef.current) return;
       setShippingOptions([]);
       setSelectedMethodId(null);
       setShippingError('Failed to fetch shipping options');
     } finally {
-      setShippingLoading(false);
+      if (seq === fetchSeqRef.current) setShippingLoading(false);
     }
   }, []);
+
+  const fetchShippingOptionsDebounced = useCallback((toCountry: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => void fetchShippingOptions(toCountry), 400);
+  }, [fetchShippingOptions]);
 
   return (
     <section style={{ background: 'var(--cream)', minHeight: '80vh', padding: '60px 28px 80px' }}>
@@ -101,7 +112,6 @@ export default function CartView() {
           <form action={handleCheckout} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 360px', gap: 50, alignItems: 'start' }}>
             <input type="hidden" name="deliveryType" value={deliveryType} />
             <input type="hidden" name="paymentMethod" value="IBAN" />
-            <input type="hidden" name="shippingCostCents" value={deliveryType === 'DELIVERY' ? (shippingOptions.find(o => o.methodId === selectedMethodId)?.costCents ?? 0) : 0} />
             <input type="hidden" name="shippingMethodId" value={deliveryType === 'DELIVERY' ? (selectedMethodId ?? '') : ''} />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
@@ -171,7 +181,7 @@ export default function CartView() {
                         value={country}
                         onChange={(e) => {
                           setCountry(e.target.value);
-                          void fetchShippingOptions(e.target.value);
+                          fetchShippingOptionsDebounced(e.target.value);
                         }}
                         style={{ border: '1px solid var(--line)', background: 'white', padding: '12px', fontSize: 14 }}
                       />

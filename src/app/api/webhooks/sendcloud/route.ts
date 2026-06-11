@@ -7,7 +7,12 @@ function verifySignature(body: string, signature: string): boolean {
     const secret = process.env.SENDCLOUD_WEBHOOK_SECRET;
     if (!secret) return false;
     const expected = crypto.createHmac('sha256', secret).update(body).digest('hex');
-    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+    const expectedBuf = Buffer.from(expected);
+    const signatureBuf = Buffer.from(signature);
+    // timingSafeEqual throws on length mismatch, which would turn a bad
+    // signature into a 500 instead of a 401.
+    if (expectedBuf.length !== signatureBuf.length) return false;
+    return crypto.timingSafeEqual(expectedBuf, signatureBuf);
 }
 
 function toOrderStatus(sendcloudStatusId: number): string | null {
@@ -44,8 +49,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const orderRes = await db.query(
         `
-        SELECT id, status, delivery_address FROM orders
-        WHERE sendcloud_parcel_id = $1
+        SELECT o.id, o.status, u.email, u.first_name
+        FROM orders o JOIN users u ON u.id = o.user_id
+        WHERE o.sendcloud_parcel_id = $1
         `,
         [parcelId]
     );
@@ -60,9 +66,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     await db.query(
         `
         UPDATE orders
-        SET status = $2::oder_status,
+        SET status = $2::order_status,
             shipping_tracking_number = COALESCE(shipping_tracking_number, $3),
-            shipping_provider = COALESCE(shipping_provider, $4),
+            shipping_provider = COALESCE(shipping_provider, $4)
         WHERE id = $1
         `,
         [order.id, newStatus, trackingNumber, carrier.toUpperCase()]
@@ -76,22 +82,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         [order.id, newStatus, `SendCloud status update: ${parcel.status?.message ?? statusId}`]
     )
 
-    if (newStatus === 'SHIPPED') {
-        const userRes = await db.query(
-            `SELECT u.email, u.first_name FROM users u 
-            JOIN orders o ON o.user_id = u.id WHERE o.id = $1`,
-            [order.id]
-        )
-        const user = userRes.rows[0];
-        if (user) {
-            await SendOrderShippedEmail({
-                to: user.email,
-                customerName: user.first_name,
-                orderId: order.id,
-                trackingNumber,
-                shippingProvider: carrier.toUpperCase(),
-            }).catch((err) => console.error('Failed to send shipped email: ', err));
-        }
+    if (newStatus === 'SHIPPED' && order.email) {
+        await SendOrderShippedEmail({
+            to: order.email,
+            customerName: order.first_name,
+            orderId: order.id,
+            trackingNumber,
+            shippingProvider: carrier.toUpperCase(),
+        }).catch((err) => console.error('Failed to send shipped email: ', err));
     }
 
     return NextResponse.json({ ok: true });

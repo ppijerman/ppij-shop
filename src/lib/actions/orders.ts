@@ -6,7 +6,7 @@ import { requireOrderAdmin } from '@/lib/auth';
 import { getCurrentDbUserOrThrow } from '@/lib/users';
 import { expireOverdueAwaitingPaymentOrders, getPaymentExpiresAtExpression } from '@/lib/orderExpiry';
 import type { DeliveryAddress, PaymentMethod } from '@/types';
-import { SendOrderConfirmationEmail, SendOrderCancelledEmail, SendOrderExpiredEmail, SendPaymentApprovedEmail, SendPaymentProofUploadedEmail, SendPaymentRejectedEmail } from '@/lib/actions/send-order-email';
+import { SendOrderConfirmationEmail, SendOrderCancelledEmail, SendOrderExpiredEmail, SendPaymentApprovedEmail, SendPaymentProofUploadedEmail, SendPaymentRejectedEmail, SendOrderShippedEmail } from '@/lib/actions/send-order-email';
 import { createParcel, getShippingMethods, getParcel } from '@/lib/sendcloud';
 
 const ORDER_STATUSES = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'] as const;
@@ -40,6 +40,20 @@ export interface ShippingOption {
 function formString(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === 'string' ? value.trim() : '';
+}
+
+async function getCartWeightG(userId: string): Promise<number> {
+  const result = await db.query(
+    `
+    SELECT COALESCE(SUM(p.weight_g * ci.quantity), 500) AS total_weight_g
+    FROM cart_items ci
+    LEFT JOIN product_variants pv ON pv.id = ci.variant_id
+    LEFT JOIN products p ON p.id = pv.product_id
+    WHERE ci.user_id = $1
+    `,
+    [userId],
+  );
+  return Number(result.rows[0]?.total_weight_g ?? 500);
 }
 
 function isPaymentMethod(value: string): value is PaymentMethod {
@@ -111,13 +125,28 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
 
   const isDelivery = deliveryTypeInput === 'DELIVERY';
 
-  const shippingCostCents = isDelivery
-    ? Math.max(0, parseInt(formString(formData, 'ShippingCostCents') || '0', 10 ))
-    : 0;
-
   const shippingMethodId = isDelivery
-    ? parseInt(formString(formData, 'ShippingMethodId') || '0', 10) || null
+    ? parseInt(formString(formData, 'shippingMethodId') || '0', 10) || null
     : null;
+
+  let shippingCost = 0;
+  if (isDelivery) {
+    if (!shippingMethodId) {
+      return { ok: false, code: 'VALIDATION_ERROR', message: 'Choose a shipping option.' };
+    }
+    try {
+      const weightG = await getCartWeightG(user.id);
+      const methods = await getShippingMethods(deliveryAddress!.country, weightG);
+      const method = methods.find((m) => m.id === shippingMethodId);
+      if (!method) {
+        return { ok: false, code: 'VALIDATION_ERROR', message: 'The selected shipping option is no longer available.' };
+      }
+      shippingCost = Number(method.price);
+    } catch (err) {
+      console.error('SendCloud getShippingMethods failed:', err);
+      return { ok: false, code: 'VALIDATION_ERROR', message: 'Could not confirm the shipping cost. Please try again later.' };
+    }
+  }
 
   const emailDataRef: { value: { total: number; itemsTotal: number; items: { name: string; quantity: number; price: string }[] } | null } = { value: null };
 
@@ -227,7 +256,7 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
       return sum + unitPrice * Number(item.quantity);
     }, 0);
 
-    const total = itemsTotal + shippingCostCents;
+    const total = itemsTotal + shippingCost;
 
     const orderResult = await query(
       `
@@ -241,7 +270,7 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
         deliveryAddress === null ? null : JSON.stringify(deliveryAddress),
         deliveryTypeInput,
         paymentMethodInput,
-        shippingCostCents,
+        shippingCost,
         shippingMethodId,
       ],
     );
@@ -318,8 +347,8 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
         to: user.email,
         customerName: user.first_name,
         orderId: result.orderId,
-        itemsTotal: emailDataRef.value.itemsTotal.toFixed(2),
-        shippingCost: (emailDataRef.value.total - emailDataRef.value.itemsTotal).toFixed(2),
+        itemsTotal: `€${emailDataRef.value.itemsTotal.toFixed(2)}`,
+        shippingCost: `€${(emailDataRef.value.total - emailDataRef.value.itemsTotal).toFixed(2)}`,
         total: `€${Number(emailDataRef.value.total).toFixed(2)}`,
         items: emailDataRef.value.items,
       });
@@ -762,6 +791,8 @@ export async function updateShippingTrackingNumberAction(
     return { ok: false, message: 'Shipping number must be 120 characters or fewer.' };
   }
 
+  const buyerRef = { value: null as { email: string; first_name: string; sendcloud_parcel_id: number | null } | null };
+
   const result = await withTransaction(async (query) => {
     const updateResult = await query(
       `
@@ -785,6 +816,16 @@ export async function updateShippingTrackingNumberAction(
       [orderId, `Shipping saved: ${provider} ${trackingNumber}`, admin.id],
     );
 
+    const buyerResult = await query(
+      `
+      SELECT u.email, u.first_name, o.sendcloud_parcel_id
+      FROM orders o JOIN users u ON u.id = o.user_id
+      WHERE o.id = $1
+      `,
+      [orderId],
+    );
+    buyerRef.value = buyerResult.rows[0] ?? null;
+
     return { ok: true, message: 'Shipping number saved.' };
   });
 
@@ -792,6 +833,22 @@ export async function updateShippingTrackingNumberAction(
     revalidatePath(`/admin/kk/orders/${orderId}`);
     revalidatePath(`/admin/it/orders/${orderId}`);
     revalidatePath(`/account/orders/${orderId}`);
+  }
+
+  // SendCloud orders get their shipped email from the webhook; only email here
+  // for orders shipped outside SendCloud, so the buyer isn't notified twice.
+  if (result.ok && buyerRef.value?.email && !buyerRef.value.sendcloud_parcel_id) {
+    try {
+      await SendOrderShippedEmail({
+        to: buyerRef.value.email,
+        customerName: buyerRef.value.first_name,
+        orderId,
+        shippingProvider: provider,
+        trackingNumber,
+      });
+    } catch (err) {
+      console.error('Failed to send order shipped email: ', err);
+    }
   }
 
   return result;
@@ -828,7 +885,7 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
     const detailsResult = await query(
       `
       SELECT o.delivery_type, o.delivery_address, o.shipping_method_id, 
-        u.email, u.first_name, u.last_name
+        u.email, u.first_name, u.last_name,
         COALESCE(SUM(p.weight_g * oi.quantity), 500) AS total_weight_g
       FROM orders o 
       JOIN users u ON u.id = o.user_id 
@@ -880,7 +937,7 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
       await db.query(
         `
         INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
-        VALUES ($1, 'PROCESSING', $3, $4)
+        VALUES ($1, 'PROCESSING', $2, $3)
         `,
         [orderId, `Failed to create shipping parcel: ${err instanceof Error ? err.message : String(err)}`, admin.id],
       );
@@ -974,19 +1031,9 @@ export async function rejectPaymentAction(orderId: string): Promise<SimpleAction
 export async function getShippingOptionsAction(
   toCountry: string,
 ): Promise<{ ok: true; options: ShippingOption[] } | { ok: false; message: string }> {
-  const user =  await getCurrentDbUserOrThrow();
+  const user = await getCurrentDbUserOrThrow();
 
-  const weightResult = await db.query(
-    `
-    SELECT COALESCE(SUM(p.weight_g * ci.quantity), 500) AS total_weight_g
-    FROM cart_items ci
-    LEFT JOIN product_variants pv ON pv.id = ci.variant_id
-    LEFT JOIN products p ON p.id = pv.product_id
-    WHERE ci.user_id = $1
-    `,
-    [user.id],
-  );
-  const weightG = weightResult.rows[0]?.total_weight_g ?? 500;
+  const weightG = await getCartWeightG(user.id);
 
   try {
     const methods = await getShippingMethods(toCountry, weightG);
@@ -999,7 +1046,8 @@ export async function getShippingOptionsAction(
       methodId: method.id,
       name: method.name,
       carrier: method.carrier,
-      costCents: method.price,
+      // SendCloud returns the price in euros; the UI works in cents.
+      costCents: Math.round(Number(method.price) * 100),
     }));
 
     options.sort((a,b) => a.costCents - b.costCents);
