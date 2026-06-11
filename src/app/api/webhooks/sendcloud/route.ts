@@ -9,15 +9,21 @@ function verifySignature(body: string, signature: string): boolean {
     const expected = crypto.createHmac('sha256', secret).update(body).digest('hex');
     const expectedBuf = Buffer.from(expected);
     const signatureBuf = Buffer.from(signature);
-    // timingSafeEqual throws on length mismatch, which would turn a bad
-    // signature into a 500 instead of a 401.
     if (expectedBuf.length !== signatureBuf.length) return false;
     return crypto.timingSafeEqual(expectedBuf, signatureBuf);
 }
 
-function toOrderStatus(sendcloudStatusId: number): string | null {
-    if ([11, 12, 13, 14, 15].includes(sendcloudStatusId)) return 'SHIPPED';
-    if (sendcloudStatusId === 2000) return 'DONE';
+function toOrderStatus(parcelStatus: { id?: number; code?: string } | undefined): string | null {
+    // V2: numeric status IDs
+    if (parcelStatus?.id !== undefined) {
+        if ([11, 12, 13, 14, 15].includes(parcelStatus.id)) return 'SHIPPED';
+        if (parcelStatus.id === 2000) return 'DONE';
+    }
+    // V3: string status codes
+    if (parcelStatus?.code !== undefined) {
+        if (['IN_TRANSIT', 'AT_SORTING_CENTER', 'DELIVERY_ATTEMPT', 'OUT_FOR_DELIVERY'].includes(parcelStatus.code)) return 'SHIPPED';
+        if (['DELIVERED'].includes(parcelStatus.code)) return 'DONE';
+    }
     return null;
 }
 
@@ -40,11 +46,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (!parcel) return NextResponse.json({ ok: true });
 
     const parcelId: number = parcel.id;
-    const statusId: number = parcel.status?.id;
     const trackingNumber: string = parcel.tracking_number ?? '';
-    const carrier: string = parcel.carrier?.code ?? '';
+    const carrier: string = parcel.carrier?.code ?? parcel.carrier?.name ?? '';
 
-    const newStatus = toOrderStatus(statusId);
+    const newStatus = toOrderStatus(parcel.status);
     if (!newStatus) return NextResponse.json({ ok: true });
 
     const orderRes = await db.query(
@@ -79,7 +84,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
         VALUES ($1, $2::order_status, $3, NULL)
         `,
-        [order.id, newStatus, `SendCloud status update: ${parcel.status?.message ?? statusId}`]
+        [order.id, newStatus, `SendCloud status update: ${parcel.status?.message ?? parcel.status?.code ?? ''}`]
     )
 
     if (newStatus === 'SHIPPED' && order.email) {

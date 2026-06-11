@@ -53,7 +53,7 @@ export async function createProduct(productData: ProductData) {
               fitType,
               config.price,
               config.originalPrice,
-              `${productData.skuPrefix}-${color.name}-${size}-${fitType}`,
+              `${productData.skuPrefix}-${color.name}-${size}-${fitType}`.toUpperCase(),
               stock,
             ]
           )
@@ -148,7 +148,7 @@ export async function updateProduct(id: string, productData: ProductData) {
               SET stock = $2, price = $3, original_price = $4, color_hex = $5, sku = $6
               WHERE id = $1
               `,
-              [existingMap[key], stock, config.price, config.originalPrice || null, color.hex, `${productData.skuPrefix}-${color.name.split(' ').join('')}-${size}-${fitType}`]
+              [existingMap[key], stock, config.price, config.originalPrice || null, color.hex, `${productData.skuPrefix}-${color.name.split(' ').join('')}-${size}-${fitType}`.toUpperCase()]
             );
           } else {
             // Insert new variant
@@ -157,7 +157,7 @@ export async function updateProduct(id: string, productData: ProductData) {
               INSERT INTO product_variants (product_id, color_name, color_hex, size, fit_type, price, original_price, sku, stock)
               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
               `,
-              [id, color.name, color.hex, size, fitType, config.price, config.originalPrice, `${productData.skuPrefix}-${color.name.split(' ').join('')}-${size}-${fitType}`, stock]
+              [id, color.name, color.hex, size, fitType, config.price, config.originalPrice, `${productData.skuPrefix}-${color.name.split(' ').join('')}-${size}-${fitType}`.toUpperCase(), stock]
             );
           }
         }

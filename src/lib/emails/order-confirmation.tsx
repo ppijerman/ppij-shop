@@ -18,7 +18,7 @@ export default function OrderConfirmationEmail(params: {
           <Heading>Order Confirmed</Heading>
           <Text>Hi {params.customerName}, your order has been received.</Text>
           <Text>
-            <strong>Order ID:</strong> {params.orderId}
+            <strong>Order ID:</strong> {params.orderId.slice(0, 8)}
           </Text>
           <Section>
             {(params.items ?? []).map((item) => (

@@ -20,12 +20,13 @@ export default function CartView() {
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('PICKUP');
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [country, setCountry] = useState('Germany');
+  const [country, setCountry] = useState('DE');
   const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
-  const [selectedMethodId, setSelectedMethodId] = useState<number | null>(null);
+  const [selectedMethodId, setSelectedMethodId] = useState<string | null>(null);
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingError, setShippingError] = useState<string | null>(null);
   const paymentInstruction = getPaymentInstruction('IBAN');
+  const isDisabled = submitting || loading || shippingLoading || (deliveryType === 'DELIVERY' && shippingOptions.length === 0);
 
   async function handleCheckout(formData: FormData) {
     setSubmitting(true);
@@ -61,7 +62,6 @@ export default function CartView() {
 
   const fetchShippingOptions = useCallback(async (toCountry: string) => {
     if (!toCountry.trim()) return;
-    // Drop out-of-order responses: only the latest request may update state.
     const seq = ++fetchSeqRef.current;
     setShippingLoading(true);
     setShippingError(null);
@@ -176,7 +176,7 @@ export default function CartView() {
                     <TextField name="postcode" label="Postcode" />
                     <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Country</span>
-                      <input
+                      <select
                         name="country"
                         value={country}
                         onChange={(e) => {
@@ -184,7 +184,9 @@ export default function CartView() {
                           fetchShippingOptionsDebounced(e.target.value);
                         }}
                         style={{ border: '1px solid var(--line)', background: 'white', padding: '12px', fontSize: 14 }}
-                      />
+                      >
+                        <option value="DE">Germany</option>
+                      </select>
                     </label>
                   </div>
 
@@ -210,7 +212,7 @@ export default function CartView() {
                             onChange={() => setSelectedMethodId(option.methodId)}
                           />
                           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                            {option.carrier} — {option.name}
+                            {option.name.replace(/\s*\d+(\.\d+)?-\d+(\.\d+)?kg.*$/i, '').trim()}
                           </span>
                         </span>
                         <span style={{ fontFamily: 'var(--font-display)', fontSize: 16 }}>
@@ -273,7 +275,7 @@ export default function CartView() {
                   {checkoutError ?? error}
                 </div>
               )}
-              <button disabled={submitting || loading || shippingLoading || (deliveryType === 'DELIVERY' && shippingOptions.length === 0)} type="submit" style={{ width: '100%', background: submitting || loading || shippingLoading || (deliveryType === 'DELIVERY' && shippingOptions.length === 0) ? 'var(--muted)' : 'var(--accent)', color: '#fff', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: submitting || loading || shippingLoading || (deliveryType === 'DELIVERY' && shippingOptions.length === 0) ? 'not-allowed' : 'pointer', marginTop: 18, borderRadius: 999, fontWeight: 600 }}>
+              <button disabled={isDisabled} type="submit" style={{ width: '100%', background: isDisabled ? 'var(--muted)' : 'var(--accent)', color: '#fff', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: isDisabled ? 'not-allowed' : 'pointer', marginTop: 18, borderRadius: 999, fontWeight: 600 }}>
                 {submitting ? 'creating order...' : 'place order ↗'}
               </button>
             </div>

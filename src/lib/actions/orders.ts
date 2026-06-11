@@ -31,7 +31,7 @@ export type CreateOrderResult =
 export type SimpleActionResult = { ok: true; message?: string } | { ok: false; message: string };
 
 export interface ShippingOption {
-  methodId: number;
+  methodId: string;
   name: string;
   carrier: string;
   costCents: number;
@@ -126,7 +126,7 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
   const isDelivery = deliveryTypeInput === 'DELIVERY';
 
   const shippingMethodId = isDelivery
-    ? parseInt(formString(formData, 'shippingMethodId') || '0', 10) || null
+    ? formString(formData, 'shippingMethodId') || null
     : null;
 
   let shippingCost = 0;
@@ -137,7 +137,7 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
     try {
       const weightG = await getCartWeightG(user.id);
       const methods = await getShippingMethods(deliveryAddress!.country, weightG);
-      const method = methods.find((m) => m.id === shippingMethodId);
+      const method = methods.find((m) => String(m.id) === shippingMethodId);
       if (!method) {
         return { ok: false, code: 'VALIDATION_ERROR', message: 'The selected shipping option is no longer available.' };
       }
@@ -835,8 +835,6 @@ export async function updateShippingTrackingNumberAction(
     revalidatePath(`/account/orders/${orderId}`);
   }
 
-  // SendCloud orders get their shipped email from the webhook; only email here
-  // for orders shipped outside SendCloud, so the buyer isn't notified twice.
   if (result.ok && buyerRef.value?.email && !buyerRef.value.sendcloud_parcel_id) {
     try {
       await SendOrderShippedEmail({
@@ -921,25 +919,30 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
         city: addr.city,
         postal_code: addr.postcode,
         country: addr.country,
-        weight: Math.max(Number(d.total_weight_g), 100),
-        shipment: { id: Number(d.shipping_method_id) },
+        weight: Math.max(Number(d.total_weight_g), 100) / 1000,
+        shipment: { id: d.shipping_method_id as string },
         sender_address: Number(process.env.SENDCLOUD_SENDER_ADDRESS_ID!),
-        order_number: orderId,
+        order_number: orderId.slice(0, 8),
       });
 
-      await db.query(
-        'UPDATE orders SET sendcloud_parcel_id = $2 WHERE id = $1',
-        [orderId, parcel.id],
-      )
+      try {
+        await db.query(
+          'UPDATE orders SET sendcloud_parcel_id = $2 WHERE id = $1',
+          [orderId, parcel.id],
+        );
+      } catch (dbErr) {
+        console.error(`SendCloud parcel ${parcel.id} created but failed to save to order ${orderId}:`, dbErr);
+        throw dbErr;
+      }
     } catch (err) {
-      console.error('Failed to create parcel: ', err);
+      console.error('Failed to create/save parcel: ', err);
 
       await db.query(
         `
         INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
         VALUES ($1, 'PROCESSING', $2, $3)
         `,
-        [orderId, `Failed to create shipping parcel: ${err instanceof Error ? err.message : String(err)}`, admin.id],
+        [orderId, `Failed to create shipping parcel: ${err instanceof Error ? err.message : String(err)}`.slice(0, 255), admin.id],
       );
     }
   }
@@ -1046,7 +1049,6 @@ export async function getShippingOptionsAction(
       methodId: method.id,
       name: method.name,
       carrier: method.carrier,
-      // SendCloud returns the price in euros; the UI works in cents.
       costCents: Math.round(Number(method.price) * 100),
     }));
 
@@ -1076,7 +1078,7 @@ export async function getParcelLabelUrlAction(
 
   try {
     const parcel = await getParcel(row.sendcloud_parcel_id);
-    const url = parcel.label?.normal_printer?.[0];
+    const url = parcel.documents?.find(d => d.type === 'label')?.link;
     if (!url) return { ok: false, message: 'No label available for this parcel.' };
     return { ok: true, url };
   } catch (err) {

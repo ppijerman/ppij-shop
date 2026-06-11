@@ -1,4 +1,4 @@
-const BASE_URL = 'https://api.sendcloud.sc/api/v2';
+const V3_URL = 'https://panel.sendcloud.sc/api/v3';
 
 function authHeader(): string {
     const key = process.env.SENDCLOUD_API_KEY;
@@ -6,11 +6,11 @@ function authHeader(): string {
     if (!key || !secret) {
         throw new Error('SendCloud API key and secret must be set in environment variables');
     }
-    return 'Basic ' + Buffer.from(`${key}:${secret}`).toString('base64')
+    return 'Basic ' + Buffer.from(`${key}:${secret}`).toString('base64');
 }
 
 async function sendcloudFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-    const res = await fetch(`${BASE_URL}${path}`, {
+    const res = await fetch(`${V3_URL}${path}`, {
         ...options,
         headers: {
             'Authorization': authHeader(),
@@ -28,13 +28,12 @@ async function sendcloudFetch<T>(path: string, options: RequestInit = {}): Promi
 export interface SendCloudParcel {
     id: number;
     tracking_number: string;
-    status: { id: number, message: string };
-    carrier: { code: string };
-    label?: { normal_printer?: string[] };
+    status: { code: string; message: string };
+    documents: { type: string; size: string; link: string }[];
 }
 
 export interface SendCloudShippingMethod {
-    id: number;
+    id: string;
     name: string;
     carrier: string;
     min_weight: number;
@@ -51,33 +50,89 @@ export interface CreateParcelPayload {
     country: string;
     weight: number;
     email?: string;
-    shipment: { id: number };
+    shipment: { id: string };
     sender_address: number;
     order_number: string;
 }
 
+interface V3ShippingOption {
+    code: string;
+    name: string;
+    carrier: { code: string; name: string };
+    weight: { min: { value: number; unit: string }; max: { value: number; unit: string } };
+    quotes: { price: { total: { value: string; currency: string } } }[] | null;
+}
+
+function toWeightKg(value: number, unit: string): number {
+    if (unit === 'gram' || unit === 'g') return value / 1000;
+    return value; // assume kg
+}
+
 export async function getShippingMethods(toCountry: string, weight: number): Promise<SendCloudShippingMethod[]> {
-    const params = new URLSearchParams({
-        to_country: toCountry,
-        shipping_function_id: '1',
+    const weightKg = weight / 1000;
+    const body = await sendcloudFetch<{ data: V3ShippingOption[] }>('/shipping-options', {
+        method: 'POST',
+        body: JSON.stringify({
+            from_address: { country_code: 'DE' },
+            to_address: { country_code: toCountry },
+            parcels: [{ weight: { value: weightKg, unit: 'kg' } }],
+            calculate_quotes: true,
+        }),
     });
-    const body = await sendcloudFetch<{ shipping_methods: SendCloudShippingMethod[] }>(
-        `/shipping_methods?${params}`
-    );
-    return body.shipping_methods.filter(
-        (m) => m.min_weight <= weight && m.max_weight >= weight
-    );
+
+    const testMode = process.env.SENDCLOUD_TEST_MODE === 'true';
+    const INCLUDE = testMode
+        ? /^(DHL Paket|DPD Classic KP|Unstamped letter)$/i
+        : /^(DHL Paket|DPD Classic KP)$/i;
+
+    return body.data
+        .filter((m) => {
+            if (!INCLUDE.test(m.name)) return false;
+            if (!m.quotes?.[0]?.price.total.value) return false;
+            const minKg = toWeightKg(m.weight.min.value, m.weight.min.unit);
+            const maxKg = toWeightKg(m.weight.max.value, m.weight.max.unit);
+            return minKg <= weightKg && maxKg >= weightKg;
+        })
+        .map((m) => ({
+            id: m.code,
+            name: m.name,
+            carrier: m.carrier.code,
+            min_weight: toWeightKg(m.weight.min.value, m.weight.min.unit),
+            max_weight: toWeightKg(m.weight.max.value, m.weight.max.unit),
+            price: Number(m.quotes?.[0]?.price.total.value ?? 0),
+            countries: [],
+        }));
 }
 
 export async function createParcel(payload: CreateParcelPayload): Promise<SendCloudParcel> {
-    const body = await sendcloudFetch<{ parcel: SendCloudParcel }>('/parcels', {
+    const body = await sendcloudFetch<{ data: { parcels: SendCloudParcel[] } }>('/shipments/announce', {
         method: 'POST',
-        body: JSON.stringify({ parcel: payload }),
+        body: JSON.stringify({
+            from_address: {
+                sender_address_id: payload.sender_address,
+            },
+            to_address: {
+                name: payload.name,
+                address_line_1: payload.address,
+                city: payload.city,
+                postal_code: payload.postal_code,
+                country_code: payload.country,
+                email: payload.email,
+            },
+            ship_with: {
+                type: 'shipping_option_code',
+                properties: { shipping_option_code: payload.shipment.id },
+            },
+            parcels: [{
+                weight: { value: payload.weight, unit: 'kg' },
+            }],
+            order_number: payload.order_number,
+        }),
     });
-    return body.parcel;
+    return body.data.parcels[0];
 }
 
 export async function getParcel(parcelId: number): Promise<SendCloudParcel> {
-    const body = await sendcloudFetch<{ parcel: SendCloudParcel }>(`/parcels/${parcelId}`);
-    return body.parcel;
+    const body = await sendcloudFetch<{ data: SendCloudParcel }>(`/parcels/${parcelId}`);
+    return body.data;
 }
