@@ -20,7 +20,7 @@ export default async function NewBundle({ params }: { params: Promise<{ role: st
       skuPrefix: formData.get('skuPrefix') as string,
       slug: generateSlug(name),
       variantIds: JSON.parse(formData.get('selectedVariantIds') as string)
-    })
+    });
     redirect(`/admin/${role}/bundles`);
   }
 
