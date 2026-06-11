@@ -190,36 +190,69 @@ export default function CartView() {
                     </label>
                   </div>
 
-                  <div>
+                  <div style={{ marginTop: 18 }}>
+                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 10 }}>Shipping method</p>
                     {shippingLoading && (
                       <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', letterSpacing: '0.12em' }}>
-                        Loading shipping options...
+                        Loading...
                       </p>
                     )}
                     {shippingError && (
-                      <p style={{ fontSize: 13, color: '#b91c1c', marginTop: 15 }}>
+                      <p style={{ fontSize: 13, color: '#b91c1c' }}>
                         {shippingError}
                       </p>
                     )}
-                    {!shippingLoading && shippingOptions.map((option) => (
-                      <label key={option.methodId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', border: selectedMethodId === option.methodId ? '2px solid var(--black)' : '1px solid var(--line)', background: selectedMethodId === option.methodId ? 'var(--cream-2)' : 'white', cursor: 'pointer' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <input
-                            type="radio"
-                            name="_shippingOption"
-                            value={option.methodId}
-                            checked={selectedMethodId === option.methodId}
-                            onChange={() => setSelectedMethodId(option.methodId)}
-                          />
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                            {option.name.replace(/\s*\d+(\.\d+)?-\d+(\.\d+)?kg.*$/i, '').trim()}
-                          </span>
-                        </span>
-                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 16 }}>
-                          €{(option.costCents / 100).toFixed(2)}
-                        </span>
-                      </label>
-                    ))}
+                    {!shippingLoading && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {shippingOptions.map((option) => {
+                          const selected = selectedMethodId === option.methodId;
+                          return (
+                            <label
+                              key={option.methodId}
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '14px 16px',
+                                border: selected ? '2px solid var(--black)' : '1px solid var(--line)',
+                                background: selected ? 'var(--cream-2)' : 'white',
+                                cursor: 'pointer',
+                                borderRadius: 4,
+                                transition: 'border-color 0.15s, background 0.15s',
+                              }}
+                            >
+                              <input
+                                type="radio"
+                                name="_shippingOption"
+                                value={option.methodId}
+                                checked={selected}
+                                onChange={() => setSelectedMethodId(option.methodId)}
+                                style={{ display: 'none' }}
+                              />
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <span style={{
+                                  width: 16, height: 16, borderRadius: '50%',
+                                  border: selected ? '5px solid var(--black)' : '1.5px solid var(--muted)',
+                                  flexShrink: 0,
+                                  transition: 'border 0.15s',
+                                }} />
+                                <span>
+                                  <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--black)', letterSpacing: '0.04em' }}>
+                                    {option.name.replace(/\s*\d+(\.\d+)?-\d+(\.\d+)?kg.*$/i, '').trim()}
+                                  </span>
+                                  <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>
+                                    {option.carrier}
+                                  </span>
+                                </span>
+                              </span>
+                              <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--black)' }}>
+                                €{(option.costCents / 100).toFixed(2)}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                   </>
                 ) : (
