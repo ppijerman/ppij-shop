@@ -1,12 +1,13 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { withTransaction } from '@/lib/db';
+import { db, withTransaction } from '@/lib/db';
 import { requireOrderAdmin } from '@/lib/auth';
 import { getCurrentDbUserOrThrow } from '@/lib/users';
 import { expireOverdueAwaitingPaymentOrders, getPaymentExpiresAtExpression } from '@/lib/orderExpiry';
-import type { PaymentMethod } from '@/types';
+import type { DeliveryAddress, PaymentMethod } from '@/types';
 import { SendOrderConfirmationEmail, SendOrderCancelledEmail, SendOrderExpiredEmail, SendPaymentApprovedEmail, SendPaymentProofUploadedEmail, SendPaymentRejectedEmail, SendOrderShippedEmail } from '@/lib/actions/send-order-email';
+import { createParcel, getShippingMethods, getParcel } from '@/lib/sendcloud';
 
 const ORDER_STATUSES = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'] as const;
 const PAYMENT_METHODS = ['IBAN'] as const;
@@ -28,6 +29,13 @@ export type CreateOrderResult =
   | { ok: false; code: 'VALIDATION_ERROR' | 'EMPTY_CART' | 'OUT_OF_STOCK'; message: string; items?: string[] };
 
 export type SimpleActionResult = { ok: true; message?: string } | { ok: false; message: string };
+
+export interface ShippingOption {
+  methodId: number;
+  name: string;
+  carrier: string;
+  costCents: number;
+}
 
 function formString(formData: FormData, key: string): string {
   const value = formData.get(key);
@@ -101,7 +109,17 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
     return { ok: false, code: 'VALIDATION_ERROR', message: 'Delivery address is incomplete.' };
   }
 
-  const emailDataRef: { value: { total: number; items: { name: string; quantity: number; price: string }[] } | null } = { value: null };
+  const isDelivery = deliveryTypeInput === 'DELIVERY';
+
+  const shippingCostCents = isDelivery
+    ? Math.max(0, parseInt(formString(formData, 'ShippingCostCents') || '0', 10 ))
+    : 0;
+
+  const shippingMethodId = isDelivery
+    ? parseInt(formString(formData, 'ShippingMethodId') || '0', 10) || null
+    : null;
+
+  const emailDataRef: { value: { total: number; itemsTotal: number; items: { name: string; quantity: number; price: string }[] } | null } = { value: null };
 
   const result = await withTransaction<CreateOrderResult>(async (query) => {
     const cartResult = await query(
@@ -204,15 +222,17 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
       };
     }
 
-    const total = cartRows.reduce((sum, item) => {
+    const itemsTotal = cartRows.reduce((sum, item) => {
       const unitPrice = Number(item.variant_price ?? item.bundle_price ?? 0);
       return sum + unitPrice * Number(item.quantity);
     }, 0);
 
+    const total = itemsTotal + shippingCostCents;
+
     const orderResult = await query(
       `
-      INSERT INTO orders (user_id, status, total_price, delivery_address, delivery_type, payment_method, payment_expires_at)
-      VALUES ($1, 'AWAITING_PAYMENT', $2, $3::jsonb, $4::delivery_type, $5::payment_method, ${getPaymentExpiresAtExpression()})
+      INSERT INTO orders (user_id, status, total_price, delivery_address, delivery_type, payment_method, payment_expires_at, shipping_cost, shipping_method_id)
+      VALUES ($1, 'AWAITING_PAYMENT', $2, $3::jsonb, $4::delivery_type, $5::payment_method, ${getPaymentExpiresAtExpression()}, $6, $7)
       RETURNING id
       `,
       [
@@ -221,6 +241,8 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
         deliveryAddress === null ? null : JSON.stringify(deliveryAddress),
         deliveryTypeInput,
         paymentMethodInput,
+        shippingCostCents,
+        shippingMethodId,
       ],
     );
     const orderId = orderResult.rows[0].id;
@@ -274,6 +296,7 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
 
     emailDataRef.value = {
       total,
+      itemsTotal,
       items: cartRows.map((item) => ({
         name: item.bundle_name ?? item.product_name,
         quantity: Number(item.quantity),
@@ -295,6 +318,8 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
         to: user.email,
         customerName: user.first_name,
         orderId: result.orderId,
+        itemsTotal: emailDataRef.value.itemsTotal.toFixed(2),
+        shippingCost: (emailDataRef.value.total - emailDataRef.value.itemsTotal).toFixed(2),
         total: `€${Number(emailDataRef.value.total).toFixed(2)}`,
         items: emailDataRef.value.items,
       });
@@ -801,7 +826,7 @@ export async function updateShippingTrackingNumberAction(
 export async function approvePaymentAction(orderId: string): Promise<SimpleActionResult> {
   const admin = await requireOrderAdmin();
 
-  const buyerRef = { value: null as { email: string; first_name: string } | null };
+  const detailsRef: { value: any | null } = { value: null };
 
   const result = await withTransaction(async (query) => {
     const updateResult = await query(
@@ -826,15 +851,22 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
       [orderId, 'Payment approved by admin.', admin.id],
     );
 
-    const buyerResult = await query(
+    const detailsResult = await query(
       `
-      SELECT u.email, u.first_name 
-      FROM orders o JOIN users u ON u.id = o.user_id 
+      SELECT o.delivery_type, o.delivery_address, o.shipping_method_id, 
+        u.email, u.first_name, u.last_name
+        COALESCE(SUM(p.weight_g * oi.quantity), 500) AS total_weight_g
+      FROM orders o 
+      JOIN users u ON u.id = o.user_id 
+      LEFT JOIN order_items oi ON oi.order_id = o.id
+      LEFT JOIN product_variants pv ON pv.id = oi.variant_id
+      LEFT JOIN products p ON p.id = pv.product_id
       WHERE o.id = $1
+      GROUP BY o.id, o.delivery_type, o.delivery_address, o.shipping_method_id, u.email, u.first_name, u.last_name
       `,
       [orderId],
     );
-    buyerRef.value = buyerResult.rows[0] ?? null;
+    detailsRef.value = detailsResult.rows[0] ?? null;
 
     return { ok: true, message: 'Payment approved.' };
   });
@@ -847,11 +879,45 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
     revalidatePath(`/account/orders/${orderId}`);
   }
 
-  if (result.ok && buyerRef.value?.email) {
+  if (result.ok && detailsRef.value?.delivery_type === 'DELIVERY') {
+    try {
+      const d = detailsRef.value;
+      const addr = d.delivery_address as DeliveryAddress;
+
+      const parcel = await createParcel({
+        name: `${d.first_name} ${d.last_name ?? ''}`.trim(),
+        address: addr.street,
+        city: addr.city,
+        postal_code: addr.postcode,
+        country: addr.country,
+        weight: Math.max(Number(d.total_weight_g), 100),
+        shipment: { id: Number(d.shipping_method_id) },
+        sender_address: Number(process.env.SENDCLOUD_SENDER_ADDRESS_ID!),
+        order_number: orderId,
+      });
+
+      await db.query(
+        'UPDATE orders SET sendcloud_parcel_id = $2 WHERE id = $1',
+        [orderId, parcel.id],
+      )
+    } catch (err) {
+      console.error('Failed to create parcel: ', err);
+
+      await db.query(
+        `
+        INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+        VALUES ($1, 'PROCESSING', $3, $4)
+        `,
+        [orderId, `Failed to create shipping parcel: ${err instanceof Error ? err.message : String(err)}`, admin.id],
+      );
+    }
+  }
+
+  if (result.ok && detailsRef.value?.email) {
     try {
       await SendPaymentApprovedEmail({
-        to: buyerRef.value.email,
-        customerName: buyerRef.value.first_name,
+        to: detailsRef.value.email,
+        customerName: detailsRef.value.first_name,
         orderId,
       });
     } catch (err) {
@@ -929,4 +995,70 @@ export async function rejectPaymentAction(orderId: string): Promise<SimpleAction
   }
 
   return result;
+}
+
+export async function getShippingOptionsAction(
+  toCountry: string,
+): Promise<{ ok: true; options: ShippingOption[] } | { ok: false; message: string }> {
+  const user =  await getCurrentDbUserOrThrow();
+
+  const weightResult = await db.query(
+    `
+    SELECT COALESCE(SUM(p.weight_g * ci.quantity), 500) AS total_weight_g
+    FROM cart_items ci
+    LEFT JOIN product_variants pv ON pv.id = ci.variant_id
+    LEFT JOIN products p ON p.id = pv.product_id
+    WHERE ci.user_id = $1
+    `,
+    [user.id],
+  );
+  const weightG = weightResult.rows[0]?.total_weight_g ?? 500;
+
+  try {
+    const methods = await getShippingMethods(toCountry, weightG);
+
+    if (methods.length === 0) {
+      return { ok: false, message: 'No shipping options available for the provided address.' };
+    }
+
+    const options: ShippingOption[] = methods.map((method) => ({
+      methodId: method.id,
+      name: method.name,
+      carrier: method.carrier,
+      costCents: method.price,
+    }));
+
+    options.sort((a,b) => a.costCents - b.costCents);
+
+    return { ok: true, options };
+  } catch (err) {
+    console.error('SendCloud getShippingMethods failed:', err);
+    return { ok: false, message: 'Failed to fetch shipping options. Please try again later.' };
+  }
+}
+
+export async function getParcelLabelUrlAction(
+  orderId: string,
+): Promise<{ ok: true; url: string } | { ok: false; message: string }> {
+  await requireOrderAdmin();
+
+  const res = await db.query(
+    'SELECT sendcloud_parcel_id FROM orders WHERE id = $1',
+    [orderId],
+  );
+  const row = res.rows[0];
+  
+  if (!row?.sendcloud_parcel_id) {
+    return { ok: false, message: 'No parcel associated with this order.' };
+  }
+
+  try {
+    const parcel = await getParcel(row.sendcloud_parcel_id);
+    const url = parcel.label?.normal_printer?.[0];
+    if (!url) return { ok: false, message: 'No label available for this parcel.' };
+    return { ok: true, url };
+  } catch (err) {
+    console.error('Failed to fetch parcel details:', err);
+    return { ok: false, message: 'Failed to fetch label URL. Please try again later.' };
+  }
 }

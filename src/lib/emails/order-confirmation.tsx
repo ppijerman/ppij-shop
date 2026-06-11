@@ -5,6 +5,8 @@ import {
 export default function OrderConfirmationEmail(params: {
   customerName: string;
   orderId: string;
+  itemsTotal: string;
+  shippingCost: string;
   total: string;
   items: { name: string; quantity : number; price: string }[];
 }) {
@@ -27,6 +29,12 @@ export default function OrderConfirmationEmail(params: {
               </Row>
             ))}
           </Section>
+          <Text>
+            <strong>Items Total: {params.itemsTotal}</strong>
+          </Text>
+          <Text>
+            <strong>Shipping Cost: {params.shippingCost}</strong>
+          </Text>
           <Text>
             <strong>Total: {params.total}</strong>
           </Text>
