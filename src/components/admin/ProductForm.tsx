@@ -17,7 +17,7 @@ async function getCroppedFile(src: string, crop: Area, originalName: string): Pr
   canvas.height = crop.height;
   const ctx = canvas.getContext('2d')!;
   ctx.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
-  return new Promise<File>((resolve) =>
+  return new Promise<File>((resolve, reject) =>
     canvas.toBlob(blob => {
       if (!blob) { reject(new Error('Failed to generate cropped image')); return; }
       resolve(new File([blob], originalName, { type: 'image/webp' }));
