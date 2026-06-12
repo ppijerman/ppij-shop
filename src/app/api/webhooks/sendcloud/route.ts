@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, withTransaction } from '@/lib/db';
 import { SendOrderShippedEmail } from '@/lib/actions/send-order-email';
 import crypto from 'crypto';
 
@@ -60,24 +60,25 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         return NextResponse.json({ ok: true });
     }
 
-    await db.query(
-        `
-        UPDATE orders
-        SET status = $2::order_status,
-            shipping_tracking_number = COALESCE(shipping_tracking_number, $3),
-            shipping_provider = COALESCE(shipping_provider, $4)
-        WHERE id = $1
-        `,
-        [order.id, newStatus, trackingNumber, carrier.toUpperCase()]
-    )
-
-    await db.query(
-        `
-        INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
-        VALUES ($1, $2::order_status, $3, NULL)
-        `,
-        [order.id, newStatus, `SendCloud status update: ${parcel.status?.message ?? parcel.status?.code ?? ''}`]
-    )
+    await withTransaction(async (query) => {
+        await query(
+            `
+            UPDATE orders
+            SET status = $2::order_status,
+                shipping_tracking_number = COALESCE(shipping_tracking_number, $3),
+                shipping_provider = COALESCE(shipping_provider, $4)
+            WHERE id = $1
+            `,
+            [order.id, newStatus, trackingNumber, carrier.toUpperCase()]
+        );
+        await query(
+            `
+            INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+            VALUES ($1, $2::order_status, $3, NULL)
+            `,
+            [order.id, newStatus, `SendCloud status update: ${parcel.status?.message ?? parcel.status?.code ?? ''}`]
+        );
+    });
 
     if (newStatus === 'SHIPPED' && order.email) {
         await SendOrderShippedEmail({

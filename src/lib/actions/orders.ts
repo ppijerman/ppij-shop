@@ -68,23 +68,31 @@ function isOrderStatus(value: string): value is OrderStatus {
   return ORDER_STATUSES.includes(value as OrderStatus);
 }
 
-function parseDeliveryAddress(formData: FormData, deliveryType: DeliveryType) {
-  if (deliveryType === 'PICKUP') {
-    return null;
+const ALLOWED_DELIVERY_COUNTRIES = new Set(['DE']);
+
+function parseDeliveryAddress(formData: FormData): { address: DeliveryAddress } | { error: string } {
+  const street = formString(formData, 'street').trim();
+  const city = formString(formData, 'city').trim();
+  const postcode = formString(formData, 'postcode').trim();
+  const country = formString(formData, 'country').trim();
+
+  if (!street || !city || !postcode || !country) {
+    return { error: 'Delivery address is incomplete.' };
+  }
+  if (street.length > 100) {
+    return { error: 'Street address is too long (max 100 characters).' };
+  }
+  if (city.length > 100) {
+    return { error: 'City is too long (max 100 characters).' };
+  }
+  if (!ALLOWED_DELIVERY_COUNTRIES.has(country)) {
+    return { error: 'Delivery is only available within Germany.' };
+  }
+  if (!/^\d{5}$/.test(postcode)) {
+    return { error: 'Enter a valid 5-digit German postcode (e.g. 52070).' };
   }
 
-  const address = {
-    street: formString(formData, 'street'),
-    city: formString(formData, 'city'),
-    postcode: formString(formData, 'postcode'),
-    country: formString(formData, 'country'),
-  };
-
-  if (!address.street || !address.city || !address.postcode || !address.country) {
-    return null;
-  }
-
-  return address;
+  return { address: { street, city, postcode, country } };
 }
 
 function truncateLogValue(value: string, maxLength: number): string {
@@ -118,12 +126,16 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
     return { ok: false, code: 'VALIDATION_ERROR', message: 'IBAN bank transfer is required.' };
   }
 
-  const deliveryAddress = parseDeliveryAddress(formData, deliveryTypeInput);
-  if (deliveryTypeInput === 'DELIVERY' && deliveryAddress === null) {
-    return { ok: false, code: 'VALIDATION_ERROR', message: 'Delivery address is incomplete.' };
-  }
-
   const isDelivery = deliveryTypeInput === 'DELIVERY';
+
+  let deliveryAddress: DeliveryAddress | null = null;
+  if (isDelivery) {
+    const addressResult = parseDeliveryAddress(formData);
+    if ('error' in addressResult) {
+      return { ok: false, code: 'VALIDATION_ERROR', message: addressResult.error };
+    }
+    deliveryAddress = addressResult.address;
+  }
 
   const shippingMethodId = isDelivery
     ? formString(formData, 'shippingMethodId') || null
@@ -910,6 +922,11 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
 
   if (result.ok && detailsRef.value?.delivery_type === 'DELIVERY') {
     try {
+      const senderAddressId = Number(process.env.SENDCLOUD_SENDER_ADDRESS_ID);
+      if (!process.env.SENDCLOUD_SENDER_ADDRESS_ID || isNaN(senderAddressId)) {
+        throw new Error('SENDCLOUD_SENDER_ADDRESS_ID env var is missing or not a valid number');
+      }
+
       const d = detailsRef.value;
       const addr = d.delivery_address as DeliveryAddress;
 
@@ -921,27 +938,23 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
         country: addr.country,
         weight: Math.max(Number(d.total_weight_g), 100) / 1000,
         shipment: { id: d.shipping_method_id as string },
-        sender_address: Number(process.env.SENDCLOUD_SENDER_ADDRESS_ID!),
+        sender_address: senderAddressId,
         order_number: orderId.slice(0, 8),
       });
 
-      try {
-        await db.query(
+      await withTransaction(async (query) => {
+        await query(
           'UPDATE orders SET sendcloud_parcel_id = $2 WHERE id = $1',
           [orderId, parcel.id],
         );
-      } catch (dbErr) {
-        console.error(`SendCloud parcel ${parcel.id} created but failed to save to order ${orderId}:`, dbErr);
-        throw dbErr;
-      }
-
-      await db.query(
-        `
-        INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
-        VALUES ($1, 'PROCESSING', $2, $3)
-        `,
-        [orderId, `Shipping label created via SendCloud (parcel #${parcel.id}, tracking: ${parcel.tracking_number || 'pending'})`, admin.id],
-      );
+        await query(
+          `
+          INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+          VALUES ($1, 'PROCESSING', $2, $3)
+          `,
+          [orderId, `Shipping label created via SendCloud (parcel #${parcel.id}, tracking: ${parcel.tracking_number || 'pending'})`, admin.id],
+        );
+      });
     } catch (err) {
       console.error('Failed to create/save parcel: ', err);
 

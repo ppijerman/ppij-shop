@@ -171,9 +171,9 @@ export default function CartView() {
                 {deliveryType === 'DELIVERY' ? (
                   <>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    <TextField name="street" label="Street" />
-                    <TextField name="city" label="City" />
-                    <TextField name="postcode" label="Postcode" />
+                    <TextField name="street" label="Street" maxLength={100} />
+                    <TextField name="city" label="City" maxLength={100} />
+                    <TextField name="postcode" label="Postcode" maxLength={5} pattern="\d{5}" inputMode="numeric" />
                     <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Country</span>
                       <select
@@ -341,11 +341,18 @@ function ChoiceButton({ active, onClick, label }: { active: boolean; onClick: ()
   );
 }
 
-function TextField({ name, label, defaultValue = '' }: { name: string; label: string; defaultValue?: string }) {
+function TextField({ name, label, defaultValue = '', maxLength, pattern, inputMode }: {
+  name: string;
+  label: string;
+  defaultValue?: string;
+  maxLength?: number;
+  pattern?: string;
+  inputMode?: React.InputHTMLAttributes<HTMLInputElement>['inputMode'];
+}) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>{label}</span>
-      <input name={name} defaultValue={defaultValue} style={{ border: '1px solid var(--line)', background: 'white', padding: '12px', fontSize: 14 }} />
+      <input name={name} defaultValue={defaultValue} maxLength={maxLength} pattern={pattern} inputMode={inputMode} style={{ border: '1px solid var(--line)', background: 'white', padding: '12px', fontSize: 14 }} />
     </label>
   );
 }

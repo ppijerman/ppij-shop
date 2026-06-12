@@ -88,7 +88,7 @@ export async function getShippingMethods(toCountry: string, weight: number): Pro
     return body.data
         .filter((m) => {
             if (!INCLUDE.test(m.name)) return false;
-            if (!m.quotes?.[0]?.price.total.value) return false;
+            if (m.quotes?.[0]?.price.total.value == null) return false;
             const minKg = toWeightKg(m.weight.min.value, m.weight.min.unit);
             const maxKg = toWeightKg(m.weight.max.value, m.weight.max.unit);
             return minKg <= weightKg && maxKg >= weightKg;
@@ -129,6 +129,7 @@ export async function createParcel(payload: CreateParcelPayload): Promise<SendCl
             order_number: payload.order_number,
         }),
     });
+    if (!body.data.parcels?.length) throw new Error('SendCloud returned empty parcels array');
     return body.data.parcels[0];
 }
 
