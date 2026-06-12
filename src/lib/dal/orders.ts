@@ -111,6 +111,20 @@ export async function getOrderItems(orderId: string) {
   return res.rows
 }
 
+export async function getCancellationNote(orderId: string): Promise<string | null> {
+  const res = await db.query(
+    `
+    SELECT note
+    FROM order_status_logs
+    WHERE order_id = $1 AND status = 'CANCELLED'
+    ORDER BY created_at DESC
+    LIMIT 1
+    `,
+    [orderId],
+  );
+  return res.rows[0]?.note ?? null;
+}
+
 export async function getOrderStatusLogs(orderId: string) {
   const res = await db.query(
     `

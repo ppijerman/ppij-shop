@@ -413,6 +413,82 @@ export async function uploadPaymentProofAction(formData: FormData): Promise<Simp
   return result;
 }
 
+export async function cancelOrderByUserAction(orderId: string): Promise<SimpleActionResult> {
+  const user = await getCurrentDbUserOrThrow();
+
+  const buyerRef = { value: null as { email: string; first_name: string } | null };
+
+  const result = await withTransaction(async (query) => {
+    const orderResult = await query(
+      `SELECT id, status FROM orders WHERE id = $1 AND user_id = $2 FOR UPDATE`,
+      [orderId, user.id],
+    );
+    const order = orderResult.rows[0];
+
+    if (!order) {
+      return { ok: false, message: 'Order not found.' };
+    }
+
+    if (order.status !== 'AWAITING_PAYMENT' && order.status !== 'PAYMENT_REVIEW') {
+      return { ok: false, message: 'This order can no longer be cancelled.' };
+    }
+
+    await query(`UPDATE orders SET status = 'CANCELLED' WHERE id = $1`, [orderId]);
+
+    const restockResult = await query(
+      `
+      SELECT variant_id, SUM(quantity)::integer AS quantity
+      FROM (
+        SELECT oi.variant_id, oi.quantity
+        FROM order_items oi
+        WHERE oi.order_id = $1 AND oi.variant_id IS NOT NULL
+
+        UNION ALL
+
+        SELECT bi.variant_id, oi.quantity
+        FROM order_items oi
+        JOIN bundle_items bi ON bi.bundle_id = oi.bundle_id
+        WHERE oi.order_id = $1 AND oi.bundle_id IS NOT NULL
+      ) reserved_items
+      GROUP BY variant_id
+      `,
+      [orderId],
+    );
+
+    for (const item of restockResult.rows as { variant_id: string; quantity: number }[]) {
+      await query(`UPDATE product_variants SET stock = stock + $2 WHERE id = $1`, [item.variant_id, item.quantity]);
+    }
+
+    await query(
+      `INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id) VALUES ($1, 'CANCELLED', $2, $3)`,
+      [orderId, 'Order cancelled by buyer.', user.id],
+    );
+
+    buyerRef.value = { email: user.email, first_name: user.first_name };
+
+    return { ok: true, message: 'Order cancelled.' };
+  });
+
+  if (result.ok) {
+    revalidatePath(`/account/orders/${orderId}`);
+    revalidatePath('/account/orders');
+  }
+
+  if (result.ok && buyerRef.value?.email) {
+    try {
+      await SendOrderCancelledEmail({
+        to: buyerRef.value.email,
+        customerName: buyerRef.value.first_name,
+        orderId,
+      });
+    } catch (err) {
+      console.error('Failed to send order cancelled email:', err);
+    }
+  }
+
+  return result;
+}
+
 export async function updateOrderStatusAction(orderId: string, status: string, commentInput = ''): Promise<SimpleActionResult> {
   const admin = await requireOrderAdmin();
   const comment = commentInput.trim();
@@ -449,6 +525,20 @@ export async function updateOrderStatusAction(orderId: string, status: string, c
       }
     }
 
+    if (status === 'CANCELLED') {
+      const currentResult = await query(
+        `SELECT status FROM orders WHERE id = $1 FOR UPDATE`,
+        [orderId],
+      );
+      const current = currentResult.rows[0];
+      if (!current) {
+        return { ok: false, message: 'Order not found.' };
+      }
+      if (current.status === 'CANCELLED') {
+        return { ok: false, message: 'Order is already cancelled.' };
+      }
+    }
+
     const updateResult = await query(
       `UPDATE orders SET status = $2::order_status WHERE id = $1 RETURNING id`,
       [orderId, status],
@@ -458,20 +548,46 @@ export async function updateOrderStatusAction(orderId: string, status: string, c
       return { ok: false, message: 'Order not found.' };
     }
 
+    let note: string;
+    if (status === 'CANCELLED') {
+      note = comment ? `Order cancelled by admin. Reason: ${comment}` : 'Order cancelled by admin.';
+    } else {
+      note = comment ? `Status manually changed to ${status}.\nReason: ${comment}` : `Status manually changed to ${status}.`;
+    }
+
     await query(
       `
       INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
       VALUES ($1, $2::order_status, $3, $4)
       `,
-      [
-        orderId,
-        status,
-        comment ? `Status manually changed to ${status}.\nReason: ${comment}` : `Status manually changed to ${status}.`,
-        admin.id,
-      ],
+      [orderId, status, note, admin.id],
     );
 
     if (status === 'CANCELLED') {
+      const restockResult = await query(
+        `
+        SELECT variant_id, SUM(quantity)::integer AS quantity
+        FROM (
+          SELECT oi.variant_id, oi.quantity
+          FROM order_items oi
+          WHERE oi.order_id = $1 AND oi.variant_id IS NOT NULL
+
+          UNION ALL
+
+          SELECT bi.variant_id, oi.quantity
+          FROM order_items oi
+          JOIN bundle_items bi ON bi.bundle_id = oi.bundle_id
+          WHERE oi.order_id = $1 AND oi.bundle_id IS NOT NULL
+        ) reserved_items
+        GROUP BY variant_id
+        `,
+        [orderId],
+      );
+
+      for (const item of restockResult.rows as { variant_id: string; quantity: number }[]) {
+        await query(`UPDATE product_variants SET stock = stock + $2 WHERE id = $1`, [item.variant_id, item.quantity]);
+      }
+
       const buyerResult = await query(
         `SELECT u.email, u.first_name FROM orders o JOIN users u ON u.id = o.user_id WHERE o.id = $1`,
         [orderId],
