@@ -863,24 +863,24 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
                 id="pickup-details"
                 value={pickupDetails}
                 onChange={(e) => setPickupDetails(e.target.value)}
-                disabled={loading}
+                disabled={loading || ['DONE', 'CANCELLED'].includes(initialOrder.status)}
                 placeholder="e.g. Saturday 14 June, 14:00 at Mensa TU Berlin"
                 rows={4}
                 style={textareaStyle}
               />
               <button
                 onClick={handleSavePickupDetails}
-                disabled={loading}
+                disabled={loading || ['DONE', 'CANCELLED'].includes(initialOrder.status)}
                 style={{
                   width: '100%',
                   padding: '12px',
-                  background: loading ? 'var(--muted)' : 'var(--black)',
+                  background: loading || ['DONE', 'CANCELLED'].includes(initialOrder.status) ? 'var(--muted)' : 'var(--black)',
                   color: 'var(--cream)',
                   border: 'none',
                   borderRadius: 4,
                   fontFamily: 'var(--font-mono)',
                   fontSize: 12,
-                  cursor: loading ? 'not-allowed' : 'pointer',
+                  cursor: loading || ['DONE', 'CANCELLED'].includes(initialOrder.status) ? 'not-allowed' : 'pointer',
                 }}
               >
                 {loading ? 'SAVING...' : hasSavedPickup ? 'UPDATE PICKUP DETAILS' : 'SAVE PICKUP DETAILS'}
