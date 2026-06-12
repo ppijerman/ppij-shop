@@ -47,7 +47,7 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
               >
                 <Link href={`/product/${product.slug}`} style={{ textDecoration: 'none', display: 'block' }}>
                   <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--cream-2)' }}>
-                    <ProductCrop src={product.primary_image} height={340} scale={2.4} />
+                    <ProductCrop src={product.primary_image} height={340} />
                     {product.tag && (
                       <div style={{ position: 'absolute', top: 10, left: 10, background: 'var(--cream)', padding: '4px 9px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--accent-deep)', border: '1px solid var(--accent-deep)' }}>
                         {product.tag}

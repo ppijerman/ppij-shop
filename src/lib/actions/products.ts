@@ -27,10 +27,10 @@ export async function createProduct(productData: ProductData) {
     const productId = res.rows[0].id;
 
     for (const image of productData.images) {
+      if (image.kind !== 'new') continue;
       await query(
-        `INSERT INTO product_images (product_id, url, is_primary)
-        VALUES ($1, $2, $3)`,
-        [productId, image.url, image.is_primary]
+        `INSERT INTO product_images (product_id, data, content_type, is_primary) VALUES ($1, $2, $3, $4)`,
+        [productId, image.data, image.contentType, image.is_primary]
       );
     }
     for ( const fitType of ['REGULAR', 'OVERSIZED'] as FitType[]) {
@@ -91,11 +91,29 @@ export async function updateProduct(id: string, productData: ProductData) {
       ]
     );
 
-    await query('DELETE FROM product_images WHERE product_id = $1', [id]);
-    for (const image of productData.images) {
+    const keepIds = productData.images
+      .filter(img => img.kind === 'existing')
+      .map(img => img.id);
+
+    if (keepIds.length > 0) {
       await query(
-        `INSERT INTO product_images (product_id, url, is_primary) VALUES ($1, $2, $3)`,
-        [id, image.url, image.is_primary]
+        `DELETE FROM product_images WHERE product_id = $1 AND id != ALL($2::uuid[])`,
+        [id, keepIds]
+      );
+      for (const img of productData.images) {
+        if (img.kind === 'existing') {
+          await query(`UPDATE product_images SET is_primary = $1 WHERE id = $2 AND product_id = $3`, [img.is_primary, img.id, id]);
+        }
+      }
+    } else {
+      await query('DELETE FROM product_images WHERE product_id = $1', [id]);
+    }
+
+    for (const img of productData.images) {
+      if (img.kind !== 'new') continue;
+      await query(
+        `INSERT INTO product_images (product_id, data, content_type, is_primary) VALUES ($1, $2, $3, $4)`,
+        [id, img.data, img.contentType, img.is_primary]
       );
     }
 

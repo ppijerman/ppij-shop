@@ -1,7 +1,29 @@
 'use client';
 
 import { FitConfig, FitType } from '@/types';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import Cropper from 'react-easy-crop';
+import type { Area } from 'react-easy-crop';
+
+async function getCroppedFile(src: string, crop: Area, originalName: string): Promise<File> {
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+  const canvas = document.createElement('canvas');
+  canvas.width = crop.width;
+  canvas.height = crop.height;
+  const ctx = canvas.getContext('2d')!;
+  ctx.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+  return new Promise<File>((resolve, reject) =>
+    canvas.toBlob(blob => {
+      if (!blob) { reject(new Error('Failed to generate cropped image')); return; }
+      resolve(new File([blob], originalName, { type: 'image/webp' }));
+    }, 'image/webp', 0.85)
+  );
+}
 
 interface ProductFormProps {
   initialData?: any;
@@ -56,9 +78,62 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
     return initialFits;
   })
 
-  const [images, setImages] = useState<{ url: string; is_primary: boolean; }[]>(initialData?.images || []);
+  type ImageEntry =
+    | { kind: 'existing'; id: string; url: string; is_primary: boolean }
+    | { kind: 'new'; file: File; previewUrl: string; is_primary: boolean }
+
+  const [images, setImages] = useState<ImageEntry[]>(() => {
+    if (!initialData?.images?.length) return [];
+    return (initialData.images as { id: string; url: string; is_primary: boolean }[]).map(img => ({
+      kind: 'existing' as const,
+      id: img.id,
+      url: img.url,
+      is_primary: img.is_primary,
+    }));
+  });
   const [fileInputKey, setFileInputKey] = useState(0);
   const [attempted, setAttempted] = useState(false);
+
+  const [cropQueue, setCropQueue] = useState<{ src: string; name: string }[]>([]);
+  const [cropQueueTotal, setCropQueueTotal] = useState(0);
+  const [cropState, setCropState] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+
+  const onCropComplete = useCallback((_: Area, pixels: Area) => {
+    setCroppedAreaPixels(pixels);
+  }, []);
+
+  const handleCropConfirm = async () => {
+    if (!croppedAreaPixels || cropQueue.length === 0) return;
+    const current = cropQueue[0];
+    let file: File;
+    try {
+      file = await getCroppedFile(current.src, croppedAreaPixels, current.name);
+    } catch {
+      alert('Failed to process image. Please try again.');
+      return;
+    }
+    const previewUrl = URL.createObjectURL(file);
+    setImages(prev => {
+      const isPrimary = prev.length === 0;
+      return [...prev, { kind: 'new', file, previewUrl, is_primary: isPrimary }];
+    });
+    URL.revokeObjectURL(current.src);
+    setCropQueue(prev => prev.slice(1));
+    setCropState({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+  };
+
+  const handleCropSkip = () => {
+    if (cropQueue.length === 0) return;
+    URL.revokeObjectURL(cropQueue[0].src);
+    setCropQueue(prev => prev.slice(1));
+    setCropState({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+  };
 
   const isEmpty = (val: any) => val === '' || val === null || val === undefined;
   const enabledFits = (['REGULAR', 'OVERSIZED'] as FitType[]).filter(f => fits[f].enabled);
@@ -95,7 +170,16 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
       return;
     }
     const fd = new FormData(e.currentTarget);
-    fd.set('images', JSON.stringify(images));
+    images.forEach((img, i) => {
+      if (img.kind === 'existing') {
+        fd.set(`image_existing_id_${i}`, img.id);
+      } else {
+        fd.set(`image_file_${i}`, img.file);
+      }
+    });
+    fd.set('image_count', String(images.length));
+    const primaryIdx = images.findIndex(img => img.is_primary);
+    fd.set('image_primary', String(primaryIdx >= 0 ? primaryIdx : 0));
     fd.set('colors', JSON.stringify(colors));
     fd.set('fits', JSON.stringify(fits));
     action(fd);
@@ -355,18 +439,21 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
 
       <div style={{ marginBottom: 40 }}>
         <label style={labelStyle}>Images</label>
-        <input 
-          type="file" 
-          multiple 
-          accept="image/*" 
-          onChange={async (e) => {
+        <input
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={(e) => {
             if (!e.target.files || e.target.files.length === 0) return;
-            const newImages: { url: string; is_primary: boolean; }[] = [...images];
-            for (const file of Array.from(e.target.files)) {
-              const url = URL.createObjectURL(file);
-              newImages.push({ url, is_primary: newImages.length === 0 });
-            }
-            setImages(newImages);
+            const queue = Array.from(e.target.files).map(file => ({
+              src: URL.createObjectURL(file),
+              name: file.name,
+            }));
+            setCropQueue(queue);
+            setCropQueueTotal(queue.length);
+            setCropState({ x: 0, y: 0 });
+            setZoom(1);
+            setCroppedAreaPixels(null);
             setFileInputKey(prevKey => prevKey + 1);
           }}
           style={{ marginBottom: 20, display: 'block' }}
@@ -374,18 +461,20 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
         />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 16 }}>
-          {images.map((image, index) => (
-            <div 
-              key={image.url} 
+          {images.map((image, index) => {
+            const imgUrl = image.kind === 'existing' ? image.url : image.previewUrl;
+            return (
+            <div
+              key={imgUrl}
               style={{
-                border: `2px solid ${image.is_primary ? 'var(--black)' : 'var(--line)'}`, 
-                borderRadius: 8, 
-                overflow: 'hidden', 
+                border: `2px solid ${image.is_primary ? 'var(--black)' : 'var(--line)'}`,
+                borderRadius: 8,
+                overflow: 'hidden',
                 position: 'relative',
                 padding: 8
               }}
             >
-              <img src={image.url} alt="Product preview" style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4 }} />
+              <img src={imgUrl} alt="Product preview" style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4 }} />
               {image.is_primary && (
                 <span 
                   style={{
@@ -445,7 +534,8 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
                 Delete
               </button>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -467,6 +557,71 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
       >
         {initialData ? 'SAVE CHANGES' : 'CREATE PRODUCT'}
       </button>
+
+      {cropQueue.length > 0 && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+          zIndex: 9999, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 0,
+        }}>
+          <div style={{
+            background: 'var(--cream)', width: '100%', maxWidth: 540,
+            borderRadius: 12, overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
+          }}>
+            <div style={{
+              padding: '16px 20px', borderBottom: '1px solid var(--line)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                Crop Image {cropQueueTotal > 1 ? `(${cropQueueTotal - cropQueue.length + 1} of ${cropQueueTotal})` : ''}
+              </span>
+              <button
+                type="button"
+                onClick={handleCropSkip}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', textDecoration: 'underline' }}
+              >
+                skip
+              </button>
+            </div>
+
+            <div style={{ position: 'relative', width: '100%', height: 460, background: '#111' }}>
+              <Cropper
+                image={cropQueue[0].src}
+                crop={cropState}
+                zoom={zoom}
+                aspect={4 / 5}
+                onCropChange={setCropState}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </div>
+
+            <div style={{ padding: '12px 20px', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', whiteSpace: 'nowrap' }}>ZOOM</span>
+                <input
+                  type="range" min={1} max={3} step={0.05}
+                  value={zoom}
+                  onChange={e => setZoom(Number(e.target.value))}
+                  style={{ flex: 1 }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleCropConfirm}
+                style={{
+                  padding: '10px 24px', background: 'var(--black)', color: 'var(--cream)',
+                  border: 'none', borderRadius: 6, fontFamily: 'var(--font-mono)',
+                  fontSize: 12, fontWeight: 700, letterSpacing: '0.08em',
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                CONFIRM CROP
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

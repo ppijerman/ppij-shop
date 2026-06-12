@@ -250,7 +250,7 @@ function BundleProductCard({
       flexDirection: 'row'
     }}>
       <div style={{ width: '50%', height: '100%', flexShrink: 0, overflow: 'hidden', background: 'var(--cream-2)', aspectRatio: '4/5' }}>
-        <ProductCrop src={primaryImage} scale={2.4} />
+        <ProductCrop src={primaryImage} />
       </div>
       
       <div style={{ padding: '18px 28px 28px', flex: 1, display: 'flex', flexDirection: 'column' }}>

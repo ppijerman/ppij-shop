@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
-import ProductCrop from './ProductCrop';
 import { useUser } from '@clerk/nextjs';
 
 import { Product, ProductVariant, Color, FitType } from '@/types';
@@ -142,8 +141,12 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
         onClick={e => e.stopPropagation()}
       >
         <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 0.85fr' }}>
-          <div style={{ background: 'var(--cream-2)', position: 'relative', minHeight: 520 }}>
-            <ProductCrop src={product.primary_image ?? 'editorial-color.jpeg'} height={560} scale={2.4} />
+          <div style={{ background: 'var(--cream-2)', position: 'relative', aspectRatio: '4/5', overflow: 'hidden' }}>
+            <img
+              src={product.primary_image ?? '/editorial-color.jpeg'}
+              alt={product.name}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
+            />
             {product.tag && <div style={{ position: 'absolute', top: 18, right: 18, background: 'var(--accent)', color: '#fff', padding: '5px 12px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase' }}>{product.tag}</div>}
           </div>
 
