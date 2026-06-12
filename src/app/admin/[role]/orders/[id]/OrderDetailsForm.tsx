@@ -105,12 +105,16 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
   const [timelineActorFilter, setTimelineActorFilter] = useState('');
   const [timelineFromDate, setTimelineFromDate] = useState('');
   const [timelineToDate, setTimelineToDate] = useState('');
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelReasonError, setCancelReasonError] = useState<string | null>(null);
+  const [cancelConfirming, setCancelConfirming] = useState(false);
 
   useBodyScrollLock(proofPreviewOpen);
 
   const isPickup = initialOrder.delivery_type === 'PICKUP';
   const paymentExpiresAt = initialOrder.payment_expires_at ? new Date(initialOrder.payment_expires_at) : null;
-  const statuses: string[] = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', ...(isPickup ? [] : ['SHIPPED']), 'DONE', 'CANCELLED'];
+  const statuses: string[] = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', ...(isPickup ? [] : ['SHIPPED']), 'DONE'];
+  const canAdminCancel = !['CANCELLED', 'DONE', 'SHIPPED'].includes(initialOrder.status);
   const canEditShippingNumber = !isPickup && (initialOrder.status === 'PROCESSING' || initialOrder.status === 'SHIPPED');
   const timelineStatusOptions = Array.from(new Set(statusLogs.map((log) => log.status)));
   const timelineActorOptions = Array.from(
@@ -227,6 +231,38 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
       setLoading(false);
     }
   }
+
+  const handleAdminCancel = async () => {
+    const reason = cancelReason.trim();
+    if (!reason) {
+      setCancelReasonError('Cancellation reason is required.');
+      return;
+    }
+    if (reason.length > 500) {
+      setCancelReasonError('Reason must be 500 characters or fewer.');
+      return;
+    }
+    try {
+      setLoading(true);
+      setCancelReasonError(null);
+      setError(null);
+      setSuccess(null);
+      const result = await updateOrderStatusAction(initialOrder.id, 'CANCELLED', reason);
+      if (!result.ok) {
+        setError(result.message);
+        setCancelConfirming(false);
+        return;
+      }
+      setCancelReason('');
+      setCancelConfirming(false);
+      setSuccess('Order cancelled.');
+      router.refresh();
+    } catch (err) {
+      setError('Failed to cancel order. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSavePickupDetails = async () => {
     try {
@@ -586,6 +622,112 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
             </button>
           </div>
         </section>
+
+        {canAdminCancel && (
+          <section style={sectionStyle}>
+            <h2 style={h2Style}>Cancel Order</h2>
+            <div style={{ background: 'white', padding: 24, borderRadius: 8, border: '1px solid #fecaca' }}>
+              {!cancelConfirming ? (
+                <>
+                  <label htmlFor="cancel-reason" style={{ ...infoLabel, color: '#b91c1c' }}>
+                    Cancellation Reason <span style={{ color: '#b91c1c' }}>*</span>
+                  </label>
+                  <textarea
+                    id="cancel-reason"
+                    value={cancelReason}
+                    onChange={(e) => { setCancelReason(e.target.value); setCancelReasonError(null); }}
+                    disabled={loading}
+                    placeholder="e.g. Payment not received after follow-up"
+                    rows={3}
+                    maxLength={500}
+                    style={textareaStyle}
+                  />
+                  {cancelReasonError && (
+                    <div style={{
+                      background: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      color: '#b91c1c',
+                      padding: '8px 12px',
+                      borderRadius: 4,
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 11,
+                      marginBottom: 12,
+                    }}>
+                      {cancelReasonError}
+                    </div>
+                  )}
+                  <button
+                    onClick={() => {
+                      const reason = cancelReason.trim();
+                      if (!reason) { setCancelReasonError('Cancellation reason is required.'); return; }
+                      if (reason.length > 500) { setCancelReasonError('Reason must be 500 characters or fewer.'); return; }
+                      setCancelConfirming(true);
+                    }}
+                    disabled={loading}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      background: loading ? 'var(--muted)' : '#b91c1c',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 4,
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 12,
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    CANCEL ORDER
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Confirm cancellation?</p>
+                  <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14, lineHeight: 1.5 }}>
+                    Reason: <span style={{ color: 'var(--black)', fontWeight: 500 }}>{cancelReason}</span>
+                  </p>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button
+                      onClick={() => void handleAdminCancel()}
+                      disabled={loading}
+                      style={{
+                        flex: 1,
+                        padding: '10px 0',
+                        background: loading ? 'var(--muted)' : '#b91c1c',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 4,
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {loading ? 'CANCELLING...' : 'CONFIRM'}
+                    </button>
+                    <button
+                      onClick={() => setCancelConfirming(false)}
+                      disabled={loading}
+                      style={{
+                        flex: 1,
+                        padding: '10px 0',
+                        background: 'transparent',
+                        color: 'var(--black)',
+                        border: '1px solid var(--line)',
+                        borderRadius: 4,
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      GO BACK
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </section>
+        )}
 
         <section style={sectionStyle}>
           <h2 style={h2Style}>Buyer Information</h2>

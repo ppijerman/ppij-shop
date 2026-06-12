@@ -1,9 +1,10 @@
-import { getOrderByIdForUser, getOrderItems } from '@/lib/dal/orders';
+import { getOrderByIdForUser, getOrderItems, getCancellationNote } from '@/lib/dal/orders';
 import { getCurrentDbUserOrThrow } from '@/lib/users';
 import { getPaymentInstruction } from '@/lib/payment';
 import { getOrderStatusLabel } from '@/lib/orderStatus';
 import PaymentProofUploadForm from '@/components/account/PaymentProofUploadForm';
 import PaymentProofPreviewButton from '@/components/account/PaymentProofPreviewButton';
+import CancelOrderButton from '@/components/account/CancelOrderButton';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
@@ -17,6 +18,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const buyerName = [user.first_name, user.last_name].filter(Boolean).join(' ');
   const paymentInstruction = getPaymentInstruction(order.payment_method, order.id.substring(0, 8), buyerName);
   const paymentExpiresAt = order.payment_expires_at ? new Date(order.payment_expires_at) : null;
+  const cancellationNote = order.status === 'CANCELLED' ? await getCancellationNote(id) : null;
 
   return (
     <div>
@@ -87,7 +89,16 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 ) : order.status === 'PAYMENT_REVIEW' ? (
                   <p style={{ fontSize: 13, color: 'var(--muted)' }}>Payment proof uploaded. Waiting for admin review.</p>
                 ) : order.status === 'CANCELLED' ? (
-                  <p style={{ fontSize: 13, color: 'var(--muted)' }}>This order was cancelled because the payment window expired.</p>
+                  <div>
+                    <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: cancellationNote ? 8 : 0 }}>
+                      This order has been cancelled.
+                    </p>
+                    {cancellationNote && (
+                      <p style={{ fontSize: 13, color: 'var(--black)', fontWeight: 500 }}>
+                        {cancellationNote}
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   <p style={{ fontSize: 13, color: 'var(--muted)' }}>Payment review is complete or no longer editable.</p>
                 )}
@@ -97,6 +108,16 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               </div>
             </div>
           </section>
+
+          {order.status === 'AWAITING_PAYMENT' && (
+            <section>
+              <h3 style={sectionHeadingStyle}>CANCEL ORDER</h3>
+              <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 0, lineHeight: 1.6 }}>
+                You can cancel this order before submitting your payment proof.
+              </p>
+              <CancelOrderButton orderId={order.id} />
+            </section>
+          )}
         </div>
 
         <aside style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>

@@ -81,9 +81,9 @@ export async function getCartItemsAction(): Promise<CartItem[]> {
       pv.color_hex,
       pv.fit_type,
       COALESCE(
-        pi.url,
+        CASE WHEN pi.data IS NOT NULL THEN '/api/products/images/' || pi.id::text ELSE pi.url END,
         (
-          SELECT bpi.url
+          SELECT CASE WHEN bpi.data IS NOT NULL THEN '/api/products/images/' || bpi.id::text ELSE bpi.url END
           FROM bundle_items bi
           JOIN product_variants bpv ON bpv.id = bi.variant_id
           JOIN product_images bpi ON bpi.product_id = bpv.product_id
