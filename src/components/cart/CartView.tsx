@@ -81,7 +81,7 @@ export default function CartView() {
                   <div key={item.cartId} style={{ display: 'flex', gap: 16, alignItems: 'center', padding: '18px 0', borderBottom: '1px solid var(--line)' }}>
                     {!item.bundleId && (
                       <div style={{ width: 84, height: 84, background: 'var(--cream-2)', flexShrink: 0, overflow: 'hidden' }}>
-                        <ProductCrop src={item.image} height={84} scale={2.4} />
+                        <ProductCrop src={item.image} height={84} />
                       </div>
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>

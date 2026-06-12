@@ -69,7 +69,12 @@ export async function getProductBySlugWithVariants(slug: string) {
 export async function getProductImages(productId: string) {
   const res = await db.query(
     `
-      SELECT * FROM product_images
+      SELECT
+        id,
+        product_id,
+        is_primary,
+        CASE WHEN url IS NOT NULL THEN url ELSE '/api/products/images/' || id::text END AS url
+      FROM product_images
       WHERE product_id = $1
       ORDER BY is_primary DESC, id ASC
     `,

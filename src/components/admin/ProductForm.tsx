@@ -1,7 +1,26 @@
 'use client';
 
 import { FitConfig, FitType } from '@/types';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import Cropper from 'react-easy-crop';
+import type { Area } from 'react-easy-crop';
+
+async function getCroppedFile(src: string, crop: Area, originalName: string): Promise<File> {
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+  const canvas = document.createElement('canvas');
+  canvas.width = crop.width;
+  canvas.height = crop.height;
+  const ctx = canvas.getContext('2d')!;
+  ctx.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+  return new Promise<File>((resolve) =>
+    canvas.toBlob(blob => resolve(new File([blob!], originalName, { type: 'image/jpeg' })), 'image/jpeg', 0.92)
+  );
+}
 
 interface ProductFormProps {
   initialData?: any;
@@ -71,6 +90,40 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
   });
   const [fileInputKey, setFileInputKey] = useState(0);
   const [attempted, setAttempted] = useState(false);
+
+  const [cropQueue, setCropQueue] = useState<{ src: string; name: string }[]>([]);
+  const [cropState, setCropState] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+
+  const onCropComplete = useCallback((_: Area, pixels: Area) => {
+    setCroppedAreaPixels(pixels);
+  }, []);
+
+  const handleCropConfirm = async () => {
+    if (!croppedAreaPixels || cropQueue.length === 0) return;
+    const current = cropQueue[0];
+    const file = await getCroppedFile(current.src, croppedAreaPixels, current.name);
+    const previewUrl = URL.createObjectURL(file);
+    setImages(prev => {
+      const isPrimary = prev.length === 0;
+      return [...prev, { kind: 'new', file, previewUrl, is_primary: isPrimary }];
+    });
+    URL.revokeObjectURL(current.src);
+    setCropQueue(prev => prev.slice(1));
+    setCropState({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+  };
+
+  const handleCropSkip = () => {
+    if (cropQueue.length === 0) return;
+    URL.revokeObjectURL(cropQueue[0].src);
+    setCropQueue(prev => prev.slice(1));
+    setCropState({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+  };
 
   const isEmpty = (val: any) => val === '' || val === null || val === undefined;
   const enabledFits = (['REGULAR', 'OVERSIZED'] as FitType[]).filter(f => fits[f].enabled);
@@ -381,11 +434,14 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
           accept="image/*"
           onChange={(e) => {
             if (!e.target.files || e.target.files.length === 0) return;
-            const newImages: ImageEntry[] = [...images];
-            for (const file of Array.from(e.target.files)) {
-              newImages.push({ kind: 'new', file, previewUrl: URL.createObjectURL(file), is_primary: newImages.length === 0 });
-            }
-            setImages(newImages);
+            const queue = Array.from(e.target.files).map(file => ({
+              src: URL.createObjectURL(file),
+              name: file.name,
+            }));
+            setCropQueue(queue);
+            setCropState({ x: 0, y: 0 });
+            setZoom(1);
+            setCroppedAreaPixels(null);
             setFileInputKey(prevKey => prevKey + 1);
           }}
           style={{ marginBottom: 20, display: 'block' }}
@@ -489,6 +545,71 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
       >
         {initialData ? 'SAVE CHANGES' : 'CREATE PRODUCT'}
       </button>
+
+      {cropQueue.length > 0 && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+          zIndex: 9999, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 0,
+        }}>
+          <div style={{
+            background: 'var(--cream)', width: '100%', maxWidth: 540,
+            borderRadius: 12, overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
+          }}>
+            <div style={{
+              padding: '16px 20px', borderBottom: '1px solid var(--line)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                Crop Image {cropQueue.length > 1 ? `(${1} of ${cropQueue.length})` : ''}
+              </span>
+              <button
+                type="button"
+                onClick={handleCropSkip}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', textDecoration: 'underline' }}
+              >
+                skip
+              </button>
+            </div>
+
+            <div style={{ position: 'relative', width: '100%', height: 460, background: '#111' }}>
+              <Cropper
+                image={cropQueue[0].src}
+                crop={cropState}
+                zoom={zoom}
+                aspect={4 / 5}
+                onCropChange={setCropState}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </div>
+
+            <div style={{ padding: '12px 20px', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', whiteSpace: 'nowrap' }}>ZOOM</span>
+                <input
+                  type="range" min={1} max={3} step={0.05}
+                  value={zoom}
+                  onChange={e => setZoom(Number(e.target.value))}
+                  style={{ flex: 1 }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleCropConfirm}
+                style={{
+                  padding: '10px 24px', background: 'var(--black)', color: 'var(--cream)',
+                  border: 'none', borderRadius: 6, fontFamily: 'var(--font-mono)',
+                  fontSize: 12, fontWeight: 700, letterSpacing: '0.08em',
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                CONFIRM CROP
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

@@ -40,7 +40,7 @@ export async function getBundleBySlug(slug: string) {
           'category', p.category,
           'primary_image', p.primary_image,
           'images', (
-            SELECT json_agg(json_build_object('url', pimg.url, 'is_primary', pimg.is_primary))
+            SELECT json_agg(json_build_object('url', CASE WHEN pimg.url IS NOT NULL THEN pimg.url ELSE '/api/products/images/' || pimg.id::text END, 'is_primary', pimg.is_primary))
             FROM product_images pimg WHERE pimg.product_id = p.id
           ),
           'variants', (
