@@ -102,7 +102,7 @@ export async function updateProduct(id: string, productData: ProductData) {
       );
       for (const img of productData.images) {
         if (img.kind === 'existing') {
-          await query(`UPDATE product_images SET is_primary = $1 WHERE id = $2`, [img.is_primary, img.id]);
+          await query(`UPDATE product_images SET is_primary = $1 WHERE id = $2 AND product_id = $3`, [img.is_primary, img.id, id]);
         }
       }
     } else {

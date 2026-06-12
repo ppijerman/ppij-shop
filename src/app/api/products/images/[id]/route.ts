@@ -4,7 +4,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const { id } = await params;
 
   const result = await db.query(
-    `SELECT data, content_type FROM product_images WHERE id = $1 LIMIT 1`,
+    `SELECT pi.data, pi.content_type
+     FROM product_images pi
+     JOIN products p ON p.id = pi.product_id
+     WHERE pi.id = $1 AND p.is_active = true
+     LIMIT 1`,
     [id],
   );
 

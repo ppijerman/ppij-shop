@@ -57,7 +57,8 @@ export async function getBundleBySlug(slug: string) {
           )
         ))
         FROM (
-          SELECT DISTINCT p.id, p.name, p.subtitle, p.category, pi.url AS primary_image
+          SELECT DISTINCT p.id, p.name, p.subtitle, p.category,
+            CASE WHEN pi.url IS NOT NULL THEN pi.url ELSE '/api/products/images/' || pi.id::text END AS primary_image
           FROM bundle_items bi
           JOIN product_variants pv ON bi.variant_id = pv.id
           JOIN products p ON pv.product_id = p.id

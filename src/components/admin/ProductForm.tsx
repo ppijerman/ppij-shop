@@ -18,7 +18,10 @@ async function getCroppedFile(src: string, crop: Area, originalName: string): Pr
   const ctx = canvas.getContext('2d')!;
   ctx.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
   return new Promise<File>((resolve) =>
-    canvas.toBlob(blob => resolve(new File([blob!], originalName, { type: 'image/jpeg' })), 'image/jpeg', 0.92)
+    canvas.toBlob(blob => {
+      if (!blob) { reject(new Error('Failed to generate cropped image')); return; }
+      resolve(new File([blob], originalName, { type: 'image/webp' }));
+    }, 'image/webp', 0.85)
   );
 }
 
@@ -92,6 +95,7 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
   const [attempted, setAttempted] = useState(false);
 
   const [cropQueue, setCropQueue] = useState<{ src: string; name: string }[]>([]);
+  const [cropQueueTotal, setCropQueueTotal] = useState(0);
   const [cropState, setCropState] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -103,7 +107,13 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
   const handleCropConfirm = async () => {
     if (!croppedAreaPixels || cropQueue.length === 0) return;
     const current = cropQueue[0];
-    const file = await getCroppedFile(current.src, croppedAreaPixels, current.name);
+    let file: File;
+    try {
+      file = await getCroppedFile(current.src, croppedAreaPixels, current.name);
+    } catch {
+      alert('Failed to process image. Please try again.');
+      return;
+    }
     const previewUrl = URL.createObjectURL(file);
     setImages(prev => {
       const isPrimary = prev.length === 0;
@@ -168,7 +178,8 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
       }
     });
     fd.set('image_count', String(images.length));
-    fd.set('image_primary', String(images.findIndex(img => img.is_primary)));
+    const primaryIdx = images.findIndex(img => img.is_primary);
+    fd.set('image_primary', String(primaryIdx >= 0 ? primaryIdx : 0));
     fd.set('colors', JSON.stringify(colors));
     fd.set('fits', JSON.stringify(fits));
     action(fd);
@@ -439,6 +450,7 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
               name: file.name,
             }));
             setCropQueue(queue);
+            setCropQueueTotal(queue.length);
             setCropState({ x: 0, y: 0 });
             setZoom(1);
             setCroppedAreaPixels(null);
@@ -561,7 +573,7 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                Crop Image {cropQueue.length > 1 ? `(${1} of ${cropQueue.length})` : ''}
+                Crop Image {cropQueueTotal > 1 ? `(${cropQueueTotal - cropQueue.length + 1} of ${cropQueueTotal})` : ''}
               </span>
               <button
                 type="button"
