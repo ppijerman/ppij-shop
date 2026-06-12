@@ -114,7 +114,7 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
 
   const isPickup = initialOrder.delivery_type === 'PICKUP';
   const paymentExpiresAt = initialOrder.payment_expires_at ? new Date(initialOrder.payment_expires_at) : null;
-  const STATUS_FLOW = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', ...(isPickup ? [] : ['SHIPPED']), 'DONE', 'CANCELLED'];
+  const STATUS_FLOW = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', ...(isPickup ? [] : ['SHIPPED']), 'DONE'];
   const currentIdx = STATUS_FLOW.indexOf(initialOrder.status);
   const statuses = STATUS_FLOW.map((s) => ({
     value: s,
@@ -500,9 +500,46 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
       <div>
         <section style={sectionStyle}>
           <h2 style={h2Style}>Status</h2>
+          {(initialOrder.status === 'CANCELLED' || initialOrder.status === 'DONE') ? (
+            <div style={{
+              background: initialOrder.status === 'CANCELLED' ? '#fef2f2' : '#f0fdf4',
+              padding: 24,
+              borderRadius: 8,
+              border: `1px solid ${initialOrder.status === 'CANCELLED' ? '#fecaca' : '#bbf7d0'}`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+            }}>
+              <span style={{
+                display: 'inline-block',
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                background: getOrderStatusColor(initialOrder.status),
+                flexShrink: 0,
+              }} />
+              <div>
+                <p style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: initialOrder.status === 'CANCELLED' ? '#b91c1c' : '#166534',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                }}>
+                  {getOrderStatusLabel(initialOrder.status)}
+                </p>
+                <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                  {initialOrder.status === 'CANCELLED'
+                    ? 'This order has been cancelled and cannot be updated.'
+                    : 'This order is complete and cannot be updated.'}
+                </p>
+              </div>
+            </div>
+          ) : (
           <div style={{ background: 'white', padding: 24, borderRadius: 8, border: '1px solid var(--line)' }}>
-            <select 
-              value={status} 
+            <select
+              value={status}
               onChange={(e) => setStatus(e.target.value)}
               style={{ width: '100%', padding: '12px', borderRadius: 4, border: '1px solid var(--line)', fontFamily: 'var(--font-mono)', fontSize: 12, marginBottom: 16 }}
             >
@@ -567,6 +604,7 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
             {loading ? 'UPDATING...' : 'UPDATE STATUS'}
           </button>
           </div>
+          )}
         </section>
 
         <section style={sectionStyle}>
