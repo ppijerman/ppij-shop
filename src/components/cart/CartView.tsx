@@ -265,14 +265,14 @@ export default function CartView() {
                               </span>
                               <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
                                 {isFree ? (
-                                  <>
-                                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: '#16a34a', letterSpacing: '0.06em' }}>FREE</span>
-                                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#aaa', textDecoration: 'line-through' }}>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: '#aaa', textDecoration: 'line-through' }}>
                                       €{(option.costCents / 100).toFixed(2)}
                                     </span>
-                                  </>
+                                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: '#16a34a', letterSpacing: '0.04em' }}>FREE</span>
+                                  </span>
                                 ) : (
-                                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, color: 'var(--black)', letterSpacing: '-0.02em' }}>
+                                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: 'var(--black)', letterSpacing: '0.04em' }}>
                                     €{(option.costCents / 100).toFixed(2)}
                                   </span>
                                 )}
