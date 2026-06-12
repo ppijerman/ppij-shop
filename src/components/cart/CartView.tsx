@@ -8,6 +8,7 @@ import { useToast } from '@/context/ToastContext';
 import ProductCrop from '@/components/product/ProductCrop';
 import { createOrder, getShippingOptionsAction } from '@/lib/actions/orders';
 import { getPaymentInstruction } from '@/lib/payment';
+import { FREE_SHIPPING_THRESHOLD } from '@/lib/constants';
 
 import type { ShippingOption } from '@/lib/actions/orders';
 
@@ -206,6 +207,7 @@ export default function CartView() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {shippingOptions.map((option) => {
                           const selected = selectedMethodId === option.methodId;
+                          const isFree = total >= FREE_SHIPPING_THRESHOLD;
                           return (
                             <label
                               key={option.methodId}
@@ -214,11 +216,12 @@ export default function CartView() {
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 padding: '14px 16px',
-                                border: selected ? '2px solid var(--black)' : '1px solid var(--line)',
+                                border: selected ? '1.5px solid var(--black)' : '1px solid var(--line)',
                                 background: selected ? 'var(--cream-2)' : 'white',
                                 cursor: 'pointer',
-                                borderRadius: 4,
-                                transition: 'border-color 0.15s, background 0.15s',
+                                borderRadius: 8,
+                                transition: 'border-color 0.15s, background 0.15s, box-shadow 0.15s',
+                                boxShadow: selected ? '0 2px 10px rgba(0,0,0,0.08)' : '0 1px 3px rgba(0,0,0,0.04)',
                               }}
                             >
                               <input
@@ -229,24 +232,50 @@ export default function CartView() {
                                 onChange={() => setSelectedMethodId(option.methodId)}
                                 style={{ display: 'none' }}
                               />
-                              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                                 <span style={{
-                                  width: 16, height: 16, borderRadius: '50%',
-                                  border: selected ? '5px solid var(--black)' : '1.5px solid var(--muted)',
+                                  width: 18, height: 18, borderRadius: '50%',
+                                  border: selected ? '5px solid var(--black)' : '1.5px solid #ccc',
                                   flexShrink: 0,
                                   transition: 'border 0.15s',
+                                  background: 'white',
                                 }} />
                                 <span>
-                                  <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--black)', letterSpacing: '0.04em' }}>
+                                  <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--black)', letterSpacing: '-0.01em' }}>
                                     {option.name.replace(/\s*\d+(\.\d+)?-\d+(\.\d+)?kg.*$/i, '').trim()}
                                   </span>
-                                  <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>
-                                    {option.carrier}
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
+                                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                                      {option.carrier}
+                                    </span>
+                                    {option.leadTimeHours != null && (
+                                      <>
+                                        <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--muted)', display: 'inline-block', flexShrink: 0 }} />
+                                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)' }}>
+                                          {option.leadTimeHours <= 24
+                                            ? '1 business day'
+                                            : option.leadTimeHours <= 48
+                                            ? '1–2 business days'
+                                            : `${Math.ceil(option.leadTimeHours / 24)} business days`}
+                                        </span>
+                                      </>
+                                    )}
                                   </span>
                                 </span>
                               </span>
-                              <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--black)' }}>
-                                €{(option.costCents / 100).toFixed(2)}
+                              <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                                {isFree ? (
+                                  <>
+                                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: '#16a34a', letterSpacing: '0.06em' }}>FREE</span>
+                                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#aaa', textDecoration: 'line-through' }}>
+                                      €{(option.costCents / 100).toFixed(2)}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, color: 'var(--black)', letterSpacing: '-0.02em' }}>
+                                    €{(option.costCents / 100).toFixed(2)}
+                                  </span>
+                                )}
                               </span>
                             </label>
                           );
@@ -284,17 +313,42 @@ export default function CartView() {
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, marginBottom: 18 }}>SUMMARY<span style={{ color: 'var(--accent)' }}>.</span></div>
               {(() => {
                 const selectedOption = shippingOptions.find(o => o.methodId === selectedMethodId);
-                const shippingCostCents = deliveryType === 'DELIVERY' ? (selectedOption?.costCents ?? 0) : 0;
+                const isFreeShipping = deliveryType === 'DELIVERY' && total >= FREE_SHIPPING_THRESHOLD;
+                const shippingCostCents = (deliveryType !== 'DELIVERY' || isFreeShipping) ? 0 : (selectedOption?.costCents ?? 0);
                 const grandTotal = total + shippingCostCents / 100;
+                const remaining = FREE_SHIPPING_THRESHOLD - total;
                 return (
                   <>
+                    {deliveryType === 'DELIVERY' && (
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: isFreeShipping ? '#7CD992' : 'rgba(239,234,224,0.5)', textTransform: 'uppercase' }}>
+                            {isFreeShipping ? '✓ Free shipping' : 'Free shipping at €49'}
+                          </span>
+                          {!isFreeShipping && (
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(239,234,224,0.5)' }}>
+                              €{remaining.toFixed(2)} away
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                          <div style={{
+                            height: '100%',
+                            borderRadius: 999,
+                            background: isFreeShipping ? '#7CD992' : 'var(--accent)',
+                            width: `${Math.min((total / FREE_SHIPPING_THRESHOLD) * 100, 100)}%`,
+                            transition: 'width 0.3s ease',
+                          }} />
+                        </div>
+                      </div>
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(239,234,224,0.6)', marginBottom: 8 }}>
                       <span>SUBTOTAL</span><span style={{ color: 'var(--cream)' }}>€{total.toFixed(2)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(239,234,224,0.6)' }}>
                       <span>SHIPPING</span>
-                      <span style={{ color: deliveryType === 'PICKUP' ? '#7CD992' : 'var(--cream)' }}>
-                        {deliveryType === 'PICKUP' ? 'FREE' : shippingLoading ? '...' : `€${(shippingCostCents / 100).toFixed(2)}`}
+                      <span style={{ color: (deliveryType === 'PICKUP' || isFreeShipping) ? '#7CD992' : 'var(--cream)' }}>
+                        {deliveryType === 'PICKUP' ? 'FREE' : isFreeShipping ? 'FREE' : shippingLoading ? '...' : `€${(shippingCostCents / 100).toFixed(2)}`}
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-display)', fontSize: 24, marginTop: 14, paddingTop: 14, borderTop: '1px solid #222' }}>

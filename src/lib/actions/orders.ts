@@ -8,6 +8,7 @@ import { expireOverdueAwaitingPaymentOrders, getPaymentExpiresAtExpression } fro
 import type { DeliveryAddress, PaymentMethod } from '@/types';
 import { SendOrderConfirmationEmail, SendOrderCancelledEmail, SendOrderExpiredEmail, SendPaymentApprovedEmail, SendPaymentProofUploadedEmail, SendPaymentRejectedEmail, SendOrderShippedEmail } from '@/lib/actions/send-order-email';
 import { createParcel, getShippingMethods, getParcel } from '@/lib/sendcloud';
+import { FREE_SHIPPING_THRESHOLD } from '@/lib/constants';
 
 const ORDER_STATUSES = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'] as const;
 const PAYMENT_METHODS = ['IBAN'] as const;
@@ -35,6 +36,7 @@ export interface ShippingOption {
   name: string;
   carrier: string;
   costCents: number;
+  leadTimeHours: number | null;
 }
 
 function formString(formData: FormData, key: string): string {
@@ -267,6 +269,10 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
       const unitPrice = Number(item.variant_price ?? item.bundle_price ?? 0);
       return sum + unitPrice * Number(item.quantity);
     }, 0);
+
+    if (itemsTotal >= FREE_SHIPPING_THRESHOLD) {
+      shippingCost = 0;
+    }
 
     const total = itemsTotal + shippingCost;
 
@@ -1071,6 +1077,7 @@ export async function getShippingOptionsAction(
       name: method.name,
       carrier: method.carrier,
       costCents: Math.round(Number(method.price) * 100),
+      leadTimeHours: method.lead_time_hours,
     }));
 
     options.sort((a,b) => a.costCents - b.costCents);

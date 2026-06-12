@@ -39,6 +39,7 @@ export interface SendCloudShippingMethod {
     min_weight: number;
     max_weight: number;
     price: number;
+    lead_time_hours: number | null;
     countries: { iso_2: string }[];
 }
 
@@ -60,7 +61,7 @@ interface V3ShippingOption {
     name: string;
     carrier: { code: string; name: string };
     weight: { min: { value: number; unit: string }; max: { value: number; unit: string } };
-    quotes: { price: { total: { value: string; currency: string } } }[] | null;
+    quotes: { price: { total: { value: string; currency: string } }; lead_time: number | null }[] | null;
 }
 
 function toWeightKg(value: number, unit: string): number {
@@ -96,10 +97,11 @@ export async function getShippingMethods(toCountry: string, weight: number): Pro
         .map((m) => ({
             id: m.code,
             name: m.name,
-            carrier: m.carrier.code,
+            carrier: m.carrier.name,
             min_weight: toWeightKg(m.weight.min.value, m.weight.min.unit),
             max_weight: toWeightKg(m.weight.max.value, m.weight.max.unit),
             price: Number(m.quotes?.[0]?.price.total.value ?? 0),
+            lead_time_hours: m.quotes?.[0]?.lead_time ?? null,
             countries: [],
         }));
 }
