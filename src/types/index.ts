@@ -47,16 +47,17 @@ export interface ProductVariant {
   updated_at: string;
 }
 
+export type ProductImageInput =
+  | { kind: 'existing'; id: string; is_primary: boolean }
+  | { kind: 'new'; data: Buffer; contentType: string; is_primary: boolean }
+
 export interface ProductData {
   name: string
   subtitle: string
   category: string
   tag: string
   description: string
-  images: {
-    url: string
-    is_primary: boolean
-  }[]
+  images: ProductImageInput[]
   colors: {
     name: string
     hex: string
@@ -70,7 +71,7 @@ export interface ProductData {
 export interface ProductImage {
   id: string;
   product_id: string;
-  url: string;
+  url: string | null;
   is_primary: boolean;
 }
 

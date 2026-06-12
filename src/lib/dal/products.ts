@@ -3,7 +3,8 @@ import { db } from "../db"
 export async function getAllProducts() {
   const res = await db.query(
     `
-    SELECT p.*, pi.url as primary_image
+    SELECT p.*,
+      CASE WHEN pi.url IS NOT NULL THEN pi.url ELSE '/api/products/images/' || pi.id::text END AS primary_image
     FROM products p
     LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
     WHERE p.is_active = true
@@ -15,7 +16,8 @@ export async function getAllProducts() {
 export async function getProductBySlug(slug: string) {
   const res = await db.query(
     `
-    SELECT p.*, pi.url as primary_image
+    SELECT p.*,
+      CASE WHEN pi.url IS NOT NULL THEN pi.url ELSE '/api/products/images/' || pi.id::text END AS primary_image
     FROM products p
     LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
     WHERE p.slug = $1
@@ -30,7 +32,7 @@ export async function getProductBySlugWithVariants(slug: string) {
     `
     SELECT
       p.*,
-      pi.url AS primary_image,
+      CASE WHEN pi.url IS NOT NULL THEN pi.url ELSE '/api/products/images/' || pi.id::text END AS primary_image,
       (
         SELECT json_agg(json_build_object(
           'id', pv.id,
@@ -49,7 +51,7 @@ export async function getProductBySlugWithVariants(slug: string) {
       (
         SELECT json_agg(json_build_object(
           'id', pimg.id,
-          'url', pimg.url,
+          'url', CASE WHEN pimg.url IS NOT NULL THEN pimg.url ELSE '/api/products/images/' || pimg.id::text END,
           'is_primary', pimg.is_primary
         ) ORDER BY pimg.is_primary DESC, pimg.id ASC)
         FROM product_images pimg
@@ -89,7 +91,7 @@ export async function getAllProductsWithVariants() {
     `
     SELECT
       p.*,
-      pi.url AS primary_image,
+      CASE WHEN pi.url IS NOT NULL THEN pi.url ELSE '/api/products/images/' || pi.id::text END AS primary_image,
       (
         SELECT json_agg(json_build_object(
           'id', pv.id,
@@ -108,7 +110,7 @@ export async function getAllProductsWithVariants() {
       (
         SELECT json_agg(json_build_object(
           'id', pimg.id,
-          'url', pimg.url,
+          'url', CASE WHEN pimg.url IS NOT NULL THEN pimg.url ELSE '/api/products/images/' || pimg.id::text END,
           'is_primary', pimg.is_primary
         ) ORDER BY pimg.is_primary DESC, pimg.id ASC)
         FROM product_images pimg

@@ -56,7 +56,19 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
     return initialFits;
   })
 
-  const [images, setImages] = useState<{ url: string; is_primary: boolean; }[]>(initialData?.images || []);
+  type ImageEntry =
+    | { kind: 'existing'; id: string; url: string; is_primary: boolean }
+    | { kind: 'new'; file: File; previewUrl: string; is_primary: boolean }
+
+  const [images, setImages] = useState<ImageEntry[]>(() => {
+    if (!initialData?.images?.length) return [];
+    return (initialData.images as { id: string; url: string; is_primary: boolean }[]).map(img => ({
+      kind: 'existing' as const,
+      id: img.id,
+      url: img.url,
+      is_primary: img.is_primary,
+    }));
+  });
   const [fileInputKey, setFileInputKey] = useState(0);
   const [attempted, setAttempted] = useState(false);
 
@@ -95,7 +107,15 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
       return;
     }
     const fd = new FormData(e.currentTarget);
-    fd.set('images', JSON.stringify(images));
+    images.forEach((img, i) => {
+      if (img.kind === 'existing') {
+        fd.set(`image_existing_id_${i}`, img.id);
+      } else {
+        fd.set(`image_file_${i}`, img.file);
+      }
+    });
+    fd.set('image_count', String(images.length));
+    fd.set('image_primary', String(images.findIndex(img => img.is_primary)));
     fd.set('colors', JSON.stringify(colors));
     fd.set('fits', JSON.stringify(fits));
     action(fd);
@@ -355,16 +375,15 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
 
       <div style={{ marginBottom: 40 }}>
         <label style={labelStyle}>Images</label>
-        <input 
-          type="file" 
-          multiple 
-          accept="image/*" 
-          onChange={async (e) => {
+        <input
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={(e) => {
             if (!e.target.files || e.target.files.length === 0) return;
-            const newImages: { url: string; is_primary: boolean; }[] = [...images];
+            const newImages: ImageEntry[] = [...images];
             for (const file of Array.from(e.target.files)) {
-              const url = URL.createObjectURL(file);
-              newImages.push({ url, is_primary: newImages.length === 0 });
+              newImages.push({ kind: 'new', file, previewUrl: URL.createObjectURL(file), is_primary: newImages.length === 0 });
             }
             setImages(newImages);
             setFileInputKey(prevKey => prevKey + 1);
@@ -374,18 +393,20 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
         />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 16 }}>
-          {images.map((image, index) => (
-            <div 
-              key={image.url} 
+          {images.map((image, index) => {
+            const imgUrl = image.kind === 'existing' ? image.url : image.previewUrl;
+            return (
+            <div
+              key={imgUrl}
               style={{
-                border: `2px solid ${image.is_primary ? 'var(--black)' : 'var(--line)'}`, 
-                borderRadius: 8, 
-                overflow: 'hidden', 
+                border: `2px solid ${image.is_primary ? 'var(--black)' : 'var(--line)'}`,
+                borderRadius: 8,
+                overflow: 'hidden',
                 position: 'relative',
                 padding: 8
               }}
             >
-              <img src={image.url} alt="Product preview" style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4 }} />
+              <img src={imgUrl} alt="Product preview" style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4 }} />
               {image.is_primary && (
                 <span 
                   style={{
@@ -445,7 +466,8 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
                 Delete
               </button>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

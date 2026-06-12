@@ -2,6 +2,7 @@ import ProductForm from '@/components/admin/ProductForm';
 import { redirect } from 'next/navigation';
 import { createProduct } from '@/lib/actions/products';
 import { generateSlug } from '@/lib/utils';
+import type { ProductImageInput } from '@/types';
 
 export default async function NewProduct({ params }: { params: Promise<{ role: string }> }) {
   const { role } = await params;
@@ -9,13 +10,23 @@ export default async function NewProduct({ params }: { params: Promise<{ role: s
   async function handleSubmit(formData: FormData) {
     'use server';
     const name = formData.get('name') as string;
+    const imageCount = Number(formData.get('image_count') ?? '0');
+    const primaryIndex = Number(formData.get('image_primary') ?? '0');
+    const images: ProductImageInput[] = [];
+    for (let i = 0; i < imageCount; i++) {
+      const file = formData.get(`image_file_${i}`) as File | null;
+      if (file && file.size > 0) {
+        const data = Buffer.from(await file.arrayBuffer());
+        images.push({ kind: 'new', data, contentType: file.type, is_primary: i === primaryIndex });
+      }
+    }
     await createProduct({
-      name: formData.get('name') as string,
+      name,
       subtitle: formData.get('subtitle') as string,
       category: formData.get('category') as string,
       tag: formData.get('tag') as string,
       description: formData.get('desc') as string,
-      images: JSON.parse(formData.get('images') as string),
+      images,
       weightG: Number(formData.get('weight')),
       skuPrefix: formData.get('skuPrefix') as string,
       colors: JSON.parse(formData.get('colors') as string),
