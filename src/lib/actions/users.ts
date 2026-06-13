@@ -38,11 +38,10 @@ export async function updateNameAction(firstName: string, lastName: string) {
 
   if (!trimmedFirst) throw new Error('First name is required');
 
-  // Update Clerk first — if it fails, DB remains unchanged
   const client = await clerkClient();
   await client.users.updateUser(user.clerk_user_id, {
     firstName: trimmedFirst,
-    lastName: trimmedLast || undefined,
+    lastName: trimmedLast || '',
   });
 
   await db.query(
@@ -56,7 +55,6 @@ export async function updateNameAction(firstName: string, lastName: string) {
 export async function deleteOwnAccountAction() {
   const user = await getCurrentDbUserOrThrow();
 
-  // Delete from Clerk first — if it fails, DB row is still intact
   const client = await clerkClient();
   await client.users.deleteUser(user.clerk_user_id);
 

@@ -1,7 +1,5 @@
 import Image from 'next/image';
 
-const STATS = [['500+', 'anggota'], ['24', 'kota'], ['5', 'produk']];
-
 export default function About() {
   return (
     <section style={{ background: 'var(--cream)', padding: '60px 28px 80px' }}>
@@ -22,16 +20,8 @@ export default function About() {
               Wadah resmi pelajar dan mahasiswa Indonesia di Deutschland.
             </p>
             <p style={{ fontFamily: 'var(--font-body)', fontSize: 14.5, color: 'var(--ink)', lineHeight: 1.85 }}>
-              Setiap merch yang kami buat lahir dari cerita, candaan, dan kebanggaan kami sebagai pelajar di perantauan. Dari "Mit Karte Bitte" sampai "Einkaufen 101" — semuanya adalah catatan kecil hidup di Jerman yang ingin kami abadikan.
+              Setiap merch yang kami buat lahir dari cerita, candaan, dan kebanggaan kami sebagai pelajar di perantauan. Dari "Mit Karte Bitte" sampai "Trio Komodores", semuanya adalah catatan kecil hidup di Jerman yang ingin kami abadikan.
             </p>
-            <div style={{ display: 'flex', gap: 24, marginTop: 28 }}>
-              {STATS.map(([n, l]) => (
-                <div key={l}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 42, color: 'var(--accent)' }}>{n}</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase' }}>{l}</div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>
