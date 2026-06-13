@@ -1,7 +1,7 @@
 const sections = [
   {
     title: '14-Day Right of Withdrawal',
-    body: 'In accordance with German consumer protection regulations (Widerrufsrecht), customers have the right to return the product within 14 days of receipt.',
+    body: 'In accordance with German consumer protection regulations (Widerrufsrecht), customers have the right to withdraw from the contract within 14 days of receipt. The full withdrawal notice and model withdrawal form are available on the Withdrawal page.',
   },
   {
     title: 'Return Shipping Cost',
@@ -40,6 +40,11 @@ export default function ReturnsPage() {
           {sections.map((section) => (
             <Section key={section.title} title={section.title}>
               <p>{section.body}</p>
+              {section.title === '14-Day Right of Withdrawal' && (
+                <a href="/withdrawal" style={{ color: 'var(--black)', fontWeight: 700, textDecoration: 'underline' }}>
+                  Read the Widerrufsbelehrung
+                </a>
+              )}
             </Section>
           ))}
         </div>
