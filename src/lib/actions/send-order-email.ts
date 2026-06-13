@@ -11,6 +11,8 @@ export async function SendOrderConfirmationEmail(params: {
   to: string;
   customerName: string;
   orderId: string;
+  itemsTotal: string;
+  shippingCost: string;
   total: string;
   items: { name: string; quantity: number; price: string }[];
 }) {
@@ -21,6 +23,8 @@ export async function SendOrderConfirmationEmail(params: {
     react: OrderConfirmationEmail({
       customerName: params.customerName,
       orderId: params.orderId.substring(0, 8),
+      itemsTotal: params.itemsTotal,
+      shippingCost: params.shippingCost,
       total: params.total,
       items: params.items,
     }),

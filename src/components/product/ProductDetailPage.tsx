@@ -365,7 +365,7 @@ export default function ProductDetailPage({
           </div>
         </div>
 
-        <div style={{ paddingTop: 8 }}>
+        <div style={{ paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div
             style={{
               fontFamily: 'var(--font-mono)',

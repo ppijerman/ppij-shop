@@ -12,7 +12,7 @@ export default function PaymentRejectedEmail(params: {
       <Body style={{ fontFamily: 'sans-serif', backgroundColor: '#f9f9f9' }}>
       <Container style={{ maxWidth: '600px', margin: 'auto', padding: '24px' }}>
           <Heading>Payment Proof Not Accepted</Heading>
-          <Text>Hi {params.customerName}, unfortunately your payment proof for order <strong>#{params.orderId}</strong> could not be accepted.</Text>
+          <Text>Hi {params.customerName}, unfortunately your payment proof for order <strong>#{params.orderId.slice(0, 8)}</strong> could not be accepted.</Text>
           <Text>
             <strong>You have 30 minutes to upload a new proof</strong> before the order is cancelled.
           </Text>

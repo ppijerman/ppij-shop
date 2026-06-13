@@ -16,7 +16,7 @@ export default function OrderShippedEmail(params: {
       <Body style={{ fontFamily: 'sans-serif', backgroundColor: '#f9f9f9' }}>
         <Container style={{ maxWidth: '600px', margin: 'auto', padding: '24px' }}>
           <Heading>Your Order Has Been Shipped</Heading>
-          <Text>Hi {params.customerName}, your order <strong>#{params.orderId}</strong> is on its way!</Text>
+          <Text>Hi {params.customerName}, your order <strong>#{params.orderId.slice(0, 8)}</strong> is on its way!</Text>
           <Text>
             <strong>Carrier:</strong> {params.shippingProvider}
           </Text>

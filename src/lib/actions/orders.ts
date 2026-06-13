@@ -1,12 +1,14 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { withTransaction } from '@/lib/db';
+import { db, withTransaction } from '@/lib/db';
 import { requireOrderAdmin } from '@/lib/auth';
 import { getCurrentDbUserOrThrow } from '@/lib/users';
 import { expireOverdueAwaitingPaymentOrders, getPaymentExpiresAtExpression } from '@/lib/orderExpiry';
-import type { PaymentMethod } from '@/types';
+import type { DeliveryAddress, PaymentMethod } from '@/types';
 import { SendOrderConfirmationEmail, SendOrderCancelledEmail, SendOrderExpiredEmail, SendPaymentApprovedEmail, SendPaymentProofUploadedEmail, SendPaymentRejectedEmail, SendOrderShippedEmail } from '@/lib/actions/send-order-email';
+import { createParcel, getShippingMethods, getParcel } from '@/lib/sendcloud';
+import { FREE_SHIPPING_THRESHOLD } from '@/lib/constants';
 
 const ORDER_STATUSES = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'] as const;
 const PAYMENT_METHODS = ['IBAN'] as const;
@@ -29,9 +31,31 @@ export type CreateOrderResult =
 
 export type SimpleActionResult = { ok: true; message?: string } | { ok: false; message: string };
 
+export interface ShippingOption {
+  methodId: string;
+  name: string;
+  carrier: string;
+  costCents: number;
+  leadTimeHours: number | null;
+}
+
 function formString(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === 'string' ? value.trim() : '';
+}
+
+async function getCartWeightG(userId: string): Promise<number> {
+  const result = await db.query(
+    `
+    SELECT COALESCE(SUM(p.weight_g * ci.quantity), 500) AS total_weight_g
+    FROM cart_items ci
+    LEFT JOIN product_variants pv ON pv.id = ci.variant_id
+    LEFT JOIN products p ON p.id = pv.product_id
+    WHERE ci.user_id = $1
+    `,
+    [userId],
+  );
+  return Number(result.rows[0]?.total_weight_g ?? 500);
 }
 
 function isPaymentMethod(value: string): value is PaymentMethod {
@@ -46,23 +70,31 @@ function isOrderStatus(value: string): value is OrderStatus {
   return ORDER_STATUSES.includes(value as OrderStatus);
 }
 
-function parseDeliveryAddress(formData: FormData, deliveryType: DeliveryType) {
-  if (deliveryType === 'PICKUP') {
-    return null;
+const ALLOWED_DELIVERY_COUNTRIES = new Set(['DE']);
+
+function parseDeliveryAddress(formData: FormData): { address: DeliveryAddress } | { error: string } {
+  const street = formString(formData, 'street').trim();
+  const city = formString(formData, 'city').trim();
+  const postcode = formString(formData, 'postcode').trim();
+  const country = formString(formData, 'country').trim();
+
+  if (!street || !city || !postcode || !country) {
+    return { error: 'Delivery address is incomplete.' };
+  }
+  if (street.length > 100) {
+    return { error: 'Street address is too long (max 100 characters).' };
+  }
+  if (city.length > 100) {
+    return { error: 'City is too long (max 100 characters).' };
+  }
+  if (!ALLOWED_DELIVERY_COUNTRIES.has(country)) {
+    return { error: 'Delivery is only available within Germany.' };
+  }
+  if (!/^\d{5}$/.test(postcode)) {
+    return { error: 'Enter a valid 5-digit German postcode (e.g. 52070).' };
   }
 
-  const address = {
-    street: formString(formData, 'street'),
-    city: formString(formData, 'city'),
-    postcode: formString(formData, 'postcode'),
-    country: formString(formData, 'country'),
-  };
-
-  if (!address.street || !address.city || !address.postcode || !address.country) {
-    return null;
-  }
-
-  return address;
+  return { address: { street, city, postcode, country } };
 }
 
 function truncateLogValue(value: string, maxLength: number): string {
@@ -96,12 +128,41 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
     return { ok: false, code: 'VALIDATION_ERROR', message: 'IBAN bank transfer is required.' };
   }
 
-  const deliveryAddress = parseDeliveryAddress(formData, deliveryTypeInput);
-  if (deliveryTypeInput === 'DELIVERY' && deliveryAddress === null) {
-    return { ok: false, code: 'VALIDATION_ERROR', message: 'Delivery address is incomplete.' };
+  const isDelivery = deliveryTypeInput === 'DELIVERY';
+
+  let deliveryAddress: DeliveryAddress | null = null;
+  if (isDelivery) {
+    const addressResult = parseDeliveryAddress(formData);
+    if ('error' in addressResult) {
+      return { ok: false, code: 'VALIDATION_ERROR', message: addressResult.error };
+    }
+    deliveryAddress = addressResult.address;
   }
 
-  const emailDataRef: { value: { total: number; items: { name: string; quantity: number; price: string }[] } | null } = { value: null };
+  const shippingMethodId = isDelivery
+    ? formString(formData, 'shippingMethodId') || null
+    : null;
+
+  let shippingCost = 0;
+  if (isDelivery) {
+    if (!shippingMethodId) {
+      return { ok: false, code: 'VALIDATION_ERROR', message: 'Choose a shipping option.' };
+    }
+    try {
+      const weightG = await getCartWeightG(user.id);
+      const methods = await getShippingMethods(deliveryAddress!.country, weightG);
+      const method = methods.find((m) => String(m.id) === shippingMethodId);
+      if (!method) {
+        return { ok: false, code: 'VALIDATION_ERROR', message: 'The selected shipping option is no longer available.' };
+      }
+      shippingCost = Number(method.price);
+    } catch (err) {
+      console.error('SendCloud getShippingMethods failed:', err);
+      return { ok: false, code: 'VALIDATION_ERROR', message: 'Could not confirm the shipping cost. Please try again later.' };
+    }
+  }
+
+  const emailDataRef: { value: { total: number; itemsTotal: number; items: { name: string; quantity: number; price: string }[] } | null } = { value: null };
 
   const result = await withTransaction<CreateOrderResult>(async (query) => {
     const cartResult = await query(
@@ -204,15 +265,21 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
       };
     }
 
-    const total = cartRows.reduce((sum, item) => {
+    const itemsTotal = cartRows.reduce((sum, item) => {
       const unitPrice = Number(item.variant_price ?? item.bundle_price ?? 0);
       return sum + unitPrice * Number(item.quantity);
     }, 0);
 
+    if (itemsTotal >= FREE_SHIPPING_THRESHOLD) {
+      shippingCost = 0;
+    }
+
+    const total = itemsTotal + shippingCost;
+
     const orderResult = await query(
       `
-      INSERT INTO orders (user_id, status, total_price, delivery_address, delivery_type, payment_method, payment_expires_at)
-      VALUES ($1, 'AWAITING_PAYMENT', $2, $3::jsonb, $4::delivery_type, $5::payment_method, ${getPaymentExpiresAtExpression()})
+      INSERT INTO orders (user_id, status, total_price, delivery_address, delivery_type, payment_method, payment_expires_at, shipping_cost, shipping_method_id)
+      VALUES ($1, 'AWAITING_PAYMENT', $2, $3::jsonb, $4::delivery_type, $5::payment_method, ${getPaymentExpiresAtExpression()}, $6, $7)
       RETURNING id
       `,
       [
@@ -221,6 +288,8 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
         deliveryAddress === null ? null : JSON.stringify(deliveryAddress),
         deliveryTypeInput,
         paymentMethodInput,
+        shippingCost,
+        shippingMethodId,
       ],
     );
     const orderId = orderResult.rows[0].id;
@@ -274,6 +343,7 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
 
     emailDataRef.value = {
       total,
+      itemsTotal,
       items: cartRows.map((item) => ({
         name: item.bundle_name ?? item.product_name,
         quantity: Number(item.quantity),
@@ -295,6 +365,8 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
         to: user.email,
         customerName: user.first_name,
         orderId: result.orderId,
+        itemsTotal: `€${emailDataRef.value.itemsTotal.toFixed(2)}`,
+        shippingCost: `€${(emailDataRef.value.total - emailDataRef.value.itemsTotal).toFixed(2)}`,
         total: `€${Number(emailDataRef.value.total).toFixed(2)}`,
         items: emailDataRef.value.items,
       });
@@ -737,7 +809,7 @@ export async function updateShippingTrackingNumberAction(
     return { ok: false, message: 'Shipping number must be 120 characters or fewer.' };
   }
 
-  const buyerRef = { value: null as { email: string; first_name: string } | null };
+  const buyerRef = { value: null as { email: string; first_name: string; sendcloud_parcel_id: number | null } | null };
 
   const result = await withTransaction(async (query) => {
     const updateResult = await query(
@@ -764,12 +836,12 @@ export async function updateShippingTrackingNumberAction(
 
     const buyerResult = await query(
       `
-      SELECT u.email, u.first_name
-      FROM orders o Join users u ON u.id = o.user_id
+      SELECT u.email, u.first_name, o.sendcloud_parcel_id
+      FROM orders o JOIN users u ON u.id = o.user_id
       WHERE o.id = $1
       `,
-      [orderId]
-    )
+      [orderId],
+    );
     buyerRef.value = buyerResult.rows[0] ?? null;
 
     return { ok: true, message: 'Shipping number saved.' };
@@ -781,7 +853,7 @@ export async function updateShippingTrackingNumberAction(
     revalidatePath(`/account/orders/${orderId}`);
   }
 
-  if (result.ok && buyerRef.value?.email) {
+  if (result.ok && buyerRef.value?.email && !buyerRef.value.sendcloud_parcel_id) {
     try {
       await SendOrderShippedEmail({
         to: buyerRef.value.email,
@@ -789,9 +861,9 @@ export async function updateShippingTrackingNumberAction(
         orderId,
         shippingProvider: provider,
         trackingNumber,
-      })
+      });
     } catch (err) {
-      console.error("Failed to send order shipped email: ", err);
+      console.error('Failed to send order shipped email: ', err);
     }
   }
 
@@ -801,7 +873,7 @@ export async function updateShippingTrackingNumberAction(
 export async function approvePaymentAction(orderId: string): Promise<SimpleActionResult> {
   const admin = await requireOrderAdmin();
 
-  const buyerRef = { value: null as { email: string; first_name: string } | null };
+  const detailsRef: { value: any | null } = { value: null };
 
   const result = await withTransaction(async (query) => {
     const updateResult = await query(
@@ -826,15 +898,22 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
       [orderId, 'Payment approved by admin.', admin.id],
     );
 
-    const buyerResult = await query(
+    const detailsResult = await query(
       `
-      SELECT u.email, u.first_name 
-      FROM orders o JOIN users u ON u.id = o.user_id 
+      SELECT o.delivery_type, o.delivery_address, o.shipping_method_id, 
+        u.email, u.first_name, u.last_name,
+        COALESCE(SUM(p.weight_g * oi.quantity), 500) AS total_weight_g
+      FROM orders o 
+      JOIN users u ON u.id = o.user_id 
+      LEFT JOIN order_items oi ON oi.order_id = o.id
+      LEFT JOIN product_variants pv ON pv.id = oi.variant_id
+      LEFT JOIN products p ON p.id = pv.product_id
       WHERE o.id = $1
+      GROUP BY o.id, o.delivery_type, o.delivery_address, o.shipping_method_id, u.email, u.first_name, u.last_name
       `,
       [orderId],
     );
-    buyerRef.value = buyerResult.rows[0] ?? null;
+    detailsRef.value = detailsResult.rows[0] ?? null;
 
     return { ok: true, message: 'Payment approved.' };
   });
@@ -847,11 +926,59 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
     revalidatePath(`/account/orders/${orderId}`);
   }
 
-  if (result.ok && buyerRef.value?.email) {
+  if (result.ok && detailsRef.value?.delivery_type === 'DELIVERY') {
+    try {
+      const senderAddressId = Number(process.env.SENDCLOUD_SENDER_ADDRESS_ID);
+      if (!process.env.SENDCLOUD_SENDER_ADDRESS_ID || isNaN(senderAddressId)) {
+        throw new Error('SENDCLOUD_SENDER_ADDRESS_ID env var is missing or not a valid number');
+      }
+
+      const d = detailsRef.value;
+      const addr = d.delivery_address as DeliveryAddress;
+
+      const parcel = await createParcel({
+        name: `${d.first_name} ${d.last_name ?? ''}`.trim(),
+        address: addr.street,
+        city: addr.city,
+        postal_code: addr.postcode,
+        country: addr.country,
+        weight: Math.max(Number(d.total_weight_g), 100) / 1000,
+        shipment: { id: d.shipping_method_id as string },
+        sender_address: senderAddressId,
+        order_number: orderId.slice(0, 8),
+      });
+
+      await withTransaction(async (query) => {
+        await query(
+          'UPDATE orders SET sendcloud_parcel_id = $2 WHERE id = $1',
+          [orderId, parcel.id],
+        );
+        await query(
+          `
+          INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+          VALUES ($1, 'PROCESSING', $2, $3)
+          `,
+          [orderId, `Shipping label created via SendCloud (parcel #${parcel.id}, tracking: ${parcel.tracking_number || 'pending'})`, admin.id],
+        );
+      });
+    } catch (err) {
+      console.error('Failed to create/save parcel: ', err);
+
+      await db.query(
+        `
+        INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+        VALUES ($1, 'PROCESSING', $2, $3)
+        `,
+        [orderId, `Failed to create shipping parcel: ${err instanceof Error ? err.message : String(err)}`.slice(0, 255), admin.id],
+      );
+    }
+  }
+
+  if (result.ok && detailsRef.value?.email) {
     try {
       await SendPaymentApprovedEmail({
-        to: buyerRef.value.email,
-        customerName: buyerRef.value.first_name,
+        to: detailsRef.value.email,
+        customerName: detailsRef.value.first_name,
         orderId,
       });
     } catch (err) {
@@ -929,4 +1056,61 @@ export async function rejectPaymentAction(orderId: string): Promise<SimpleAction
   }
 
   return result;
+}
+
+export async function getShippingOptionsAction(
+  toCountry: string,
+): Promise<{ ok: true; options: ShippingOption[] } | { ok: false; message: string }> {
+  const user = await getCurrentDbUserOrThrow();
+
+  const weightG = await getCartWeightG(user.id);
+
+  try {
+    const methods = await getShippingMethods(toCountry, weightG);
+
+    if (methods.length === 0) {
+      return { ok: false, message: 'No shipping options available for the provided address.' };
+    }
+
+    const options: ShippingOption[] = methods.map((method) => ({
+      methodId: method.id,
+      name: method.name,
+      carrier: method.carrier,
+      costCents: Math.round(Number(method.price) * 100),
+      leadTimeHours: method.lead_time_hours,
+    }));
+
+    options.sort((a,b) => a.costCents - b.costCents);
+
+    return { ok: true, options };
+  } catch (err) {
+    console.error('SendCloud getShippingMethods failed:', err);
+    return { ok: false, message: 'Failed to fetch shipping options. Please try again later.' };
+  }
+}
+
+export async function getParcelLabelUrlAction(
+  orderId: string,
+): Promise<{ ok: true; url: string } | { ok: false; message: string }> {
+  await requireOrderAdmin();
+
+  const res = await db.query(
+    'SELECT sendcloud_parcel_id FROM orders WHERE id = $1',
+    [orderId],
+  );
+  const row = res.rows[0];
+  
+  if (!row?.sendcloud_parcel_id) {
+    return { ok: false, message: 'No parcel associated with this order.' };
+  }
+
+  try {
+    const parcel = await getParcel(row.sendcloud_parcel_id);
+    const url = parcel.documents?.find(d => d.type === 'label')?.link;
+    if (!url) return { ok: false, message: 'No label available for this parcel.' };
+    return { ok: true, url };
+  } catch (err) {
+    console.error('Failed to fetch parcel details:', err);
+    return { ok: false, message: 'Failed to fetch label URL. Please try again later.' };
+  }
 }
