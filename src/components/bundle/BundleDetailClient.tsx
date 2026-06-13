@@ -6,7 +6,7 @@ import { addBundleToCartAction } from "@/lib/actions/cart";
 import { Product, ProductVariant, Bundle, Color, FitType } from "@/types";
 import { useState, useMemo, useEffect } from "react";
 import ProductCrop from "@/components/product/ProductCrop";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 
 interface BundleWithProducts extends Bundle {
   products: (Product & { variants: ProductVariant[] })[];
@@ -18,6 +18,7 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
   const { user } = useUser(); 
   const role = user?.publicMetadata?.role;
   const isAdmin = role === 'ADMIN_IT' || role === 'ADMIN_KK';
+  const { isSignedIn } = useAuth();
 
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const { refreshCart } = useCart();
@@ -38,11 +39,17 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
   const isComplete = bundle.products.every(p => selectedVariants[p.id]);
 
   const handleAdd = async () => {
-    if (isComplete) {
+    if (isAdmin) return;
+    
+    if (isComplete && isSignedIn) {
       const variantIds = Object.values(selectedVariants);
       await addBundleToCartAction(bundle.id, variantIds);
       await refreshCart();
       showToast(`✦ added bundle · ${bundle.name}`);
+    } else if (isComplete) {
+      showToast('Please sign in before adding items to your cart.');
+    } else {
+      showToast('Please select all variants.');
     }
   }
 
@@ -125,20 +132,21 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
             width: '100%',
             maxWidth: 640,
             padding: '18px 32px',
-            background: isComplete ? 'var(--accent)' : 'var(--line)',
-            color: isComplete ? '#fff' : 'var(--muted)',
+            background: isComplete && !isAdmin ? 'var(--accent)' : 'var(--line)',
+            color: isComplete && !isAdmin ? '#fff' : 'var(--muted)',
             border: 'none',
             borderRadius: 999,
             fontFamily: 'var(--font-mono)',
             fontSize: 12,
             letterSpacing: '0.22em',
-            cursor: isComplete ? 'pointer' : 'not-allowed',
+            cursor: isComplete && !isAdmin ? 'pointer' : 'not-allowed',
             textTransform: 'uppercase',
             fontWeight: 700,
             transition: 'all 0.3s',
           }}
         >
-          {isComplete
+        {isAdmin ? 'Admin Mode' 
+          : isComplete
             ? `Add bundle to cart — €${Number(bundle.price).toFixed(2)} ↗`
             : 'Select all variants to continue'
           }
