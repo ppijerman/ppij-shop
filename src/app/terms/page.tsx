@@ -1,3 +1,42 @@
+const sections = [
+  {
+    title: '1. About Us',
+    body: 'This placeholder AGB applies to the PPI Jerman Merch Shop operated for the PPI Jerman community. Real provider details, responsible legal entity, address, and contact details must be reviewed and completed before go-live.',
+  },
+  {
+    title: '2. Account Registration',
+    body: 'Customers may need to create an account to place orders. Account information must be accurate and kept up to date. Customers are responsible for keeping login credentials secure.',
+  },
+  {
+    title: '3. Orders & Payment',
+    body: 'Product listings are invitations to order. An order is created when the customer submits checkout information. Payment is currently handled by bank transfer, and orders are processed after payment proof has been verified.',
+  },
+  {
+    title: '4. Shipping',
+    body: 'Shipping options and costs are shown during checkout where delivery is available. Customers are responsible for providing complete and accurate delivery information.',
+  },
+  {
+    title: '5. Returns & Exchanges',
+    body: 'Returns and exchanges are handled according to the shop return policy. Defective or incorrect items must be reported promptly with the order number, a photo, and a description of the issue.',
+  },
+  {
+    title: '6. Intellectual Property',
+    body: 'Shop designs, logos, product images, text, and branding belong to PPI Jerman or their respective rights holders. They may not be copied, reused, or distributed without permission.',
+  },
+  {
+    title: '7. Limitation of Liability',
+    body: 'Liability is limited according to applicable law. PPI Jerman is not responsible for delays caused by carriers or circumstances outside its reasonable control.',
+  },
+  {
+    title: '8. Changes to Terms',
+    body: 'These terms may be updated from time to time. The version published at the time of order applies unless mandatory law requires otherwise.',
+  },
+  {
+    title: '9. Contact',
+    body: 'Questions about orders, these terms, or legal notices should be directed to the official PPI Jerman shop contact. Real contact details must be inserted before go-live.',
+  },
+];
+
 export default function TermsPage() {
   return (
     <section style={{ background: 'var(--cream)', padding: '60px 28px 100px' }}>
@@ -15,50 +54,15 @@ export default function TermsPage() {
               Last updated: June 2026
             </p>
             <p style={{ fontSize: 15 }}>
-              These Terms and Conditions govern your use of the PPI Jerman Merch Shop and the purchase of merchandise offered through this platform. By creating an account, you agree to be bound by these terms.
+              Placeholder Terms & Conditions (AGB) for the PPI Jerman Merch Shop. This text must be replaced with legally reviewed terms before go-live.
             </p>
           </div>
 
-          <Section title="1. About Us">
-            <p>The PPI Jerman Merch Shop is operated by Perhimpunan Pelajar Indonesia Jerman (PPI Jerman), a non-profit student association representing Indonesian students in Germany. All proceeds support PPI Jerman's community programs and activities.</p>
-          </Section>
-
-          <Section title="2. Account Registration">
-            <p>To place an order, you must create an account with a valid email address. You are responsible for maintaining the confidentiality of your account credentials. You must provide accurate and complete information during registration and keep your account information up to date.</p>
-          </Section>
-
-          <Section title="3. Orders and Payment">
-            <p>All orders are subject to availability. Prices are listed in Euros (€) and include applicable taxes. Payment is made via IBAN bank transfer to PPI Jerman's official account. Orders are confirmed only after payment proof is reviewed and approved by our team.</p>
-            <p style={{ marginTop: 12 }}>We reserve the right to cancel any order at our discretion, in which case a full refund will be issued.</p>
-          </Section>
-
-          <Section title="4. Shipping">
-            <p>We ship within Germany and to select European countries. Delivery times are estimates and may vary. Shipping is free on all orders. Risk of loss passes to you upon delivery to the carrier.</p>
-          </Section>
-
-          <Section title="5. Returns and Exchanges">
-            <p>If you receive a defective or incorrect item, contact us within 7 days of receipt. We will arrange a free replacement. As our merchandise is produced in limited runs, we generally cannot accept returns for reasons other than defect or fulfillment error.</p>
-          </Section>
-
-          <Section title="6. Intellectual Property">
-            <p>All designs, logos, and branding on PPI Jerman merchandise are the property of PPI Jerman or its licensed designers. You may not reproduce or use them without prior written permission.</p>
-          </Section>
-
-          <Section title="7. Privacy">
-            <p>We collect and process personal data (name, email, shipping address) solely for order fulfillment and communication. We do not sell your data to third parties. Your data is stored securely and you may request deletion of your account and associated data at any time from your account settings.</p>
-          </Section>
-
-          <Section title="8. Limitation of Liability">
-            <p>PPI Jerman's liability for any claim arising from these terms or the use of our shop is limited to the total amount paid for the order in question. We are not liable for indirect, incidental, or consequential damages.</p>
-          </Section>
-
-          <Section title="9. Changes to Terms">
-            <p>We may update these terms from time to time. Continued use of the shop after changes are posted constitutes your acceptance of the revised terms.</p>
-          </Section>
-
-          <Section title="10. Contact">
-            <p>For questions about these terms or your order, please reach out to us through the official PPI Jerman channels.</p>
-          </Section>
+          {sections.map((section) => (
+            <Section key={section.title} title={section.title}>
+              <p>{section.body}</p>
+            </Section>
+          ))}
         </div>
       </div>
     </section>
