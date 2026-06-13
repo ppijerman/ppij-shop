@@ -18,6 +18,15 @@ const SIZE_ORDER = ['S', 'M', 'L', 'XL', 'XXL', 'ONE SIZE'];
 export default function QuickViewModal({ product, onClose }: QuickViewModalProps) {
   const variants = product.variants || [];
 
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
   // Derive unique fits from variants, forced order, but inclusive
   const availableFits = useMemo(() => {
     const rawFits = Array.from(new Set(variants.map((v) => v.fit_type as FitType)));

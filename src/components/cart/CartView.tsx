@@ -20,6 +20,8 @@ export default function CartView() {
   const router = useRouter();
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('PICKUP');
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [legalAccepted, setLegalAccepted] = useState(false);
+  const [legalError, setLegalError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [country, setCountry] = useState('DE');
   const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
@@ -32,7 +34,13 @@ export default function CartView() {
   async function handleCheckout(formData: FormData) {
     setSubmitting(true);
     setCheckoutError(null);
+    setLegalError(null);
     try {
+      if (!legalAccepted) {
+        setLegalError('Please agree to the legal terms and policies before placing your order.');
+        return;
+      }
+
       const result = await createOrder(formData);
       if (!result.ok) {
         const details = result.items?.length ? ` (${result.items.join(', ')})` : '';
@@ -354,6 +362,39 @@ export default function CartView() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-display)', fontSize: 24, marginTop: 14, paddingTop: 14, borderTop: '1px solid #222' }}>
                       <span>TOTAL</span><span style={{ color: '#fff' }}>€{grandTotal.toFixed(2)}</span>
                     </div>
+                    <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid #222' }}>
+                      <p style={{ fontSize: 12, lineHeight: 1.6, color: 'rgba(239,234,224,0.72)', marginBottom: 14 }}>
+                        Orders cannot be cancelled once payment has been made. Please ensure all order details are correct before proceeding.
+                      </p>
+                      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={legalAccepted}
+                          onChange={(event) => {
+                            setLegalAccepted(event.target.checked);
+                            if (event.target.checked) {
+                              setLegalError(null);
+                            }
+                          }}
+                          style={{
+                            marginTop: 3,
+                            width: 16,
+                            height: 16,
+                            flexShrink: 0,
+                            cursor: 'pointer',
+                            accentColor: 'var(--accent)',
+                          }}
+                        />
+                        <span style={{ fontSize: 12, lineHeight: 1.6, color: 'rgba(239,234,224,0.72)' }}>
+                          I agree to the <LegalLink href="/terms">Terms & Conditions</LegalLink>, <LegalLink href="/shipping">Shipping Policy</LegalLink>, and <LegalLink href="/returns">Return Policy</LegalLink> of PPI Jerman, and confirm that I have read the <LegalLink href="/datenschutz">Privacy Policy</LegalLink>.
+                        </span>
+                      </label>
+                      {legalError && (
+                        <div style={{ background: '#fee2e2', color: '#991b1b', padding: 10, marginTop: 12, fontSize: 12, lineHeight: 1.5 }}>
+                          {legalError}
+                        </div>
+                      )}
+                    </div>
                   </>
                 );
               })()}
@@ -370,6 +411,14 @@ export default function CartView() {
         )}
       </div>
     </section>
+  );
+}
+
+function LegalLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} style={{ color: 'var(--cream)', fontWeight: 700, textDecoration: 'none', borderBottom: '1px solid rgba(239,234,224,0.72)' }}>
+      {children}
+    </Link>
   );
 }
 
