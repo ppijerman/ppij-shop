@@ -966,17 +966,19 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
         order_number: orderId.slice(0, 8),
       });
 
-      await db.query(
-        'UPDATE orders SET sendcloud_parcel_id = $2 WHERE id = $1',
-        [orderId, parcel.id],
-      );
-      await db.query(
-        `
-        INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
-        VALUES ($1, 'PROCESSING', $2, $3)
-        `,
-        [orderId, `Shipping label created via SendCloud (parcel #${parcel.id}, tracking: ${parcel.tracking_number || 'pending'})`, admin.id],
-      ).catch((err) => console.error('Failed to log parcel creation:', err));
+      await withTransaction(async (query) => {
+        await query(
+          'UPDATE orders SET sendcloud_parcel_id = $2 WHERE id = $1',
+          [orderId, parcel.id],
+        );
+        await query(
+          `
+          INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+          VALUES ($1, 'PROCESSING', $2, $3)
+          `,
+          [orderId, `Shipping label created via SendCloud (parcel #${parcel.id}, tracking: ${parcel.tracking_number || 'pending'})`, admin.id],
+        );
+      });
     } catch (err) {
       console.error('Failed to create/save parcel: ', err);
 
