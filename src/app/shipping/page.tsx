@@ -1,27 +1,31 @@
 const sections = [
   {
-    title: 'Processing Time',
-    body: 'Orders are processed within 3 business days after payment verification.',
+    title: 'Shipping Process',
+    body: 'Orders will be processed once payment has been successfully received and verified. Processing and shipment take place within a maximum of three working days after payment verification.',
   },
   {
     title: 'Shipping Cost',
-    body: 'Shipping cost is calculated at checkout based on the destination and selected shipping method.',
+    body: 'Shipping costs are not included in the product price and will be calculated at checkout based on the delivery address and selected shipping method.',
   },
   {
     title: 'Free Shipping',
-    body: 'Free shipping applies to orders of €49 or more.',
+    body: 'Free shipping applies to purchases of at least €49.',
   },
   {
-    title: 'Delivery Information',
-    body: 'The buyer is responsible for providing accurate and complete delivery information. Incorrect or incomplete delivery details may delay fulfillment.',
+    title: 'Delivery Time',
+    body: 'Delivery time depends on the destination location and the shipping service used. Once the order has been shipped, the buyer will receive tracking information.',
   },
   {
-    title: 'Carrier Delays',
-    body: 'PPI Jerman is not liable for delays caused by the carrier after the parcel has been handed over.',
+    title: 'Shipping Information',
+    body: "The buyer is responsible for ensuring that the recipient's name, address, and contact information provided are correct and complete.",
   },
   {
-    title: 'Lost in Transit',
-    body: 'If a parcel appears lost in transit, PPI Jerman will assist with the carrier investigation where possible.',
+    title: 'Delivery Delay',
+    body: 'PPI Jerman is not responsible for delays caused by shipping service providers, weather conditions, operational disruptions, or circumstances beyond our control.',
+  },
+  {
+    title: 'Items Lost in Transit',
+    body: 'In the event of any issues or loss during the courier delivery process, the PPI Jerman team will assist with the investigation and help ensure that the buyer receives the due resolution.',
   },
 ];
 
