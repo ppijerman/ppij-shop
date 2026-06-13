@@ -4,6 +4,7 @@ import { db } from '../db'
 import { clerkClient } from '@clerk/nextjs/server';
 import { requireITAdmin } from '../auth';
 import { getCurrentDbUserOrThrow } from '../users';
+import { revalidatePath } from 'next/cache';
 
 const ALLOWED_ROLES = ['BUYER', 'ADMIN_KK', 'ADMIN_IT'];
 type Role = typeof ALLOWED_ROLES[number];
@@ -37,24 +38,29 @@ export async function updateNameAction(firstName: string, lastName: string) {
 
   if (!trimmedFirst) throw new Error('First name is required');
 
-  await db.query(
-    `UPDATE users SET first_name = $2, last_name = $3 WHERE id = $1`,
-    [user.id, trimmedFirst, trimmedLast || null]
-  );
-
+  // Update Clerk first — if it fails, DB remains unchanged
   const client = await clerkClient();
   await client.users.updateUser(user.clerk_user_id, {
     firstName: trimmedFirst,
     lastName: trimmedLast || undefined,
   });
+
+  await db.query(
+    `UPDATE users SET first_name = $2, last_name = $3 WHERE id = $1`,
+    [user.id, trimmedFirst, trimmedLast || null]
+  );
+
+  revalidatePath('/account/settings');
 }
 
 export async function deleteOwnAccountAction() {
   const user = await getCurrentDbUserOrThrow();
-  await db.query(`DELETE FROM users WHERE id = $1`, [user.id]);
 
+  // Delete from Clerk first — if it fails, DB row is still intact
   const client = await clerkClient();
   await client.users.deleteUser(user.clerk_user_id);
+
+  await db.query(`DELETE FROM users WHERE id = $1`, [user.id]);
 }
 
 export async function deleteUserAction(userId: string) {
