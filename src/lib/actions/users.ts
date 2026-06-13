@@ -3,6 +3,7 @@
 import { db } from '../db'
 import { clerkClient } from '@clerk/nextjs/server';
 import { requireITAdmin } from '../auth';
+import { getCurrentDbUserOrThrow } from '../users';
 
 const ALLOWED_ROLES = ['BUYER', 'ADMIN_KK', 'ADMIN_IT'];
 type Role = typeof ALLOWED_ROLES[number];
@@ -28,10 +29,28 @@ export async function updateUserRoleAction(userId: string, role: Role) {
   });
 }
 
-export async function deleteOwnAccountAction() {
-  const { getCurrentDbUserOrThrow } = await import('../users');
+export async function updateNameAction(firstName: string, lastName: string) {
   const user = await getCurrentDbUserOrThrow();
 
+  const trimmedFirst = firstName.trim();
+  const trimmedLast = lastName.trim();
+
+  if (!trimmedFirst) throw new Error('First name is required');
+
+  await db.query(
+    `UPDATE users SET first_name = $2, last_name = $3 WHERE id = $1`,
+    [user.id, trimmedFirst, trimmedLast || null]
+  );
+
+  const client = await clerkClient();
+  await client.users.updateUser(user.clerk_user_id, {
+    firstName: trimmedFirst,
+    lastName: trimmedLast || undefined,
+  });
+}
+
+export async function deleteOwnAccountAction() {
+  const user = await getCurrentDbUserOrThrow();
   await db.query(`DELETE FROM users WHERE id = $1`, [user.id]);
 
   const client = await clerkClient();
