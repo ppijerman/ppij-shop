@@ -28,11 +28,11 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [termsError, setTermsError] = useState<string | null>(null);
 
   const passwordMismatchMessage = "Konfirmasi password tidak cocok.";
   const hasPasswordMismatch = password.length > 0 && confirmPassword.length > 0 && password !== confirmPassword;
   const visibleError = error === passwordMismatchMessage ? null : error;
-  const canSubmit = !hasPasswordMismatch && agreedToTerms;
 
   useEffect(() => {
     if (authLoaded && isSignedIn) {
@@ -49,8 +49,14 @@ export default function RegisterPage() {
 
     setLoading(true);
     setError(null);
+    setTermsError(null);
 
     try {
+      if (!agreedToTerms) {
+        setTermsError("Please agree to the Terms & Conditions and Privacy Policy before creating an account.");
+        return;
+      }
+
       const formData = new FormData(event.currentTarget);
       const firstName = getRequiredStringValue(formData, "firstName");
       const lastName = getRequiredStringValue(formData, "lastName");
@@ -266,7 +272,12 @@ export default function RegisterPage() {
             <input
               type="checkbox"
               checked={agreedToTerms}
-              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              onChange={(e) => {
+                setAgreedToTerms(e.target.checked);
+                if (e.target.checked) {
+                  setTermsError(null);
+                }
+              }}
               style={{
                 marginTop: 2,
                 width: 16,
@@ -285,10 +296,8 @@ export default function RegisterPage() {
               }}
             >
               I have read and agree to the{" "}
-              <a
+              <Link
                 href="/terms"
-                target="_blank"
-                rel="noopener noreferrer"
                 style={{
                   color: "var(--black)",
                   fontWeight: 600,
@@ -296,16 +305,41 @@ export default function RegisterPage() {
                   borderBottom: "1px solid var(--black)",
                 }}
               >
-                Terms and Conditions
-              </a>
+                Terms & Conditions
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/privacy"
+                style={{
+                  color: "var(--black)",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  borderBottom: "1px solid var(--black)",
+                }}
+              >
+                Privacy Policy
+              </Link>{" "}
+              of PPI Jerman.
             </span>
           </label>
+          {termsError && (
+            <div
+              style={{
+                marginTop: -12,
+                fontFamily: "var(--font-body)",
+                fontSize: 12,
+                color: "var(--accent-deep)",
+              }}
+            >
+              {termsError}
+            </div>
+          )}
           <div id="clerk-captcha" />
           <AuthSubmitButton
             loading={loading || fetchStatus === "fetching"}
             loadingLabel="Creating Account..."
             idleLabel="Create Account"
-            disabled={!canSubmit}
+            disabled={hasPasswordMismatch}
           />
         </form>
       )}
