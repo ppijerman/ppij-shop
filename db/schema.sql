@@ -188,6 +188,9 @@ CREATE TABLE public.orders (
     payment_proof_content_type character varying(100),
     pickup_details text,
     payment_expires_at timestamp with time zone,
+    shipping_cost numeric DEFAULT 0 NOT NULL,
+    shipping_method_id text,
+    sendcloud_parcel_id bigint,
     CONSTRAINT chk_delivery_address_logic CHECK (((delivery_type = 'PICKUP'::public.delivery_type) OR ((delivery_type = 'DELIVERY'::public.delivery_type) AND (delivery_address ? 'street'::text) AND (delivery_address ? 'city'::text) AND (delivery_address ? 'postcode'::text) AND (delivery_address ? 'country'::text)))),
     CONSTRAINT chk_order_total_price CHECK ((total_price >= (0)::numeric)),
     CONSTRAINT orders_payment_method_iban_only CHECK ((payment_method = 'IBAN'::public.payment_method))
@@ -526,6 +529,13 @@ CREATE INDEX idx_users_clerk_id ON public.users USING btree (clerk_user_id);
 
 
 --
+-- Name: orders_sendcloud_parcel_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX orders_sendcloud_parcel_id_idx ON public.orders USING btree (sendcloud_parcel_id) WHERE (sendcloud_parcel_id IS NOT NULL);
+
+
+--
 -- Name: bundles set_timestamp_bundles; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -691,4 +701,6 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260602154031'),
     ('20260606000100'),
     ('20260608000100'),
-    ('20260612011146');
+    ('20260611163147'),
+    ('20260612011146'),
+    ('20260613171034');

@@ -5,6 +5,8 @@ import {
 export default function OrderConfirmationEmail(params: {
   customerName: string;
   orderId: string;
+  itemsTotal: string;
+  shippingCost: string;
   total: string;
   items: { name: string; quantity : number; price: string }[];
 }) {
@@ -16,7 +18,7 @@ export default function OrderConfirmationEmail(params: {
           <Heading>Order Confirmed</Heading>
           <Text>Hi {params.customerName}, your order has been received.</Text>
           <Text>
-            <strong>Order ID:</strong> {params.orderId}
+            <strong>Order ID:</strong> {params.orderId.slice(0, 8)}
           </Text>
           <Section>
             {(params.items ?? []).map((item) => (
@@ -27,6 +29,12 @@ export default function OrderConfirmationEmail(params: {
               </Row>
             ))}
           </Section>
+          <Text>
+            <strong>Items Total: {params.itemsTotal}</strong>
+          </Text>
+          <Text>
+            <strong>Shipping Cost: {params.shippingCost}</strong>
+          </Text>
           <Text>
             <strong>Total: {params.total}</strong>
           </Text>

@@ -12,7 +12,7 @@ export default function OrderExpiredEmail(params: {
       <Body style={{ fontFamily: 'sans-serif', backgroundColor: '#f9f9f9' }}>
         <Container style={{ maxWidth: '600px', margin: 'auto', padding: '24px' }}>
           <Heading>Order Cancelled — Payment Window Expired</Heading>
-          <Text>Hi {params.customerName}, your order <strong>#{params.orderId}</strong> has been cancelled because no valid payment proof was uploaded within the payment window.</Text>
+          <Text>Hi {params.customerName}, your order <strong>#{params.orderId.slice(0, 8)}</strong> has been cancelled because no valid payment proof was uploaded within the payment window.</Text>
           <Text>If you still want to order, you are welcome to place a new one.</Text>
           <Text>
             <Link href="https://ppij-shop.de/catalog">Browse the shop</Link>

@@ -141,6 +141,9 @@ export interface Order {
   updated_at: string;
   items: OrderItem[];
   paymentProof?: string; 
+  sendcloud_parcel_id: number | null;
+  shipping_cost: number;
+  shipping_method_id: number | null;
 }
 
 export interface Bundle {

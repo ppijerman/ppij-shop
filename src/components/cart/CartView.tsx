@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import ProductCrop from '@/components/product/ProductCrop';
-import { createOrder } from '@/lib/actions/orders';
+import { createOrder, getShippingOptionsAction } from '@/lib/actions/orders';
 import { getPaymentInstruction } from '@/lib/payment';
+import { FREE_SHIPPING_THRESHOLD } from '@/lib/constants';
+
+import type { ShippingOption } from '@/lib/actions/orders';
 
 type DeliveryType = 'PICKUP' | 'DELIVERY';
 
@@ -18,7 +21,13 @@ export default function CartView() {
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('PICKUP');
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [country, setCountry] = useState('DE');
+  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
+  const [selectedMethodId, setSelectedMethodId] = useState<string | null>(null);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [shippingError, setShippingError] = useState<string | null>(null);
   const paymentInstruction = getPaymentInstruction('IBAN');
+  const isDisabled = submitting || loading || shippingLoading || (deliveryType === 'DELIVERY' && shippingOptions.length === 0);
 
   async function handleCheckout(formData: FormData) {
     setSubmitting(true);
@@ -49,6 +58,40 @@ export default function CartView() {
     }
   };
 
+  const fetchSeqRef = useRef(0);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchShippingOptions = useCallback(async (toCountry: string) => {
+    if (!toCountry.trim()) return;
+    const seq = ++fetchSeqRef.current;
+    setShippingLoading(true);
+    setShippingError(null);
+    try {
+      const result = await getShippingOptionsAction(toCountry);
+      if (seq !== fetchSeqRef.current) return;
+      if (result.ok) {
+        setShippingOptions(result.options);
+        setSelectedMethodId(result.options[0]?.methodId ?? null);
+      } else {
+        setShippingOptions([]);
+        setSelectedMethodId(null);
+        setShippingError(result.message);
+      }
+    } catch {
+      if (seq !== fetchSeqRef.current) return;
+      setShippingOptions([]);
+      setSelectedMethodId(null);
+      setShippingError('Failed to fetch shipping options');
+    } finally {
+      if (seq === fetchSeqRef.current) setShippingLoading(false);
+    }
+  }, []);
+
+  const fetchShippingOptionsDebounced = useCallback((toCountry: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => void fetchShippingOptions(toCountry), 400);
+  }, [fetchShippingOptions]);
+
   return (
     <section style={{ background: 'var(--cream)', minHeight: '80vh', padding: '60px 28px 80px' }}>
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
@@ -70,6 +113,7 @@ export default function CartView() {
           <form action={handleCheckout} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 360px', gap: 50, alignItems: 'start' }}>
             <input type="hidden" name="deliveryType" value={deliveryType} />
             <input type="hidden" name="paymentMethod" value="IBAN" />
+            <input type="hidden" name="shippingMethodId" value={deliveryType === 'DELIVERY' ? (selectedMethodId ?? '') : ''} />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
               <div>
@@ -113,17 +157,133 @@ export default function CartView() {
               <section style={{ borderTop: '1px solid var(--line)', paddingTop: 28 }}>
                 <h2 style={sectionTitleStyle}>FULFILLMENT</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
-                  <ChoiceButton active={deliveryType === 'PICKUP'} onClick={() => setDeliveryType('PICKUP')} label="Pickup" />
-                  <ChoiceButton active={deliveryType === 'DELIVERY'} onClick={() => setDeliveryType('DELIVERY')} label="Delivery" />
+                  <ChoiceButton active={deliveryType === 'PICKUP'} onClick={() => {
+                    setDeliveryType('PICKUP');
+                    setShippingOptions([]);
+                    setSelectedMethodId(null);
+                    setShippingError(null);
+                  }} label="Pickup" />
+                  <ChoiceButton active={deliveryType === 'DELIVERY'} onClick={() => {
+                    setDeliveryType('DELIVERY');
+                    void fetchShippingOptions(country);
+                  }} label="Delivery" />
                 </div>
 
                 {deliveryType === 'DELIVERY' ? (
+                  <>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    <TextField name="street" label="Street" />
-                    <TextField name="city" label="City" />
-                    <TextField name="postcode" label="Postcode" />
-                    <TextField name="country" label="Country" defaultValue="Germany" />
+                    <TextField name="street" label="Street" maxLength={100} />
+                    <TextField name="city" label="City" maxLength={100} />
+                    <TextField name="postcode" label="Postcode" maxLength={5} pattern="\d{5}" inputMode="numeric" />
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Country</span>
+                      <select
+                        name="country"
+                        value={country}
+                        onChange={(e) => {
+                          setCountry(e.target.value);
+                          fetchShippingOptionsDebounced(e.target.value);
+                        }}
+                        style={{ border: '1px solid var(--line)', background: 'white', padding: '12px', fontSize: 14 }}
+                      >
+                        <option value="DE">Germany</option>
+                      </select>
+                    </label>
                   </div>
+
+                  <div style={{ marginTop: 18 }}>
+                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 10 }}>Shipping method</p>
+                    {shippingLoading && (
+                      <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', letterSpacing: '0.12em' }}>
+                        Loading...
+                      </p>
+                    )}
+                    {shippingError && (
+                      <p style={{ fontSize: 13, color: '#b91c1c' }}>
+                        {shippingError}
+                      </p>
+                    )}
+                    {!shippingLoading && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {shippingOptions.map((option) => {
+                          const selected = selectedMethodId === option.methodId;
+                          const isFree = total >= FREE_SHIPPING_THRESHOLD;
+                          return (
+                            <label
+                              key={option.methodId}
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '14px 16px',
+                                border: selected ? '1.5px solid var(--black)' : '1px solid var(--line)',
+                                background: selected ? 'var(--cream-2)' : 'white',
+                                cursor: 'pointer',
+                                borderRadius: 8,
+                                transition: 'border-color 0.15s, background 0.15s, box-shadow 0.15s',
+                                boxShadow: selected ? '0 2px 10px rgba(0,0,0,0.08)' : '0 1px 3px rgba(0,0,0,0.04)',
+                              }}
+                            >
+                              <input
+                                type="radio"
+                                name="_shippingOption"
+                                value={option.methodId}
+                                checked={selected}
+                                onChange={() => setSelectedMethodId(option.methodId)}
+                                style={{ display: 'none' }}
+                              />
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                                <span style={{
+                                  width: 18, height: 18, borderRadius: '50%',
+                                  border: selected ? '5px solid var(--black)' : '1.5px solid #ccc',
+                                  flexShrink: 0,
+                                  transition: 'border 0.15s',
+                                  background: 'white',
+                                }} />
+                                <span>
+                                  <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--black)', letterSpacing: '-0.01em' }}>
+                                    {option.name.replace(/\s*\d+(\.\d+)?-\d+(\.\d+)?kg.*$/i, '').trim()}
+                                  </span>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
+                                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                                      {option.carrier}
+                                    </span>
+                                    {option.leadTimeHours != null && (
+                                      <>
+                                        <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--muted)', display: 'inline-block', flexShrink: 0 }} />
+                                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)' }}>
+                                          {option.leadTimeHours <= 24
+                                            ? '1 business day'
+                                            : option.leadTimeHours <= 48
+                                            ? '1–2 business days'
+                                            : `${Math.ceil(option.leadTimeHours / 24)} business days`}
+                                        </span>
+                                      </>
+                                    )}
+                                  </span>
+                                </span>
+                              </span>
+                              <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                                {isFree ? (
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: '#aaa', textDecoration: 'line-through' }}>
+                                      €{(option.costCents / 100).toFixed(2)}
+                                    </span>
+                                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: '#16a34a', letterSpacing: '0.04em' }}>FREE</span>
+                                  </span>
+                                ) : (
+                                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: 'var(--black)', letterSpacing: '0.04em' }}>
+                                    €{(option.costCents / 100).toFixed(2)}
+                                  </span>
+                                )}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  </>
                 ) : (
                   <p style={{ color: 'var(--muted)', fontSize: 14, lineHeight: 1.6 }}>
                     Pickup details will be confirmed by the PPIJ team after your payment proof is reviewed.
@@ -151,21 +311,58 @@ export default function CartView() {
 
             <div style={{ background: 'var(--black)', color: 'var(--cream)', padding: 24, position: 'sticky', top: 86 }}>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, marginBottom: 18 }}>SUMMARY<span style={{ color: 'var(--accent)' }}>.</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(239,234,224,0.6)', marginBottom: 8 }}>
-                <span>SUBTOTAL</span><span style={{ color: 'var(--cream)' }}>€{total.toFixed(2)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(239,234,224,0.6)' }}>
-                <span>SHIPPING</span><span style={{ color: '#7CD992' }}>FREE</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-display)', fontSize: 24, marginTop: 14, paddingTop: 14, borderTop: '1px solid #222' }}>
-                <span>TOTAL</span><span style={{ color: '#fff' }}>€{total.toFixed(2)}</span>
-              </div>
+              {(() => {
+                const selectedOption = shippingOptions.find(o => o.methodId === selectedMethodId);
+                const isFreeShipping = deliveryType === 'DELIVERY' && total >= FREE_SHIPPING_THRESHOLD;
+                const shippingCostCents = (deliveryType !== 'DELIVERY' || isFreeShipping) ? 0 : (selectedOption?.costCents ?? 0);
+                const grandTotal = total + shippingCostCents / 100;
+                const remaining = FREE_SHIPPING_THRESHOLD - total;
+                return (
+                  <>
+                    {deliveryType === 'DELIVERY' && (
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: isFreeShipping ? '#7CD992' : 'rgba(239,234,224,0.5)', textTransform: 'uppercase' }}>
+                            {isFreeShipping ? '✓ Free shipping' : 'Free shipping at €49'}
+                          </span>
+                          {!isFreeShipping && (
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(239,234,224,0.5)' }}>
+                              €{remaining.toFixed(2)} away
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                          <div style={{
+                            height: '100%',
+                            borderRadius: 999,
+                            background: isFreeShipping ? '#7CD992' : 'var(--accent)',
+                            width: `${Math.min((total / FREE_SHIPPING_THRESHOLD) * 100, 100)}%`,
+                            transition: 'width 0.3s ease',
+                          }} />
+                        </div>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(239,234,224,0.6)', marginBottom: 8 }}>
+                      <span>SUBTOTAL</span><span style={{ color: 'var(--cream)' }}>€{total.toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(239,234,224,0.6)' }}>
+                      <span>SHIPPING</span>
+                      <span style={{ color: (deliveryType === 'PICKUP' || isFreeShipping) ? '#7CD992' : 'var(--cream)' }}>
+                        {deliveryType === 'PICKUP' ? 'FREE' : isFreeShipping ? 'FREE' : shippingLoading ? '...' : `€${(shippingCostCents / 100).toFixed(2)}`}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-display)', fontSize: 24, marginTop: 14, paddingTop: 14, borderTop: '1px solid #222' }}>
+                      <span>TOTAL</span><span style={{ color: '#fff' }}>€{grandTotal.toFixed(2)}</span>
+                    </div>
+                  </>
+                );
+              })()}
               {(checkoutError || error) && (
                 <div style={{ background: '#fee2e2', color: '#991b1b', padding: 12, marginTop: 16, fontSize: 12, lineHeight: 1.5 }}>
                   {checkoutError ?? error}
                 </div>
               )}
-              <button disabled={submitting || loading} type="submit" style={{ width: '100%', background: submitting || loading ? 'var(--muted)' : 'var(--accent)', color: '#fff', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: submitting || loading ? 'not-allowed' : 'pointer', marginTop: 18, borderRadius: 999, fontWeight: 600 }}>
+              <button disabled={isDisabled} type="submit" style={{ width: '100%', background: isDisabled ? 'var(--muted)' : 'var(--accent)', color: '#fff', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: isDisabled ? 'not-allowed' : 'pointer', marginTop: 18, borderRadius: 999, fontWeight: 600 }}>
                 {submitting ? 'creating order...' : 'place order ↗'}
               </button>
             </div>
@@ -198,11 +395,18 @@ function ChoiceButton({ active, onClick, label }: { active: boolean; onClick: ()
   );
 }
 
-function TextField({ name, label, defaultValue = '' }: { name: string; label: string; defaultValue?: string }) {
+function TextField({ name, label, defaultValue = '', maxLength, pattern, inputMode }: {
+  name: string;
+  label: string;
+  defaultValue?: string;
+  maxLength?: number;
+  pattern?: string;
+  inputMode?: React.InputHTMLAttributes<HTMLInputElement>['inputMode'];
+}) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>{label}</span>
-      <input name={name} defaultValue={defaultValue} style={{ border: '1px solid var(--line)', background: 'white', padding: '12px', fontSize: 14 }} />
+      <input name={name} defaultValue={defaultValue} maxLength={maxLength} pattern={pattern} inputMode={inputMode} style={{ border: '1px solid var(--line)', background: 'white', padding: '12px', fontSize: 14 }} />
     </label>
   );
 }
