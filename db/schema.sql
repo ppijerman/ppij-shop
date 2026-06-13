@@ -529,10 +529,10 @@ CREATE INDEX idx_users_clerk_id ON public.users USING btree (clerk_user_id);
 
 
 --
--- Name: oders_sendcloud_parcel_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: orders_sendcloud_parcel_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX oders_sendcloud_parcel_id_idx ON public.orders USING btree (sendcloud_parcel_id) WHERE (sendcloud_parcel_id IS NOT NULL);
+CREATE UNIQUE INDEX orders_sendcloud_parcel_id_idx ON public.orders USING btree (sendcloud_parcel_id) WHERE (sendcloud_parcel_id IS NOT NULL);
 
 
 --
@@ -702,4 +702,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260606000100'),
     ('20260608000100'),
     ('20260611163147'),
-    ('20260612011146');
+    ('20260612011146'),
+    ('20260613171034');

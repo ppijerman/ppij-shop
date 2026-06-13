@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, withTransaction } from '@/lib/db';
+import { withTransaction } from '@/lib/db';
 import { SendOrderShippedEmail } from '@/lib/actions/send-order-email';
 import crypto from 'crypto';
 
@@ -44,23 +44,31 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const newStatus = toOrderStatus(parcel.status);
     if (!newStatus) return NextResponse.json({ ok: true });
 
-    const orderRes = await db.query(
-        `
-        SELECT o.id, o.status, u.email, u.first_name
-        FROM orders o JOIN users u ON u.id = o.user_id
-        WHERE o.sendcloud_parcel_id = $1
-        `,
-        [parcelId]
-    );
-    const order = orderRes.rows[0];
-    if (!order) return NextResponse.json({ ok: true });
+    const STATUS_RANK: Record<string, number> = {
+        AWAITING_PAYMENT: 0,
+        PAYMENT_REVIEW: 1,
+        PROCESSING: 2,
+        SHIPPED: 3,
+        DONE: 4,
+    };
 
-    const STATUS_ORDER = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'];
-    if (STATUS_ORDER.indexOf(newStatus) <= STATUS_ORDER.indexOf(order.status)) {
-        return NextResponse.json({ ok: true });
-    }
+    const emailRef: { value: { email: string; first_name: string; id: string } | null } = { value: null };
 
     await withTransaction(async (query) => {
+        const orderRes = await query(
+            `
+            SELECT o.id, o.status, u.email, u.first_name
+            FROM orders o JOIN users u ON u.id = o.user_id
+            WHERE o.sendcloud_parcel_id = $1
+            FOR UPDATE OF o
+            `,
+            [parcelId],
+        );
+        const order = orderRes.rows[0];
+        if (!order) return;
+        if (order.status === 'DONE' || order.status === 'CANCELLED') return;
+        if ((STATUS_RANK[newStatus] ?? -1) <= (STATUS_RANK[order.status] ?? -1)) return;
+
         await query(
             `
             UPDATE orders
@@ -69,22 +77,23 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
                 shipping_provider = COALESCE(shipping_provider, $4)
             WHERE id = $1
             `,
-            [order.id, newStatus, trackingNumber, carrier.toUpperCase()]
+            [order.id, newStatus, trackingNumber, carrier.toUpperCase()],
         );
         await query(
             `
             INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
             VALUES ($1, $2::order_status, $3, NULL)
             `,
-            [order.id, newStatus, `SendCloud status update: ${parcel.status?.message ?? parcel.status?.code ?? ''}`]
+            [order.id, newStatus, `SendCloud status update: ${parcel.status?.message ?? parcel.status?.code ?? ''}`],
         );
+        emailRef.value = { email: order.email, first_name: order.first_name, id: order.id };
     });
 
-    if (newStatus === 'SHIPPED' && order.email) {
+    if (newStatus === 'SHIPPED' && emailRef.value?.email) {
         await SendOrderShippedEmail({
-            to: order.email,
-            customerName: order.first_name,
-            orderId: order.id,
+            to: emailRef.value.email,
+            customerName: emailRef.value.first_name,
+            orderId: emailRef.value.id,
             trackingNumber,
             shippingProvider: carrier.toUpperCase(),
         }).catch((err) => console.error('Failed to send shipped email: ', err));

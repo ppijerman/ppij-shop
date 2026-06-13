@@ -47,10 +47,19 @@ function formString(formData: FormData, key: string): string {
 async function getCartWeightG(userId: string): Promise<number> {
   const result = await db.query(
     `
-    SELECT COALESCE(SUM(p.weight_g * ci.quantity), 500) AS total_weight_g
+    SELECT COALESCE(SUM(
+      COALESCE(p.weight_g, bw.bundle_weight_g, 0) * ci.quantity
+    ), 500) AS total_weight_g
     FROM cart_items ci
     LEFT JOIN product_variants pv ON pv.id = ci.variant_id
     LEFT JOIN products p ON p.id = pv.product_id
+    LEFT JOIN (
+      SELECT bi.bundle_id, SUM(bp.weight_g) AS bundle_weight_g
+      FROM bundle_items bi
+      JOIN product_variants bpv ON bpv.id = bi.variant_id
+      JOIN products bp ON bp.id = bpv.product_id
+      GROUP BY bi.bundle_id
+    ) bw ON bw.bundle_id = ci.bundle_id
     WHERE ci.user_id = $1
     `,
     [userId],
@@ -900,14 +909,23 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
 
     const detailsResult = await query(
       `
-      SELECT o.delivery_type, o.delivery_address, o.shipping_method_id, 
+      SELECT o.delivery_type, o.delivery_address, o.shipping_method_id,
         u.email, u.first_name, u.last_name,
-        COALESCE(SUM(p.weight_g * oi.quantity), 500) AS total_weight_g
-      FROM orders o 
-      JOIN users u ON u.id = o.user_id 
+        COALESCE(SUM(
+          COALESCE(p.weight_g, bw.bundle_weight_g, 0) * oi.quantity
+        ), 500) AS total_weight_g
+      FROM orders o
+      JOIN users u ON u.id = o.user_id
       LEFT JOIN order_items oi ON oi.order_id = o.id
       LEFT JOIN product_variants pv ON pv.id = oi.variant_id
       LEFT JOIN products p ON p.id = pv.product_id
+      LEFT JOIN (
+        SELECT bi.bundle_id, SUM(bp.weight_g) AS bundle_weight_g
+        FROM bundle_items bi
+        JOIN product_variants bpv ON bpv.id = bi.variant_id
+        JOIN products bp ON bp.id = bpv.product_id
+        GROUP BY bi.bundle_id
+      ) bw ON bw.bundle_id = oi.bundle_id
       WHERE o.id = $1
       GROUP BY o.id, o.delivery_type, o.delivery_address, o.shipping_method_id, u.email, u.first_name, u.last_name
       `,
@@ -948,19 +966,17 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
         order_number: orderId.slice(0, 8),
       });
 
-      await withTransaction(async (query) => {
-        await query(
-          'UPDATE orders SET sendcloud_parcel_id = $2 WHERE id = $1',
-          [orderId, parcel.id],
-        );
-        await query(
-          `
-          INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
-          VALUES ($1, 'PROCESSING', $2, $3)
-          `,
-          [orderId, `Shipping label created via SendCloud (parcel #${parcel.id}, tracking: ${parcel.tracking_number || 'pending'})`, admin.id],
-        );
-      });
+      await db.query(
+        'UPDATE orders SET sendcloud_parcel_id = $2 WHERE id = $1',
+        [orderId, parcel.id],
+      );
+      await db.query(
+        `
+        INSERT INTO order_status_logs (order_id, status, note, changed_by_user_id)
+        VALUES ($1, 'PROCESSING', $2, $3)
+        `,
+        [orderId, `Shipping label created via SendCloud (parcel #${parcel.id}, tracking: ${parcel.tracking_number || 'pending'})`, admin.id],
+      ).catch((err) => console.error('Failed to log parcel creation:', err));
     } catch (err) {
       console.error('Failed to create/save parcel: ', err);
 
