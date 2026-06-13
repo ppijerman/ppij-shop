@@ -8,7 +8,7 @@ const SOCIAL = ['IG', 'X', 'YT', 'TT'];
 const COLUMNS = [
   { title: 'Shop', links: [{ href: '/catalog', label: 'All Products' }, { href: '/catalog', label: 'T-Shirts' }, { href: '/catalog', label: 'Tote Bags' }, { href: '/catalog', label: 'New Arrivals' }] },
   { title: 'Info', links: [{ href: '/about', label: 'About PPI' }, { href: '/editorial', label: 'Editorial' }, { href: '/faq', label: 'Size Guide' }, { href: '/shipping', label: 'Shipping' }] },
-  { title: 'Legal', links: [{ href: '/terms', label: 'Terms & Conditions' }, { href: '/privacy', label: 'Privacy Policy' }, { href: '/impressum', label: 'Impressum' }, { href: '/shipping', label: 'Shipping Policy' }, { href: '/returns', label: 'Return Policy' }, { href: '/withdrawal', label: 'Widerrufsbelehrung' }] },
+  { title: 'Legal', links: [{ href: '/terms', label: 'Terms & Conditions' }, { href: '/privacy', label: 'Privacy Policy' }, { href: '/impressum', label: 'Impressum' }, { href: '/shipping', label: 'Shipping Policy' }, { href: '/returns', label: 'Return Policy' }, { href: '/withdrawal', label: 'Withdrawal Form' }] },
 ];
 
 export default function Footer() {
