@@ -1,23 +1,27 @@
 const sections = [
   {
-    title: 'No Change-of-Mind Returns',
-    body: 'Returns are not accepted for change of mind, wrong size selection, or other buyer error.',
+    title: '14-Day Right of Withdrawal',
+    body: 'In accordance with German consumer protection regulations (Widerrufsrecht), customers have the right to return the product within 14 days of receipt.',
   },
   {
-    title: 'No Exchanges After Confirmation',
-    body: 'Exchanges are not available after an order has been confirmed. Please review product, size, color, fit, and delivery details before placing an order.',
+    title: 'Return Shipping Cost',
+    body: 'In the event of a withdrawal or return by the customer, the buyer bears the full cost of return shipping.',
   },
   {
-    title: 'Defective or Wrong Items',
-    body: 'If you receive a defective or wrong item, report it within 3 days of receipt with your order number, a clear photo, and a description of the issue.',
+    title: 'Size Selection',
+    body: 'Given the high cost of return postage in Germany, buyers are strongly encouraged to carefully check the size chart before completing a purchase to avoid sizing errors.',
+  },
+  {
+    title: 'Damaged or Incorrect Items',
+    body: "If the item received is damaged or incorrect, please contact the PPI Jerman team within 3 days of receiving the item, including the order number and photographic documentation of the item's condition.",
   },
   {
     title: 'Individual Review',
-    body: 'Each claim is reviewed individually. A report does not automatically guarantee a return, replacement, or refund.',
+    body: 'Each report will be reviewed individually. Statutory warranty rights remain unaffected.',
   },
   {
-    title: 'Buyer Errors',
-    body: 'Buyer errors, including incorrect size, incorrect address, or accidental order submission, are not grounds for return or exchange.',
+    title: 'Wrong Address or Buyer Error',
+    body: 'The customer is responsible for the correctness and completeness of the delivery address. Costs for returns caused by incorrect address data are borne by the customer.',
   },
 ];
 

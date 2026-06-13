@@ -1,39 +1,35 @@
 const sections = [
   {
-    title: '1. About Us',
-    body: 'This placeholder AGB applies to the PPI Jerman Merch Shop operated for the PPI Jerman community. Real provider details, responsible legal entity, address, and contact details must be reviewed and completed before go-live.',
+    title: '§ 1 Geltungsbereich und Anbieter',
+    body: 'Diese Allgemeinen Geschaftsbedingungen (AGB) gelten fur alle Bestellungen von Waren uber den Online-Shop von PPI Jerman / Vereinigung indonesischer Studenten e.V. Vertragspartner ist PPI Jerman / Vereinigung indonesischer Studenten e.V. Die aktuellen Kontaktdaten, der Sitz des Vereins, die Registernummer und die Vertretungsverhaltnisse sind dem Impressum der Website zu entnehmen. Verbraucher im Sinne dieser AGB ist jede naturliche Person, die ein Rechtsgeschaft zu Zwecken abschliesst, die uberwiegend weder ihrer gewerblichen noch ihrer selbststandigen beruflichen Tatigkeit zugerechnet werden konnen (§ 13 BGB).',
   },
   {
-    title: '2. Account Registration',
-    body: 'Customers may need to create an account to place orders. Account information must be accurate and kept up to date. Customers are responsible for keeping login credentials secure.',
+    title: '§ 2 Vertragsschluss',
+    body: 'Die Prasentation der Waren im Online-Shop stellt kein rechtlich bindendes Angebot, sondern einen unverbindlichen Online-Katalog dar. Durch Anklicken des Buttons "Kaufen" bzw. "Zahlungspflichtig bestellen" gibt der Kunde eine verbindliche Bestellung der im Warenkorb enthaltenen Waren ab. Die Bestatigung des Eingangs der Bestellung erfolgt unmittelbar nach dem Absenden durch eine automatisierte E-Mail. Der Kaufvertrag kommt erst zustande, wenn der Anbieter die Annahme der Bestellung per E-Mail bestatigt oder die Ware zum Versand bringt.',
   },
   {
-    title: '3. Orders & Payment',
-    body: 'Product listings are invitations to order. An order is created when the customer submits checkout information. Payment is currently handled by bank transfer, and orders are processed after payment proof has been verified.',
+    title: '§ 3 Preise, Versandkosten und Kleinunternehmerstatus',
+    body: 'Die auf den Produktseiten genannten Preise sind Endpreise. Aufgrund der Kleinunternehmerregelung gemass § 19 UStG wird keine Umsatzsteuer erhoben und diese folglich auch nicht auf der Rechnung ausgewiesen. Die Endpreise verstehen sich zuzuglich Versandkosten. Die Versandkosten werden im Rahmen des Checkout-Prozesses vor der endgultigen Bestellung berechnet. Ab einem Mindestbestellwert von 49,00 € erfolgt der Versand fur den Kunden kostenfrei.',
   },
   {
-    title: '4. Shipping',
-    body: 'Shipping options and costs are shown during checkout where delivery is available. Customers are responsible for providing complete and accurate delivery information.',
+    title: '§ 4 Lieferbedingungen und Bearbeitungszeit',
+    body: 'Die Bearbeitung und der Versand der Bestellung erfolgen innerhalb von maximal 3 Werktagen nach vollstandigem Zahlungseingang. Sollte es aufgrund von unvorhersehbaren logistischen Storungen oder Engpassen zu Verzogerungen kommen, wird der Kunde unverbindlich per E-Mail informiert. Der Kunde tragt die Verantwortung fur die Richtigkeit und Vollstandigkeit der angegebenen Lieferadresse. Kosten fur Rucksendungen aufgrund fehlerhafter Adressdaten gehen zu Lasten des Kunden.',
   },
   {
-    title: '5. Returns & Exchanges',
-    body: 'Returns and exchanges are handled according to the shop return policy. Defective or incorrect items must be reported promptly with the order number, a photo, and a description of the issue.',
+    title: '§ 5 Zahlungsbedingungen',
+    body: 'Die Zahlung erfolgt uber die im Online-Shop angebotenen Zahlungsmethoden. Die Ware bleibt bis zur vollstandigen Bezahlung Eigentum von PPI Jerman / Vereinigung indonesischer Studenten e.V.',
   },
   {
-    title: '6. Intellectual Property',
-    body: 'Shop designs, logos, product images, text, and branding belong to PPI Jerman or their respective rights holders. They may not be copied, reused, or distributed without permission.',
+    title: '§ 6 Widerrufsrecht und Rucksendekosten',
+    body: 'Verbraucher haben ein gesetzliches 14-tagiges Widerrufsrecht. Die Widerrufsfrist betragt vierzehn Tage ab dem Tag, an dem der Kunde oder ein von ihm benannter Dritter die Waren in Besitz genommen hat. Um das Widerrufsrecht auszuuben, muss der Kunde den Anbieter mittels einer eindeutigen Erklarung, zum Beispiel per E-Mail, uber seinen Entschluss informieren, diesen Vertrag zu widerrufen. Im Falle eines Widerrufs durch den Kunden gilt als vereinbart, dass der Kunde die unmittelbaren Kosten der Rucksendung der Waren tragt.',
   },
   {
-    title: '7. Limitation of Liability',
-    body: 'Liability is limited according to applicable law. PPI Jerman is not responsible for delays caused by carriers or circumstances outside its reasonable control.',
+    title: '§ 7 Gewahrleistung (Mangelhaftung)',
+    body: 'Es gelten die gesetzlichen Gewahrleistungsrechte bei Mangeln der Ware. Im Falle von Transportschaden, Produktionsfehlern oder Falschlieferungen wird der Kunde gebeten, den Mangel idealerweise innerhalb von 3 Tagen nach Erhalt der Ware unter Beifugung von Fotodokumentation an den Support des Anbieters zu melden, um eine schnelle Abwicklung und Schadensregulierung zu ermoglichen. Die gesetzlichen Rechte des Kunden werden durch eine verspatete Meldung nicht eingeschrankt.',
   },
   {
-    title: '8. Changes to Terms',
-    body: 'These terms may be updated from time to time. The version published at the time of order applies unless mandatory law requires otherwise.',
-  },
-  {
-    title: '9. Contact',
-    body: 'Questions about orders, these terms, or legal notices should be directed to the official PPI Jerman shop contact. Real contact details must be inserted before go-live.',
+    title: '§ 8 Schlussbestimmungen',
+    body: 'Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts. Sollten einzelne Bestimmungen dieser AGB unwirksam sein oder werden, bleibt die Wirksamkeit der ubrigen Bestimmungen davon unberuhrt.',
   },
 ];
 
@@ -54,7 +50,7 @@ export default function TermsPage() {
               Last updated: June 2026
             </p>
             <p style={{ fontSize: 15 }}>
-              Placeholder Terms & Conditions (AGB) for the PPI Jerman Merch Shop. This text must be replaced with legally reviewed terms before go-live.
+              Allgemeine Geschaftsbedingungen fur den Web Shop von PPI Jerman / Vereinigung indonesischer Studenten e.V.
             </p>
           </div>
 

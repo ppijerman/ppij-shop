@@ -1,23 +1,27 @@
 const sections = [
   {
-    title: 'Data Collected',
-    body: 'We collect personal data needed to operate the shop, including name, email address, account information, order details, payment proof information, and delivery address where delivery is selected.',
+    title: '1. Verantwortlicher',
+    body: 'Verantwortlich fur die Datenverarbeitung im Web Shop ist PPI Jerman / Vereinigung indonesischer Studenten e.V. Die vollstandigen Kontaktdaten, der Sitz des Vereins, die Registernummer und die Vertretungsverhaltnisse mussen vor dem Go-live im Impressum erganzt werden.',
   },
   {
-    title: 'Purpose of Processing',
-    body: 'We process this data to create accounts, receive orders, verify payment, fulfill orders, arrange shipping, provide customer support, and keep legally required order records.',
+    title: '2. Verarbeitete Daten',
+    body: 'Wir verarbeiten personenbezogene Daten, die fur den Betrieb des Shops erforderlich sind, insbesondere Name, E-Mail-Adresse, Account-Daten, Bestelldaten, Zahlungsnachweis-Informationen und bei Versandbestellungen die Lieferadresse.',
   },
   {
-    title: 'Third Parties',
-    body: 'We may share necessary order and contact data with service providers used for fulfillment and communication, including Sendcloud for shipping and Resend for transactional emails.',
+    title: '3. Zweck der Verarbeitung',
+    body: 'Die Daten werden verarbeitet, um Accounts zu erstellen, Bestellungen entgegenzunehmen, Zahlungen zu prufen, Waren zu liefern, Versand und Tracking bereitzustellen, Kundenanfragen zu bearbeiten und gesetzlich erforderliche Bestellunterlagen aufzubewahren.',
   },
   {
-    title: 'GDPR / DSGVO Rights',
-    body: 'Under the GDPR/DSGVO, users may request access to their personal data, correction of inaccurate data, deletion where legally possible, restriction of processing, objection to processing, and data portability where applicable.',
+    title: '4. Dienstleister',
+    body: 'Fur die Erfullung von Bestellungen konnen erforderliche Bestell- und Kontaktdaten an Dienstleister weitergegeben werden, insbesondere an Sendcloud fur Versandabwicklung und Tracking sowie an Resend fur transaktionale E-Mails.',
   },
   {
-    title: 'Data Contact',
-    body: 'For privacy requests, contact the PPI Jerman shop team through the official data contact. Real controller details and contact information must be inserted before go-live.',
+    title: '5. Rechte nach DSGVO',
+    body: 'Betroffene Personen konnen nach Massgabe der DSGVO Auskunft, Berichtigung, Loschung, Einschrankung der Verarbeitung, Widerspruch gegen die Verarbeitung und Datenubertragbarkeit verlangen, soweit die gesetzlichen Voraussetzungen vorliegen.',
+  },
+  {
+    title: '6. Datenschutzkontakt',
+    body: 'Fur Datenschutzanfragen wenden Sie sich bitte an die offiziellen Kontaktkanale von PPI Jerman. Der konkrete Datenschutzkontakt muss vor dem Go-live erganzt und rechtlich gepruft werden.',
   },
 ];
 
@@ -38,7 +42,7 @@ export default function PrivacyPage() {
               Last updated: June 2026
             </p>
             <p style={{ fontSize: 15 }}>
-              Placeholder Datenschutzerklarung for the PPI Jerman Merch Shop. This text must be replaced with legally reviewed privacy text before go-live.
+              Datenschutzerklarung fur den Web Shop von PPI Jerman / Vereinigung indonesischer Studenten e.V. Diese Fassung muss vor dem Go-live durch rechtlich gepruften finalen Text ersetzt werden.
             </p>
           </div>
 
