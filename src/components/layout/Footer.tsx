@@ -7,7 +7,7 @@ const SOCIAL = ['IG', 'X', 'YT', 'TT'];
 
 const COLUMNS = [
   { title: 'Shop', links: [{ href: '/catalog', label: 'All Products' }, { href: '/catalog', label: 'T-Shirts' }, { href: '/catalog', label: 'Tote Bags' }, { href: '/catalog', label: 'New Arrivals' }] },
-  { title: 'Info', links: [{ href: '/about', label: 'About PPI' }, { href: '/editorial', label: 'Editorial' }, { href: '/faq', label: 'Size Guide' }, { href: '/faq', label: 'Shipping' }] },
+  { title: 'Info', links: [{ href: '/about', label: 'About PPI' }, { href: '/faq', label: 'Size Guide' }, { href: '/faq', label: 'Shipping' }] },
   { title: 'Help', links: [{ href: '/faq', label: 'FAQ' }, { href: '/faq', label: 'Returns' }, { href: '/faq', label: 'Track Order' }, { href: '/faq', label: 'Contact' }] },
 ];
 

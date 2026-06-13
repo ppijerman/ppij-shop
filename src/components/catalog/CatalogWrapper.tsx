@@ -11,7 +11,7 @@ export default function CatalogWrapper({ products, bundles }: { products: any[],
   return (
     <>
       {bundles.length > 0 && (
-        <section style={{ padding: '80px 28px 40px', borderBottom: '1px solid var(--line)' }}>
+        <section style={{ padding: '80px 28px 40px' }}>
           <div style={{ maxWidth: 1440, margin: '0 auto' }}>
             <div style={{ marginBottom: 32 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-deep)', letterSpacing: '0.3em', textTransform:
@@ -56,6 +56,12 @@ export default function CatalogWrapper({ products, bundles }: { products: any[],
               ))}
             </div>
           </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 48, gap: 16 }}>
+            <div style={{ width: 60, height: 1, background: 'var(--line)' }} />
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)' }} />
+          <div style={{ width: 60, height: 1, background: 'var(--line)' }} />
+        </div>
         </section>
       )}
       <CapsuleGrid products={products} onQuickView={setSelectedProduct} />
