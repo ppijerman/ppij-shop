@@ -12,7 +12,7 @@ export default function About() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 36, marginBottom: 48 }}>
           <div className="photo-frame" style={{ position: 'relative' }}>
             <div style={{ position: 'relative', width: '100%', aspectRatio: '4/5' }}>
-              <Image src="/assets/v4/editorial-collage.jpeg" alt="" fill style={{ objectFit: 'cover' }} />
+              <Image src="/assets/v4/about-img.png" alt="" fill style={{ objectFit: 'cover' }} />
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: 8 }}>

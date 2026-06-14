@@ -14,7 +14,7 @@ export default function PhotoStrip() {
 
           <div className="photo-frame" style={{ '--rot': '-2deg' } as React.CSSProperties}>
             <div style={{ position: 'relative', width: '100%', height: 380 }}>
-              <Image src="/assets/v4/editorial-collage.jpeg" alt="" fill style={{ objectFit: 'cover' }} />
+              <Image src="/assets/v4/about-img.png" alt="" fill style={{ objectFit: 'cover' }} />
             </div>
             <div style={{ textAlign: 'center', padding: '6px 0 2px', fontFamily: 'var(--font-script)', fontSize: 18, color: 'var(--ink)' }}>field day · 2026</div>
           </div>
