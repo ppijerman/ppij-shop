@@ -19,6 +19,31 @@ export async function getAllBundles() {
         ) subq
       ) AS product_images
     FROM bundles b
+    WHERE b.is_active = true
+  `)
+  return res.rows
+}
+
+export async function getAllBundlesAdmin() {
+  const res = await db.query(`
+    SELECT
+      b.id, b.name, b.price, b.original_price, b.slug, b."desc", b.sku, b.is_active, b.created_at, b.updated_at,
+      CASE WHEN b.image_data IS NOT NULL THEN '/api/bundles/' || b.id::text || '/image?v=' || extract(epoch from b.updated_at)::bigint::text ELSE NULL END AS bundle_image_url,
+      (
+        SELECT json_agg(img_url)
+        FROM (
+          SELECT DISTINCT ON (p.id)
+            CASE WHEN pi.url IS NOT NULL THEN pi.url ELSE '/api/products/images/' || pi.id::text END AS img_url
+          FROM bundle_items bi
+          JOIN product_variants pv ON bi.variant_id = pv.id
+          JOIN products p ON pv.product_id = p.id
+          LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
+          WHERE bi.bundle_id = b.id
+          LIMIT 3
+        ) subq
+      ) AS product_images
+    FROM bundles b
+    ORDER BY b.is_active DESC, b.created_at DESC
   `)
   return res.rows
 }
@@ -89,7 +114,7 @@ export async function getBundleBySlug(slug: string) {
         ) p
       ) AS products
       FROM bundles b
-      WHERE b.slug = $1
+      WHERE b.slug = $1 AND b.is_active = true
     `,
     [slug]
   )

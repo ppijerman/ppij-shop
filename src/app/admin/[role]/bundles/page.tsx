@@ -1,11 +1,11 @@
-import { getAllBundles, getAllBundleItems } from '@/lib/dal/bundles';
+import { getAllBundlesAdmin, getAllBundleItems } from '@/lib/dal/bundles';
 import Link from 'next/link';
 import BundleList from '@/components/admin/BundleList';
-import { deleteBundle } from '@/lib/actions/bundles';
+import { deleteBundle, toggleBundleActiveAction } from '@/lib/actions/bundles';
 
 export default async function AdminBundles({ params }: { params: Promise<{ role: string }> }) {
   const { role } = await params;
-  const bundles = await getAllBundles();
+  const bundles = await getAllBundlesAdmin();
   const bundleItems = await getAllBundleItems();
 
   async function deleteBundleAction(id: string) {
@@ -13,11 +13,16 @@ export default async function AdminBundles({ params }: { params: Promise<{ role:
     await deleteBundle(id);
   }
 
+  async function toggleBundleActive(id: string, isActive: boolean) {
+    'use server';
+    await toggleBundleActiveAction(id, isActive);
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16, marginBottom: 40 }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 48 }}>BUNDLES</h1>
-        <Link 
+        <Link
           href={`/admin/${role}/bundles/new`}
           style={{
             padding: '12px 24px',
@@ -35,7 +40,7 @@ export default async function AdminBundles({ params }: { params: Promise<{ role:
         </Link>
       </div>
 
-      <BundleList initialBundles={bundles} bundleItems={bundleItems} deleteBundleAction={deleteBundleAction} />
+      <BundleList initialBundles={bundles} bundleItems={bundleItems} deleteBundleAction={deleteBundleAction} toggleBundleActiveAction={toggleBundleActive} />
     </div>
   );
 }

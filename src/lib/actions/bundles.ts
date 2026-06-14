@@ -2,6 +2,7 @@
 
 import { requireAdmin } from '../auth';
 import { db, withTransaction } from '../db';
+import { revalidatePath } from 'next/cache';
 import { generateSlug } from '../utils';
 
 export interface BundleData {
@@ -114,6 +115,14 @@ export async function updateBundle(bundleId: string, bundleData: BundleData) {
       )
     }
   });
+}
+
+export async function toggleBundleActiveAction(bundleId: string, isActive: boolean): Promise<void> {
+  await requireAdmin();
+  await db.query(`UPDATE bundles SET is_active = $2 WHERE id = $1`, [bundleId, isActive]);
+  revalidatePath('/catalog');
+  revalidatePath('/admin/kk/bundles');
+  revalidatePath('/admin/it/bundles');
 }
 
 export async function deleteBundle(bundleId: string) {

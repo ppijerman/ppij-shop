@@ -1,10 +1,10 @@
-import { getAllProductsWithVariants } from '@/lib/dal/products';
+import { getAllProductsWithVariantsAdmin } from '@/lib/dal/products';
 import Link from 'next/link';
 import ProductList from '@/components/admin/ProductList';
 
 export default async function AdminProducts({ params }: { params: Promise<{ role: string }> }) {
   const { role } = await params;
-  const products = await getAllProductsWithVariants();
+  const products = await getAllProductsWithVariantsAdmin();
 
   return (
     <div>

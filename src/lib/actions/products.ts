@@ -1,6 +1,7 @@
 'use server';
 
 import { db, withTransaction } from '../db';
+import { revalidatePath } from 'next/cache';
 import { FitType, ProductData } from '@/types';
 import { requireAdmin } from '../auth';
 
@@ -180,6 +181,14 @@ export async function updateProduct(id: string, productData: ProductData) {
     }
   })
 
+}
+
+export async function toggleProductActiveAction(productId: string, isActive: boolean): Promise<void> {
+  await requireAdmin();
+  await db.query(`UPDATE products SET is_active = $2 WHERE id = $1`, [productId, isActive]);
+  revalidatePath('/catalog');
+  revalidatePath('/admin/kk/products');
+  revalidatePath('/admin/it/products');
 }
 
 export async function deleteProduct(productId: string) {

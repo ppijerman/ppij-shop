@@ -128,3 +128,41 @@ export async function getAllProductsWithVariants() {
   );
   return res.rows;
 }
+
+export async function getAllProductsWithVariantsAdmin() {
+  const res = await db.query(
+    `
+    SELECT
+      p.*,
+      CASE WHEN pi.url IS NOT NULL THEN pi.url ELSE '/api/products/images/' || pi.id::text END AS primary_image,
+      (
+        SELECT json_agg(json_build_object(
+          'id', pv.id,
+          'size', trim(pv.size),
+          'stock', pv.stock,
+          'fit_type', pv.fit_type,
+          'price', pv.price::float,
+          'original_price', pv.original_price::float,
+          'color_name', pv.color_name,
+          'color_hex', pv.color_hex,
+          'sku', pv.sku
+        ))
+        FROM product_variants pv
+        WHERE pv.product_id = p.id
+      ) AS variants,
+      (
+        SELECT json_agg(json_build_object(
+          'id', pimg.id,
+          'url', CASE WHEN pimg.url IS NOT NULL THEN pimg.url ELSE '/api/products/images/' || pimg.id::text END,
+          'is_primary', pimg.is_primary
+        ) ORDER BY pimg.is_primary DESC, pimg.id ASC)
+        FROM product_images pimg
+        WHERE pimg.product_id = p.id
+      ) AS images
+    FROM products p
+    LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
+    ORDER BY p.is_active DESC, p.created_at DESC
+    `
+  );
+  return res.rows;
+}
