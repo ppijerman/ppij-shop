@@ -10,6 +10,9 @@ const pool = globalForPool.pool ??
     max: 10,
     idleTimeoutMillis: 20000,
     connectionTimeoutMillis: 10000,
+    ssl: process.env.NODE_ENV === 'production'
+      ? { rejectUnauthorized: false }
+      : false,
   });
 
 if (process.env.NODE_ENV !== 'production') globalForPool.pool = pool;

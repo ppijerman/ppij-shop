@@ -38,3 +38,6 @@ next-env.d.ts
 
 # local test scripts
 /scripts/test-email.ts
+
+# azure deployment docs
+/AZURE_DEPLOY.md
