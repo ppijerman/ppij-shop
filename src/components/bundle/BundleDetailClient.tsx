@@ -10,6 +10,7 @@ import { useUser, useAuth } from "@clerk/nextjs";
 
 interface BundleWithProducts extends Bundle {
   products: (Product & { variants: ProductVariant[] })[];
+  bundle_image_url?: string | null;
 }
 
 const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'ONE SIZE'];
@@ -103,10 +104,20 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
         </div>
       </div>
 
-      <div style={{ 
-        display: 'grid', 
+      {bundle.bundle_image_url && (
+        <div style={{ marginBottom: 48, width: '70%', overflow: 'hidden', marginLeft: 'auto', marginRight: 'auto' }}>
+          <img
+            src={bundle.bundle_image_url}
+            alt={bundle.name}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        </div>
+      )}
+
+      <div style={{
+        display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-        gap: 24 
+        gap: 24
       }}>
         {bundle.products.map(product => (
           <BundleProductCard 

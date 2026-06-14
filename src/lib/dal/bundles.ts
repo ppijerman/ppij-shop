@@ -1,7 +1,25 @@
 import { db } from "../db"
 
 export async function getAllBundles() {
-  const res = await db.query("SELECT * FROM bundles")
+  const res = await db.query(`
+    SELECT
+      b.id, b.name, b.price, b.original_price, b.slug, b."desc", b.sku, b.created_at, b.updated_at,
+      CASE WHEN b.image_data IS NOT NULL THEN '/api/bundles/' || b.id::text || '/image?v=' || extract(epoch from b.updated_at)::bigint::text ELSE NULL END AS bundle_image_url,
+      (
+        SELECT json_agg(img_url)
+        FROM (
+          SELECT DISTINCT ON (p.id)
+            CASE WHEN pi.url IS NOT NULL THEN pi.url ELSE '/api/products/images/' || pi.id::text END AS img_url
+          FROM bundle_items bi
+          JOIN product_variants pv ON bi.variant_id = pv.id
+          JOIN products p ON pv.product_id = p.id
+          LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
+          WHERE bi.bundle_id = b.id
+          LIMIT 3
+        ) subq
+      ) AS product_images
+    FROM bundles b
+  `)
   return res.rows
 }
 
@@ -9,7 +27,10 @@ export async function getBundleById(id: string) {
   const res = await db.query(
     `
     SELECT
-      b.*, COALESCE(
+      b.id, b.name, b.price, b.original_price, b.slug, b."desc", b.sku, b.created_at, b.updated_at,
+      CASE WHEN b.image_data IS NOT NULL THEN b.id::text ELSE NULL END AS image_id,
+      CASE WHEN b.image_data IS NOT NULL THEN '/api/bundles/' || b.id::text || '/image?v=' || extract(epoch from b.updated_at)::bigint::text ELSE NULL END AS image_url,
+      COALESCE(
         json_agg(
           json_build_object(
             'variant_id', bi.variant_id
@@ -30,8 +51,9 @@ export async function getBundleById(id: string) {
 export async function getBundleBySlug(slug: string) {
   const res = await db.query(
     `
-    SELECT 
-      b.*,
+    SELECT
+      b.id, b.name, b.price, b.original_price, b.slug, b."desc", b.sku, b.created_at, b.updated_at,
+      CASE WHEN b.image_data IS NOT NULL THEN '/api/bundles/' || b.id::text || '/image?v=' || extract(epoch from b.updated_at)::bigint::text ELSE NULL END AS bundle_image_url,
       (
         SELECT json_agg(json_build_object(
           'id', p.id,

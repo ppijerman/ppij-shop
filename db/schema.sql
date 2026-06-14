@@ -112,6 +112,8 @@ CREATE TABLE public.bundles (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     sku character varying(100) NOT NULL,
+    image_data bytea,
+    image_content_type text,
     CONSTRAINT chk_bundle_original_price CHECK (((original_price IS NULL) OR (original_price >= price))),
     CONSTRAINT chk_bundle_price CHECK ((price >= (0)::numeric))
 );
@@ -703,4 +705,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260608000100'),
     ('20260611163147'),
     ('20260612011146'),
-    ('20260613171034');
+    ('20260613171034'),
+    ('20260613210852');

@@ -15,7 +15,7 @@ export default function AdminShell({
   const { signOut } = useAuth();
   const router = useRouter();
 
-  const isItAdmin = role === 'it'; 
+  const isItAdmin = role === 'it';
   const basePath = `/admin/${role}`;
 
   return (

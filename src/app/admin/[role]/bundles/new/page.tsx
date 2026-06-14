@@ -11,15 +11,21 @@ export default async function NewBundle({ params }: { params: Promise<{ role: st
   async function createBundleAction(formData: FormData) {
     'use server';
     const name = formData.get('name') as string;
+    const imageFile = formData.get('bundle_image_file') as File | null;
+    const imageBuffer = imageFile && imageFile.size > 0
+      ? Buffer.from(await imageFile.arrayBuffer())
+      : undefined;
 
     await createBundle({
-      name: formData.get('name') as string,
+      name,
       description: formData.get('description') as string,
       price: Number(formData.get('price')),
       originalPrice: formData.get('originalPrice') ? Number(formData.get('originalPrice')) : null,
       skuPrefix: formData.get('skuPrefix') as string,
       slug: generateSlug(name),
-      variantIds: JSON.parse(formData.get('selectedVariantIds') as string)
+      variantIds: JSON.parse(formData.get('selectedVariantIds') as string),
+      imageFile: imageBuffer,
+      imageContentType: imageBuffer ? 'image/webp' : undefined,
     });
     redirect(`/admin/${role}/bundles`);
   }

@@ -23,9 +23,9 @@ export default async function EditBundle({ params }: { params: Promise<{ id: str
     const price = parseFloat(formData.get('price') as string);
 
     const originalPriceValue = formData.get('originalPrice');
-    const parsedOriginalPrice = 
-      typeof originalPriceValue === 'string' && 
-        originalPriceValue.trim() !== '' 
+    const parsedOriginalPrice =
+      typeof originalPriceValue === 'string' &&
+        originalPriceValue.trim() !== ''
       ? parseFloat(originalPriceValue)
       : NaN;
     const originalPrice = Number.isNaN(parsedOriginalPrice) ? null : parsedOriginalPrice;
@@ -34,7 +34,18 @@ export default async function EditBundle({ params }: { params: Promise<{ id: str
     const newSlug = generateSlug(name);
     const variantIds = JSON.parse(formData.get('selectedVariantIds') as string);
 
-    await updateBundle(bundleId, { name, skuPrefix, price, originalPrice, description, slug: newSlug, variantIds });
+    const imageFile = formData.get('bundle_image_file') as File | null;
+    const existingImageId = formData.get('bundle_image_existing_id') as string | null;
+    const imageBuffer = imageFile && imageFile.size > 0
+      ? Buffer.from(await imageFile.arrayBuffer())
+      : undefined;
+
+    await updateBundle(bundleId, {
+      name, skuPrefix, price, originalPrice, description, slug: newSlug, variantIds,
+      imageFile: imageBuffer,
+      imageContentType: imageBuffer ? 'image/webp' : undefined,
+      clearImage: !imageBuffer && !existingImageId,
+    });
     redirect(`/admin/${role}/bundles`);
   }
 

@@ -4,26 +4,7 @@ import { FitConfig, FitType } from '@/types';
 import { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
-
-async function getCroppedFile(src: string, crop: Area, originalName: string): Promise<File> {
-  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = src;
-  });
-  const canvas = document.createElement('canvas');
-  canvas.width = crop.width;
-  canvas.height = crop.height;
-  const ctx = canvas.getContext('2d')!;
-  ctx.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
-  return new Promise<File>((resolve, reject) =>
-    canvas.toBlob(blob => {
-      if (!blob) { reject(new Error('Failed to generate cropped image')); return; }
-      resolve(new File([blob], originalName, { type: 'image/webp' }));
-    }, 'image/webp', 0.85)
-  );
-}
+import { getCroppedFile } from '@/lib/image-utils';
 
 interface ProductFormProps {
   initialData?: any;
@@ -456,7 +437,7 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
             setCroppedAreaPixels(null);
             setFileInputKey(prevKey => prevKey + 1);
           }}
-          style={{ marginBottom: 20, display: 'block' }}
+          style={{ marginTop: 3, marginBottom: 20, display: 'block' }}
           key={fileInputKey}
         />
 
