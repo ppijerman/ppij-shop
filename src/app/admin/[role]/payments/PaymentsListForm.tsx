@@ -11,10 +11,12 @@ export default function AdminPaymentsForm({ orders }: { orders: any[] }) {
   const pendingPayments = orders.filter(o => o.status === 'PAYMENT_REVIEW' && o.payment_proof_url);
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   async function reviewPayment(orderId: string, action: 'approve' | 'reject') {
     setBusyOrderId(orderId);
     setError(null);
+    setWarning(null);
     const result = action === 'approve'
       ? await approvePaymentAction(orderId)
       : await rejectPaymentAction(orderId);
@@ -23,6 +25,10 @@ export default function AdminPaymentsForm({ orders }: { orders: any[] }) {
     if (!result.ok) {
       setError(result.message);
       return;
+    }
+
+    if (result.warning) {
+      setWarning(result.warning);
     }
 
     router.refresh();
@@ -34,6 +40,11 @@ export default function AdminPaymentsForm({ orders }: { orders: any[] }) {
       {error && (
         <div style={{ background: '#fee2e2', color: '#991b1b', padding: 12, marginBottom: 18, borderRadius: 6, fontSize: 13 }}>
           {error}
+        </div>
+      )}
+      {warning && (
+        <div style={{ background: '#fef9c3', color: '#854d0e', padding: 12, marginBottom: 18, borderRadius: 6, fontSize: 13 }}>
+          {warning}
         </div>
       )}
 

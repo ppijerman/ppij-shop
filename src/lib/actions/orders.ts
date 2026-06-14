@@ -29,7 +29,7 @@ export type CreateOrderResult =
   | { ok: true; orderId: string }
   | { ok: false; code: 'VALIDATION_ERROR' | 'EMPTY_CART' | 'OUT_OF_STOCK'; message: string; items?: string[] };
 
-export type SimpleActionResult = { ok: true; message?: string } | { ok: false; message: string };
+export type SimpleActionResult = { ok: true; message?: string; warning?: string } | { ok: false; message: string };
 
 export interface ShippingOption {
   methodId: string;
@@ -1048,6 +1048,8 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
     revalidatePath(`/account/orders/${orderId}`);
   }
 
+  let labelWarning: string | undefined;
+
   if (result.ok && detailsRef.value?.delivery_type === 'DELIVERY') {
     try {
       const senderAddressId = Number(process.env.SENDCLOUD_SENDER_ADDRESS_ID);
@@ -1093,6 +1095,8 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
         `,
         [orderId, `Failed to create shipping parcel: ${err instanceof Error ? err.message : String(err)}`.slice(0, 255), admin.id],
       );
+
+      labelWarning = 'Shipping label could not be created automatically. Ship the parcel manually at a DHL/DPD drop-off point, then enter the tracking number in the order detail page.';
     }
   }
 
@@ -1108,7 +1112,7 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
     }
   }
 
-  return result;
+  return result.ok ? { ...result, warning: labelWarning } : result;
 }
 
 export async function rejectPaymentAction(orderId: string): Promise<SimpleActionResult> {
