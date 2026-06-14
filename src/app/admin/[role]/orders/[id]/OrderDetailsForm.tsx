@@ -96,6 +96,7 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const [proofPreviewOpen, setProofPreviewOpen] = useState(false);
   const [statusComment, setStatusComment] = useState('');
   const [timelineComment, setTimelineComment] = useState('');
@@ -198,6 +199,7 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
       setLoading(true);
       setError(null);
       setSuccess(null);
+      setWarning(null);
       const result = action === 'approve'
         ? await approvePaymentAction(initialOrder.id)
         : await rejectPaymentAction(initialOrder.id);
@@ -205,6 +207,10 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
       if (!result.ok) {
         setError(result.message);
         return;
+      }
+
+      if (result.warning) {
+        setWarning(result.warning);
       }
 
       setSuccess(result.message ?? 'Payment review saved.');
@@ -584,6 +590,20 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
                 marginBottom: 12,
               }}>
                 {success}
+              </div>
+            )}
+            {warning && (
+              <div style={{
+                background: '#fefce8',
+                border: '1px solid #fde68a',
+                color: '#854d0e',
+                padding: '8px 12px',
+                borderRadius: 4,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                marginBottom: 12,
+              }}>
+                {warning}
               </div>
             )}
           <button
