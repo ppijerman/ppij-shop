@@ -42,7 +42,7 @@ export default function AdminPaymentsForm({ orders }: { orders: any[] }) {
           <p style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 14 }}>All clear! No pending payments.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 24 }}>
+        <div className="r-grid-collapse" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 24 }}>
           {pendingPayments.map((order: any) => {
             const busy = busyOrderId === order.id;
             const buyerName = [order.first_name, order.last_name].filter(Boolean).join(' ') || order.email || order.user_id;

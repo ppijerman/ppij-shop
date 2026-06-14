@@ -81,7 +81,7 @@ export default function AdminOrdersList({ orders, role }: { orders: AdminOrder[]
   return (
     <>
       <div style={{ background: 'var(--cream-2)', border: '1px solid var(--line)', borderRadius: 8, padding: 16, marginBottom: 20 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr repeat(5, minmax(0, 1fr)) auto', gap: 10, alignItems: 'end' }}>
+        <div className="admin-filter-grid" style={{ display: 'grid', gridTemplateColumns: '2fr repeat(5, minmax(0, 1fr)) auto', gap: 10, alignItems: 'end' }}>
           <label style={filterLabelStyle}>
             Search
             <input
@@ -172,8 +172,8 @@ export default function AdminOrdersList({ orders, role }: { orders: AdminOrder[]
         </p>
       </div>
 
-      <div style={{ background: 'white', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+      <div className="admin-scroll-x" style={{ background: 'white', border: '1px solid var(--line)', borderRadius: 12, overflowX: 'auto' }}>
+        <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--line)', background: 'var(--cream-2)' }}>
               <th style={thStyle}>Customer</th>

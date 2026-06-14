@@ -55,7 +55,7 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
   }
 
   return (
-    <div style={{ maxWidth: 1440, margin: '0 auto', padding: '48px 28px 80px' }}>
+    <div className="r-pad-x" style={{ maxWidth: 1440, margin: '0 auto', padding: '48px 28px 80px' }}>
       <div style={{ marginBottom: 60 }}>
         <div style={{ 
           fontFamily: 'var(--font-mono)', 
@@ -76,26 +76,28 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
         }}>
           {bundle.name.toUpperCase()}<span style={{ color: 'var(--accent)' }}>.</span>
         </h1>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 40, alignItems: 'baseline', marginTop: 24 }}>
-          <p style={{ 
-            fontFamily: 'var(--font-serif)', 
-            fontStyle: 'italic', 
-            fontSize: 24, 
+        <div style={{ marginTop: 24 }}>
+          <p style={{
+            fontFamily: 'var(--font-serif)',
+            fontStyle: 'italic',
+            fontSize: 16,
             color: 'var(--ink)',
-            maxWidth: 600
+            maxWidth: 600,
+            marginTop: 14,
+            lineHeight: 1.6
           }}>
             {bundle.desc}
           </p>
-          <div style={{ display: 'flex', gap: 20, alignItems: 'baseline' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'baseline' }}>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: 54, color: 'var(--black)' }}>
               €{Number(bundle.price).toFixed(2)}
             </span>
             {bundle.original_price && (
-              <span style={{ 
-                fontFamily: 'var(--font-mono)', 
-                fontSize: 18, 
-                color: 'var(--muted)', 
-                textDecoration: 'line-through' 
+              <span style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 18,
+                color: 'var(--muted)',
+                textDecoration: 'line-through'
               }}>
                 €{Number(bundle.original_price).toFixed(2)}
               </span>
@@ -105,16 +107,16 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
       </div>
 
       {bundle.bundle_image_url && (
-        <div style={{ marginBottom: 48, width: '70%', overflow: 'hidden', marginLeft: 'auto', marginRight: 'auto' }}>
+        <div className="bundle-hero-img" style={{ marginBottom: 48, width: '70%', maxWidth: 620, overflow: 'hidden', marginLeft: 'auto', marginRight: 'auto' }}>
           <img
             src={bundle.bundle_image_url}
             alt={bundle.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            style={{ display: 'block', width: 'auto', maxWidth: '100%', height: 'auto', maxHeight: '60vh', objectFit: 'contain', margin: '0 auto' }}
           />
         </div>
       )}
 
-      <div style={{
+      <div className="bundle-grid" style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
         gap: 24
@@ -262,13 +264,13 @@ function BundleProductCard({
   const primaryImage = product.primary_image || product.images?.[0]?.url || 'editorial-color.jpeg';
 
   return (
-    <div style={{ 
-      background: 'var(--cream-2)', 
+    <div className="bundle-card" style={{
+      background: 'var(--cream-2)',
       border: '1px solid var(--line)',
       display: 'flex',
       flexDirection: 'row'
     }}>
-      <div style={{ width: '50%', height: '100%', flexShrink: 0, overflow: 'hidden', background: 'var(--cream-2)', aspectRatio: '4/5' }}>
+      <div className="bundle-card-img" style={{ width: '42%', maxWidth: 230, flexShrink: 0, overflow: 'hidden', background: 'var(--cream-2)', aspectRatio: '4/5' }}>
         <ProductCrop src={primaryImage} />
       </div>
       

@@ -135,3 +135,282 @@ body::before {
   animation: fadeUp 0.3s ease;
   pointer-events: none;
  }
+
+/* =========================================================================
+   Responsive overrides
+   The app is styled with inline `style` objects, which cannot hold media
+   queries. `!important` declarations in a stylesheet DO override inline
+   styles, so the rules below layer responsive behaviour on top of the
+   existing desktop design without touching it: desktop renders exactly as
+   before, and these only activate at the listed breakpoints.
+   Breakpoints: 1024 (tablet) · 860 (stack big 2-col) · 768 (mobile/nav)
+   · 640 (small) · 480 (phone)
+   ========================================================================= */
+
+img,
+video,
+svg {
+  max-width: 100%;
+}
+
+/* ---- Navbar / mobile menu -------------------------------------------- */
+.nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--black);
+  cursor: pointer;
+  padding: 0;
+}
+.nav-mobile-panel {
+  display: none;
+}
+@media (max-width: 768px) {
+  .nav-links {
+    display: none !important;
+  }
+  /* Links column is hidden on mobile, so collapse to logo | controls */
+  .nav-grid {
+    grid-template-columns: 1fr auto !important;
+  }
+  .nav-toggle {
+    display: flex;
+  }
+  .nav-account-name {
+    display: none !important;
+  }
+  .nav-cart-desktop {
+    display: none !important;
+  }
+  .nav-mobile-panel {
+    display: flex;
+  }
+  /* Account dropdown spans the full navbar width on mobile, like the menu */
+  .account-menu {
+    position: fixed !important;
+    top: 62px !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+}
+
+/* ---- Generic 2-column → 1-column ------------------------------------- */
+@media (max-width: 860px) {
+  .r-stack-860 {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 28px !important;
+  }
+}
+@media (max-width: 768px) {
+  .r-stack-768 {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 24px !important;
+  }
+}
+
+/* ---- Footer ----------------------------------------------------------- */
+@media (max-width: 860px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 28px !important;
+  }
+}
+@media (max-width: 520px) {
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+}
+
+/* ---- Catalog / bundle grids (fix oversized min track on phones) ------- */
+@media (max-width: 768px) {
+  .bundle-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ---- Product detail --------------------------------------------------- */
+@media (max-width: 860px) {
+  .pdp-grid {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+  }
+}
+
+/* ---- Cart ------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .cart-grid {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+  }
+  .cart-summary {
+    position: static !important;
+  }
+}
+@media (max-width: 480px) {
+  .cart-item {
+    flex-wrap: wrap !important;
+    row-gap: 12px !important;
+  }
+}
+
+/* ---- Quick view modal ------------------------------------------------- */
+@media (max-width: 720px) {
+  .qv-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .qv-image {
+    aspect-ratio: 16 / 10 !important;
+    max-height: 42vh !important;
+  }
+}
+
+/* ---- Bundle detail ---------------------------------------------------- */
+@media (max-width: 768px) {
+  .bundle-hero-img {
+    width: 100% !important;
+  }
+}
+@media (max-width: 560px) {
+  .bundle-card {
+    flex-direction: column !important;
+  }
+  .bundle-card-img {
+    width: 100% !important;
+    max-width: none !important;
+    aspect-ratio: 16 / 11 !important;
+  }
+}
+
+/* ---- Key/value detail rows (fixed label column) → stack on phones ----- */
+@media (max-width: 480px) {
+  .kv-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 2px !important;
+  }
+}
+
+/* ---- Account: order history table → cards ----------------------------- */
+@media (max-width: 640px) {
+  .order-head {
+    display: none !important;
+  }
+  .order-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px 14px !important;
+    padding: 18px !important;
+  }
+}
+
+/* ---- Reduce big section padding on phones ----------------------------- */
+@media (max-width: 480px) {
+  .r-pad-x {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+}
+
+/* ---- Admin ------------------------------------------------------------ */
+/* Mobile bar + collapsible panel are inert on desktop. The collapse wrapper
+   is display:contents so the sidebar's top/bottom keep their space-between
+   placement. */
+.admin-mobile-bar {
+  display: none;
+}
+.admin-menu-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--black);
+  cursor: pointer;
+  padding: 0;
+}
+.admin-mobile-only {
+  display: none;
+}
+.admin-collapse {
+  display: contents;
+}
+
+@media (max-width: 900px) {
+  .admin-shell {
+    flex-direction: column !important;
+  }
+  .admin-sidebar {
+    width: 100% !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--line) !important;
+  }
+  .admin-mobile-bar {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+  }
+  /* Collapsed by default; the hamburger toggles the `.open` dropdown panel */
+  .admin-collapse {
+    display: none !important;
+  }
+  .admin-collapse.open {
+    display: flex !important;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 16px 18px;
+    border-top: 1px solid var(--line);
+  }
+  .admin-collapse.open .admin-mobile-only {
+    display: flex !important;
+  }
+  /* Brand title already shown in the bar */
+  .admin-sidebar-brand {
+    display: none !important;
+  }
+  .admin-nav {
+    gap: 4px !important;
+  }
+  .admin-sidebar-bottom {
+    margin-top: 6px !important;
+  }
+  .admin-main {
+    padding: 28px 20px !important;
+  }
+}
+
+/* Collapse auto-fill grids with a large min track so they don't overflow
+   very narrow phones. */
+@media (max-width: 560px) {
+  .r-grid-collapse {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Admin wide tables/filter rows */
+.admin-scroll-x {
+  overflow-x: auto;
+}
+@media (max-width: 1024px) {
+  .admin-filter-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+@media (max-width: 560px) {
+  .admin-filter-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

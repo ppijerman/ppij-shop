@@ -9,7 +9,7 @@ export default function About() {
           PERHIMPUNAN PELAJAR<br />INDONESIA <span style={{ color: 'var(--accent)' }}>— DI JERMAN.</span>
         </h1>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 36, marginBottom: 48 }}>
+        <div className="r-stack-768" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 36, marginBottom: 48 }}>
           <div className="photo-frame" style={{ position: 'relative' }}>
             <div style={{ position: 'relative', width: '100%', aspectRatio: '4/5' }}>
               <Image src="/assets/v4/about-img.png" alt="" fill style={{ objectFit: 'cover' }} />

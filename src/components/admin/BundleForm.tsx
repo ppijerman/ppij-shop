@@ -153,7 +153,7 @@ export default function BundleForm({ initialData, products, action }: BundleForm
         {attempted && isFieldEmpty(formData.description) && <span style={errorText}>Required</span>}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 24 }}>
+      <div className="r-stack-768" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 24 }}>
         <div style={fieldGroup}>
           <label style={labelStyle}>Price (€)</label>
           <input
@@ -198,7 +198,7 @@ export default function BundleForm({ initialData, products, action }: BundleForm
           Included Products {areProductsChanged && '*'}
         </label>
         {attempted && selectedVariantIds.length === 0 && <span style={errorText}>Select at least one product</span>}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12, borderRadius: 8, border: attempted && selectedVariantIds.length === 0 ? '1px solid #ef4444' : 'none', padding: attempted && selectedVariantIds.length === 0 ? 8 : 0 }}>
+        <div className="r-stack-768" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12, borderRadius: 8, border: attempted && selectedVariantIds.length === 0 ? '1px solid #ef4444' : 'none', padding: attempted && selectedVariantIds.length === 0 ? 8 : 0 }}>
           {products.map(product => {
             const isSelected = product.variants?.some((v: any) => selectedVariantIds.includes(v.id));
             return (

@@ -27,8 +27,8 @@ export default function BundleList({ initialBundles, bundleItems, deleteBundleAc
   };
 
   return (
-    <div style={{ background: 'white', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
-      <table ref={tableRef} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+    <div className="admin-scroll-x" style={{ background: 'white', border: '1px solid var(--line)', borderRadius: 12, overflowX: 'auto' }}>
+      <table ref={tableRef} style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse', textAlign: 'left' }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--line)', background: 'var(--cream-2)' }}>
             <th style={thStyle}>Bundle Name</th>

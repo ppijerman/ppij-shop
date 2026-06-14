@@ -12,7 +12,7 @@ export default function Hero() {
   return (
     <section style={{ background: 'var(--cream)', padding: '24px 28px 0', position: 'relative' }}>
       <div style={{ maxWidth: 1440, margin: '0 auto' }}>
-        <div style={{ position: 'relative', overflow: 'hidden', height: 'clamp(520px, 78vh, 720px)', background: '#0a0a0a' }}>
+        <div style={{ position: 'relative', overflow: 'hidden', height: 'clamp(440px, 64vh, 600px)', background: '#0a0a0a' }}>
           <Image
             src="/assets/v4/home-img.jpg"
             alt="PPI Jerman Merch Drop"
@@ -33,14 +33,14 @@ export default function Hero() {
             </div>
           </div>
 
-          <div style={{ position: 'absolute', top: '6%', left: '4%', animation: 'fadeUp 0.8s ease both' }}>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(110px, 14vw, 220px)', color: 'var(--accent)', lineHeight: 0.85, letterSpacing: '-0.01em' }}>
+          <div style={{ position: 'absolute', top: '14%', left: '4%', animation: 'fadeUp 0.8s ease both' }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(58px, 14vw, 220px)', color: 'var(--accent)', lineHeight: 0.85, letterSpacing: '-0.01em' }}>
               MERCH
             </h1>
           </div>
 
-          <div style={{ position: 'absolute', bottom: '4%', right: '4%', textAlign: 'right', animation: 'fadeUp 0.8s 0.1s ease both' }}>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(110px, 14vw, 220px)', color: 'var(--accent)', lineHeight: 0.85, letterSpacing: '-0.01em' }}>
+          <div style={{ position: 'absolute', bottom: '12%', right: '4%', textAlign: 'right', animation: 'fadeUp 0.8s 0.1s ease both' }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(58px, 14vw, 220px)', color: 'var(--accent)', lineHeight: 0.85, letterSpacing: '-0.01em' }}>
               DROP
             </h1>
           </div>

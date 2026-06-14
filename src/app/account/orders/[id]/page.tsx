@@ -22,27 +22,27 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 20, marginBottom: 40 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: '8px 20px', marginBottom: 40 }}>
         <Link href="/account/orders" style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', textDecoration: 'none' }}>
           ← BACK
         </Link>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 32, letterSpacing: '0.02em' }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(24px, 6vw, 32px)', letterSpacing: '0.02em', wordBreak: 'break-word' }}>
           ORDER #{order.id.substring(0, 8)}
         </h2>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 40 }}>
+      <div className="r-stack-768" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 40 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
           <section>
             <h3 style={sectionHeadingStyle}>ORDERED ITEMS</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {items.map((item: any) => (
                 <div key={item.id} style={{ display: 'flex', gap: 20, background: 'var(--cream-2)', padding: 16 }}>
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4, overflowWrap: 'anywhere' }}>
                       {item.product_name_snapshot}
                     </h4>
-                    <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
+                    <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12, overflowWrap: 'anywhere' }}>
                       SKU: {item.sku_snapshot}
                     </p>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -70,9 +70,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <p style={{ fontSize: 14, color: 'var(--ink)', marginBottom: 12 }}>{paymentInstruction.intro}</p>
               <div style={{ display: 'grid', gap: 7 }}>
                 {paymentInstruction.details.map((detail) => (
-                  <div key={detail.label} style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: 12, alignItems: 'baseline' }}>
+                  <div key={detail.label} className="kv-row" style={{ display: 'grid', gridTemplateColumns: '150px minmax(0, 1fr)', gap: 12, alignItems: 'baseline' }}>
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)' }}>{detail.label}</span>
-                    <span style={{ fontSize: 14, fontWeight: detail.strong ? 800 : 500, color: 'var(--black)', wordBreak: 'break-word' }}>{detail.value}</span>
+                    <span style={{ fontSize: 14, fontWeight: detail.strong ? 800 : 500, color: 'var(--black)', minWidth: 0, overflowWrap: 'anywhere' }}>{detail.value}</span>
                   </div>
                 ))}
               </div>
@@ -146,7 +146,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     {order.shipping_provider}
                   </p>
                 )}
-                <p style={{ fontSize: 16, fontWeight: 700, wordBreak: 'break-word' }}>
+                <p style={{ fontSize: 16, fontWeight: 700, overflowWrap: 'anywhere' }}>
                   {order.shipping_tracking_number}
                 </p>
               </div>

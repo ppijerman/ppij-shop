@@ -161,7 +161,7 @@ export default function PaymentProofUploadForm({ orderId, paymentExpiresAt }: { 
 
           setError(null);
         }}
-        style={{ border: '1px solid var(--line)', background: 'white', padding: 12, fontSize: 13 }}
+        style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', border: '1px solid var(--line)', background: 'white', padding: 12, fontSize: 13 }}
       />
       {error && <p style={{ color: '#b91c1c', fontSize: 12 }}>{error}</p>}
       {message && <p style={{ color: '#166534', fontSize: 12 }}>{message}</p>}

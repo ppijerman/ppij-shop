@@ -149,8 +149,8 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
         style={{ background: 'var(--cream)', maxWidth: 980, width: '100%', maxHeight: '90vh', overflow: 'auto', animation: 'scaleIn 0.22s ease' }}
         onClick={e => e.stopPropagation()}
       >
-        <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 0.85fr' }}>
-          <div style={{ background: 'var(--cream-2)', position: 'relative', aspectRatio: '4/5', overflow: 'hidden' }}>
+        <div className="qv-grid" style={{ display: 'grid', gridTemplateColumns: '1.15fr 0.85fr' }}>
+          <div className="qv-image" style={{ background: 'var(--cream-2)', position: 'relative', aspectRatio: '4/5', overflow: 'hidden' }}>
             <img
               src={product.primary_image ?? '/editorial-color.jpeg'}
               alt={product.name}
