@@ -184,6 +184,17 @@ export async function updateProduct(id: string, productData: ProductData) {
 
 export async function deleteProduct(productId: string) {
   await requireAdmin();
+
+  const hasOrders = await db.query(
+    `SELECT 1 FROM order_items oi
+     JOIN product_variants pv ON pv.id = oi.variant_id
+     WHERE pv.product_id = $1 LIMIT 1`,
+    [productId],
+  );
+  if (hasOrders.rows.length > 0) {
+    throw new Error('This product has existing orders and cannot be deleted. Deactivate it instead.');
+  }
+
   await db.query(
     `DELETE FROM products WHERE id = $1`,
     [productId]

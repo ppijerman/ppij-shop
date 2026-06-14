@@ -69,7 +69,7 @@ export default function BundleList({ initialBundles, bundleItems, deleteBundleAc
                             showToast(`deleted · ${bundle.name}`);
                             setDeletingBundleId(null);
                           } catch (err) {
-                            showToast(`error · failed to delete product`);
+                            showToast(`error · ${err instanceof Error ? err.message : 'failed to delete bundle'}`);
                           }
                         }}
                         style={{ ...dangerButtonStyle, minWidth: 60, padding: '4px 8px' }}
