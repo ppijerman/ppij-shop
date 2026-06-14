@@ -11,7 +11,7 @@ const pool = globalForPool.pool ??
     idleTimeoutMillis: 20000,
     connectionTimeoutMillis: 10000,
     ssl: process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: false }
+      ? { rejectUnauthorized: false, checkServerIdentity: () => undefined }
       : false,
   });
 
