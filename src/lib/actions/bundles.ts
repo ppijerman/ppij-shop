@@ -12,6 +12,9 @@ export interface BundleData {
   skuPrefix: string
   slug: string
   variantIds: string[]
+  imageFile?: Buffer
+  imageContentType?: string
+  clearImage?: boolean
 }
 
 export async function createBundle(bundleData: BundleData) {
@@ -33,8 +36,8 @@ export async function createBundle(bundleData: BundleData) {
 
     const res = await query(
       `
-      INSERT INTO bundles (name, "desc", price, original_price, slug, sku)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO bundles (name, "desc", price, original_price, slug, sku, image_data, image_content_type)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id
       `,
       [
@@ -44,6 +47,8 @@ export async function createBundle(bundleData: BundleData) {
         bundleData.originalPrice,
         slug,
         sku,
+        bundleData.imageFile ?? null,
+        bundleData.imageContentType ?? null,
       ]
     );
   
@@ -78,22 +83,23 @@ export async function updateBundle(bundleId: string, bundleData: BundleData) {
     );
     const sku = existingSkus.rows.length === 0 ? baseSku : `${baseSku}-${existingSkus.rows.length}`;
 
-    await query(
-      `
-      UPDATE bundles
-      SET name = $2, "desc" = $3, price = $4, original_price = $5, slug = $6, sku = $7
-      WHERE id = $1
-      `,
-      [
-        bundleId,
-        bundleData.name,
-        bundleData.description,
-        bundleData.price,
-        bundleData.originalPrice,
-        slug,
-        sku,
-      ]
-    );
+    const imageUpdate = bundleData.imageFile
+      ? { data: bundleData.imageFile, type: bundleData.imageContentType }
+      : bundleData.clearImage
+        ? { data: null, type: null }
+        : undefined;
+
+    if (imageUpdate !== undefined) {
+      await query(
+        `UPDATE bundles SET name = $2, "desc" = $3, price = $4, original_price = $5, slug = $6, sku = $7, image_data = $8, image_content_type = $9, updated_at = NOW() WHERE id = $1`,
+        [bundleId, bundleData.name, bundleData.description, bundleData.price, bundleData.originalPrice, slug, sku, imageUpdate.data, imageUpdate.type]
+      );
+    } else {
+      await query(
+        `UPDATE bundles SET name = $2, "desc" = $3, price = $4, original_price = $5, slug = $6, sku = $7, updated_at = NOW() WHERE id = $1`,
+        [bundleId, bundleData.name, bundleData.description, bundleData.price, bundleData.originalPrice, slug, sku]
+      );
+    }
 
     await query(
       `DELETE FROM bundle_items WHERE bundle_id = $1`,
