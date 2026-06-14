@@ -248,10 +248,6 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
           return { ok: false, code: 'VALIDATION_ERROR', message: `${item.bundle_name} contains an invalid variant selection.` };
         }
 
-        if (Array.isArray(item.selected_variant_ids) && item.selected_variant_ids.length > 0 && selectedIds.length !== bundleComponentIds.length) {
-          return { ok: false, code: 'VALIDATION_ERROR', message: `${item.bundle_name} requires all variants to be selected.` };
-        }
-
         for (const variantId of selectedIds) {
           requiredByVariant.set(variantId, (requiredByVariant.get(variantId) ?? 0) + quantity);
         }
