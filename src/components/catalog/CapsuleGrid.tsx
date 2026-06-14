@@ -19,7 +19,7 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.3em', textTransform: 'uppercase',marginBottom: 8 }}>
             —— essentials ——
           </div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 48, color: 'var(--black)' }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px, 6vw, 48px)', color: 'var(--black)' }}>
             INDIVIDUAL PIECES<span style={{ color: 'var(--accent)' }}>.</span>
           </h2>
         </div>

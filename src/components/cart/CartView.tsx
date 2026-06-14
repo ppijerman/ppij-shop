@@ -101,7 +101,7 @@ export default function CartView() {
   }, [fetchShippingOptions]);
 
   return (
-    <section style={{ background: 'var(--cream)', minHeight: '80vh', padding: '60px 28px 80px' }}>
+    <section className="r-pad-x" style={{ background: 'var(--cream)', minHeight: '80vh', padding: '60px 28px 80px' }}>
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
         <Link href="/catalog" style={{ textDecoration: 'none', display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 28 }}>← lanjut belanja</Link>
 
@@ -112,13 +112,13 @@ export default function CartView() {
 
         {cart.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 80, color: 'var(--cream-2)', marginBottom: 14 }}>EMPTY.</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(56px, 14vw, 80px)', color: 'var(--cream-2)', marginBottom: 14 }}>EMPTY.</div>
             <p style={{ color: 'var(--muted)', marginBottom: 24, fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase' }}>{loading ? 'loading cart' : 'keranjang anda kosong'}</p>
             {error && <p style={{ color: '#b91c1c', marginBottom: 18, fontSize: 13 }}>{error}</p>}
             <Link href="/catalog" style={{ textDecoration: 'none', display: 'inline-block', background: 'var(--black)', color: 'var(--cream)', padding: '14px 28px', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase' }}>shop now ↗</Link>
           </div>
         ) : (
-          <form action={handleCheckout} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 360px', gap: 50, alignItems: 'start' }}>
+          <form action={handleCheckout} className="cart-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 360px', gap: 50, alignItems: 'start' }}>
             <input type="hidden" name="deliveryType" value={deliveryType} />
             <input type="hidden" name="paymentMethod" value="IBAN" />
             <input type="hidden" name="shippingMethodId" value={deliveryType === 'DELIVERY' ? (selectedMethodId ?? '') : ''} />
@@ -130,7 +130,7 @@ export default function CartView() {
                   const isSoldOut = item.stock <= 0;
 
                   return (
-                  <div key={item.cartId} style={{ display: 'flex', gap: 16, alignItems: 'center', padding: '18px 0', borderBottom: '1px solid var(--line)' }}>
+                  <div key={item.cartId} className="cart-item" style={{ display: 'flex', gap: 16, alignItems: 'center', padding: '18px 0', borderBottom: '1px solid var(--line)' }}>
                     <div style={{ width: 84, height: 84, background: 'var(--cream-2)', flexShrink: 0, overflow: 'hidden' }}>
                       <ProductCrop src={item.image} height={84} />
                     </div>
@@ -315,7 +315,7 @@ export default function CartView() {
               </section>
             </div>
 
-            <div style={{ background: 'var(--black)', color: 'var(--cream)', padding: 24, position: 'sticky', top: 86 }}>
+            <div className="cart-summary" style={{ background: 'var(--black)', color: 'var(--cream)', padding: 24, position: 'sticky', top: 86 }}>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, marginBottom: 18 }}>SUMMARY<span style={{ color: 'var(--accent)' }}>.</span></div>
               {(() => {
                 const selectedOption = shippingOptions.find(o => o.methodId === selectedMethodId);

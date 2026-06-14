@@ -18,12 +18,12 @@ export default function CatalogWrapper({ products, bundles }: { products: any[],
       'uppercase', marginBottom: 8 }}>
                 -- excluesive deals --
               </div>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 48, color: 'var(--black)' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px, 6vw, 48px)', color: 'var(--black)' }}>
                 CURATED BUNDLES<span style={{ color: 'var(--accent)' }}>.</span>
               </h2>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 20 }}>
+            <div className="bundle-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 20 }}>
               {bundles.map(bundle => (
                 <Link
                   key={bundle.id}

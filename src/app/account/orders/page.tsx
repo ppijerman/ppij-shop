@@ -16,9 +16,9 @@ export default async function OrdersPage() {
       {orders.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Table Header (Hidden on Mobile) */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: '1.5fr 1fr 1fr 1fr 0.5fr', 
+          <div className="order-head" style={{
+            display: 'grid',
+            gridTemplateColumns: '1.5fr 1fr 1fr 1fr 0.5fr',
             padding: '16px 24px',
             borderBottom: '2px solid var(--black)',
             fontSize: 11,
@@ -35,11 +35,12 @@ export default async function OrdersPage() {
           </div>
 
           {orders.map((order: any) => (
-            <div 
+            <div
               key={order.id}
-              style={{ 
-                display: 'grid', 
-                gridTemplateColumns: '1.5fr 1fr 1fr 1fr 0.5fr', 
+              className="order-row"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1.5fr 1fr 1fr 1fr 0.5fr',
                 padding: '24px',
                 background: 'var(--cream-2)',
                 alignItems: 'center',

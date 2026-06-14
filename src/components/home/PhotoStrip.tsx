@@ -4,10 +4,10 @@ export default function PhotoStrip() {
   return (
     <section style={{ background: 'var(--cream)', padding: '80px 28px' }}>
       <div style={{ maxWidth: 1440, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.85fr 1fr', gap: 24, alignItems: 'start', marginBottom: 40 }}>
+        <div className="r-stack-860" style={{ display: 'grid', gridTemplateColumns: '1fr 0.85fr 1fr', gap: 24, alignItems: 'start', marginBottom: 40 }}>
           <div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-deep)', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 14 }}>—— stories ——</div>
-            <h3 style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 42, lineHeight: 1.15, color: 'var(--black)' }}>
+            <h3 style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 'clamp(30px, 5vw, 42px)', lineHeight: 1.15, color: 'var(--black)' }}>
               Cerita pelajar Indonesia di tanah Jerman.
             </h3>
           </div>

@@ -213,6 +213,7 @@ export default function ProductDetailPage({
       </div>
 
       <div
+        className="pdp-grid"
         style={{
           maxWidth: 1440,
           margin: '0 auto',
@@ -809,7 +810,7 @@ export default function ProductDetailPage({
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: 48,
+                fontSize: 'clamp(30px, 6vw, 48px)',
                 color: 'var(--black)',
                 letterSpacing: '0.01em',
               }}

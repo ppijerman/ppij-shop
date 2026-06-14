@@ -63,7 +63,7 @@ export default function Footer() {
   return (
     <footer style={{ background: 'var(--black)', color: 'var(--cream)', padding: '60px 28px 24px' }}>
       <div style={{ maxWidth: 1440, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.2fr', gap: 40, paddingBottom: 36, borderBottom: '1px solid #222' }}>
+        <div className="footer-grid" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.2fr', gap: 40, paddingBottom: 36, borderBottom: '1px solid #222' }}>
           <div>
             <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
               <div style={{ width: 30, height: 30, borderRadius: '50%', border: '2px solid var(--cream)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

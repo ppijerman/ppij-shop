@@ -170,7 +170,7 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
     <form onSubmit={handleSubmit} style={{ background: 'white', padding: 32, borderRadius: 12, border: '1px solid var(--line)', maxWidth: 800 }}>
       {initialData?.id && <input type="hidden" name="id" value={initialData.id} />}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
+      <div className="r-stack-768" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
         <div style={fieldGroup}>
           <label style={labelStyle}>Product Name</label>
           <input
@@ -343,7 +343,7 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
         <div key={f} style={{ marginBottom: 40, padding: 24, border: '1px solid var(--line)', borderRadius: 12, background: '#fafafa' }}>
           <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: 13, marginBottom: 20, color: 'var(--accent-deep)' }}>{f} FIT CONFIGURATION</h3>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
+          <div className="r-stack-768" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
             <div style={fieldGroup}>
               <label style={labelStyle}>{f} Price (€)</label>
               <input type="number" value={fits[f].price}
@@ -388,8 +388,8 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
           </div>
 
           {fits[f].sizes.length > 0 && colors.length > 0 && (
-            <div style={{ marginTop: 12, border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden', background: 'white' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+            <div className="admin-scroll-x" style={{ marginTop: 12, border: '1px solid var(--line)', borderRadius: 8, overflowX: 'auto', background: 'white' }}>
+              <table style={{ width: '100%', minWidth: 420, borderCollapse: 'collapse', fontSize: 11 }}>
                 <thead>
                   <tr style={{ background: '#f9f9f9', borderBottom: '1px solid var(--line)' }}>
                     <th style={{ padding: 10, textAlign: 'left', fontFamily: 'var(--font-mono)' }}>Color / Size</th>

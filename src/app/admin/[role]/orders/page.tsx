@@ -7,7 +7,7 @@ export default async function AdminOrders({ params }: { params: Promise<{ role: 
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16, marginBottom: 40 }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 48 }}>ORDERS</h1>
       </div>
 

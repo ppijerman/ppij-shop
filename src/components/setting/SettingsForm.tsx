@@ -160,7 +160,7 @@ export default function SettingsForm({ user }: { user: DbUser }) {
       {/* Personal Info */}
       <form onSubmit={handleNameSubmit} style={cardStyle}>
         <h3 style={sectionHeadingStyle}>PERSONAL INFORMATION</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="r-stack-768" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <label style={labelStyle}>First Name</label>
             <input
@@ -214,7 +214,7 @@ export default function SettingsForm({ user }: { user: DbUser }) {
             style={getFieldStyle(passwordData.currentPassword !== '')}
           />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="r-stack-768" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <label style={labelStyle}>New Password</label>
             <input

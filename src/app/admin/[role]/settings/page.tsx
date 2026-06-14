@@ -6,9 +6,9 @@ export default async function AdminSettingsPage() {
  const user = await getCurrentDbUserOrThrow()
  return (
    <div>
-      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 48, marginBottom: 40 }}>SETTINGS</h1>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 40 }}>
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px, 7vw, 48px)', marginBottom: 40 }}>SETTINGS</h1>
+
+      <div className="r-grid-collapse" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 40 }}>
         {/* Profile Section (Matches Buyer Layout) */}
         <section style={{ background: 'var(--cream-2)', padding: 32, border: '1px solid var(--line)' }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, marginBottom: 24, letterSpacing: '0.02em' }}>

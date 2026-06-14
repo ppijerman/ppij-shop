@@ -293,12 +293,12 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 40 }}>
+    <div className="r-stack-768" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 40 }}>
       <div>
         <section style={sectionStyle}>
           <h2 style={h2Style}>Ordered Items</h2>
-          <div style={{ background: 'white', borderRadius: 8, border: '1px solid var(--line)', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="admin-scroll-x" style={{ background: 'white', borderRadius: 8, border: '1px solid var(--line)', overflowX: 'auto' }}>
+            <table style={{ width: '100%', minWidth: 480, borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--line)', background: 'var(--cream-2)' }}>
                   <th style={thStyle}>Item</th>
@@ -349,7 +349,7 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
         <section style={sectionStyle}>
           <h2 style={h2Style}>Status Timeline</h2>
           <div style={{ background: 'white', borderRadius: 8, border: '1px solid var(--line)', overflow: 'hidden' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr)) auto', gap: 10, padding: 16, borderBottom: '1px solid var(--line)', background: 'var(--cream-2)' }}>
+            <div className="admin-filter-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr)) auto', gap: 10, padding: 16, borderBottom: '1px solid var(--line)', background: 'var(--cream-2)' }}>
               <label style={timelineFilterLabelStyle}>
                 Status
                 <select

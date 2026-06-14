@@ -100,7 +100,7 @@ export default function UserManagementForm({ initialUsers }: { initialUsers: any
       )}
 
       <div style={{ background: 'var(--cream-2)', borderRadius: 8, border: '1px solid var(--line)', padding: 16, marginBottom: 20 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr minmax(180px, 1fr) auto', gap: 10, alignItems: 'end' }}>
+        <div className="admin-filter-grid" style={{ display: 'grid', gridTemplateColumns: '2fr minmax(180px, 1fr) auto', gap: 10, alignItems: 'end' }}>
           <label style={filterLabelStyle}>
             Search
             <input
@@ -153,8 +153,8 @@ export default function UserManagementForm({ initialUsers }: { initialUsers: any
         </p>
       </div>
 
-      <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', overflow: 'hidden' }}>
-        <table ref={tableRef} style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+      <div className="admin-scroll-x" style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', overflowX: 'auto' }}>
+        <table ref={tableRef} style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse', tableLayout: 'fixed' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--line)', background: 'var(--cream-2)' }}>
               <th style={tableHeadStyle}>Name</th>
