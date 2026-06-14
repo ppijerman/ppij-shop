@@ -1,7 +1,6 @@
 import { getBundleById } from '@/lib/dal/bundles';
 import { getAllProductsWithVariants } from '@/lib/dal/products';
 import BundleForm from '@/components/admin/BundleForm';
-import { redirect } from 'next/navigation';
 import { notFound } from 'next/navigation';
 import { updateBundle } from '@/lib/actions/bundles';
 import { generateSlug } from '@/lib/utils';
@@ -46,7 +45,6 @@ export default async function EditBundle({ params }: { params: Promise<{ id: str
       imageContentType: imageBuffer ? 'image/webp' : undefined,
       clearImage: !imageBuffer && !existingImageId,
     });
-    redirect(`/admin/${role}/bundles`);
   }
 
   return (

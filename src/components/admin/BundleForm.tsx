@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 import { getCroppedFile } from '@/lib/image-utils';
+import { useToast } from '@/context/ToastContext';
 
 interface BundleFormProps {
   initialData?: any;
@@ -18,6 +20,9 @@ const getFieldStyle = (isChanged: boolean, isEmpty = false) => ({
 });
 
 export default function BundleForm({ initialData, products, action }: BundleFormProps) {
+  const router = useRouter();
+  const { role } = useParams();
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     description: initialData?.desc || '',
@@ -31,7 +36,6 @@ export default function BundleForm({ initialData, products, action }: BundleForm
   );
 
   const [attempted, setAttempted] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
   type ImageEntry =
     | { kind: 'new'; file: File; previewUrl: string }
@@ -102,7 +106,6 @@ export default function BundleForm({ initialData, products, action }: BundleForm
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setAttempted(true);
-    setSubmitError(null);
     const missing =
       isFieldEmpty(formData.name) ||
       isFieldEmpty(formData.description) ||
@@ -118,10 +121,9 @@ export default function BundleForm({ initialData, products, action }: BundleForm
     }
     try {
       await action(fd);
+      router.push(`/admin/${role}/bundles`);
     } catch (err) {
-      // Re-throw Next.js redirect/not-found so the router can handle navigation
-      if (err instanceof Error && 'digest' in err) throw err;
-      setSubmitError('Something went wrong. Please try again.');
+      showToast(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     }
   };
 
@@ -310,11 +312,6 @@ export default function BundleForm({ initialData, products, action }: BundleForm
       >
         {initialData ? 'SAVE CHANGES' : 'CREATE BUNDLE'}
       </button>
-      {submitError && (
-        <p style={{ marginTop: 12, fontFamily: 'var(--font-mono)', fontSize: 12, color: '#ef4444', textAlign: 'center' }}>
-          {submitError}
-        </p>
-      )}
 
       {cropSrc && (
         <div style={{

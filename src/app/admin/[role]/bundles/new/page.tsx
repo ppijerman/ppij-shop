@@ -1,6 +1,5 @@
 import { getAllProductsWithVariants } from '@/lib/dal/products';
 import BundleForm from '@/components/admin/BundleForm';
-import { redirect } from 'next/navigation';
 import { createBundle } from '@/lib/actions/bundles';
 import { generateSlug } from '@/lib/utils';
 
@@ -27,7 +26,6 @@ export default async function NewBundle({ params }: { params: Promise<{ role: st
       imageFile: imageBuffer,
       imageContentType: imageBuffer ? 'image/webp' : undefined,
     });
-    redirect(`/admin/${role}/bundles`);
   }
 
   return (

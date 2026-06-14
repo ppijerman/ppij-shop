@@ -144,7 +144,7 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setAttempted(true);
     if (isEmpty(formData.name) || isEmpty(formData.skuPrefix) || isEmpty(formData.weight) || isEmpty(formData.desc) || !colorsValid || !fitsValid) {
@@ -163,7 +163,7 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
     fd.set('image_primary', String(primaryIdx >= 0 ? primaryIdx : 0));
     fd.set('colors', JSON.stringify(colors));
     fd.set('fits', JSON.stringify(fits));
-    action(fd);
+    await action(fd);
   };
 
   return (
@@ -236,7 +236,7 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
           {attempted && isEmpty(formData.skuPrefix) && <span style={errorText}>Required</span>}
         </div>
         <div style={fieldGroup}>
-          <label style={labelStyle}>Weight (kg)</label>
+          <label style={labelStyle}>Weight (g)</label>
           <input
             name="weight"
             type="number"
@@ -244,7 +244,7 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
             value={formData.weight}
             onChange={e => setFormData({...formData, weight: e.target.value})}
             style={getFieldStyle(String(formData.weight) !== String(initialData?.weight_g ?? ''), attempted && isEmpty(formData.weight))}
-            placeholder="e.g. 0.25"
+            placeholder="e.g. 250"
           />
           {attempted && isEmpty(formData.weight) && <span style={errorText}>Required</span>}
         </div>
