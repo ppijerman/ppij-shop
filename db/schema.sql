@@ -150,6 +150,7 @@ CREATE TABLE public.order_items (
     price_at_purchase numeric NOT NULL,
     product_name_snapshot character varying(255),
     sku_snapshot character varying(100),
+    selected_variant_ids uuid[] DEFAULT '{}'::uuid[],
     CONSTRAINT chk_order_item_qty CHECK ((quantity > 0)),
     CONSTRAINT order_items_exclusive_id CHECK ((((variant_id IS NOT NULL) AND (bundle_id IS NULL)) OR ((variant_id IS NULL) AND (bundle_id IS NOT NULL))))
 );
@@ -706,4 +707,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260611163147'),
     ('20260612011146'),
     ('20260613171034'),
-    ('20260613210852');
+    ('20260613210852'),
+    ('20260614021425');
