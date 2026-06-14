@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
-const TAGS = ['TOTE BAG', 'T-SHIRT', 'CANVAS HEAVY', 'PRINTED', 'HAND-DRAWN'];
+const TAGS = ['TOTE BAG', 'T-SHIRT'];
 
 export default function Hero() {
   const [hovered, setHovered] = useState(false);
@@ -14,11 +14,11 @@ export default function Hero() {
       <div style={{ maxWidth: 1440, margin: '0 auto' }}>
         <div style={{ position: 'relative', overflow: 'hidden', height: 'clamp(520px, 78vh, 720px)', background: '#0a0a0a' }}>
           <Image
-            src="/assets/v4/hero-group.jpeg"
+            src="/assets/v4/home-img.jpg"
             alt="PPI Jerman Merch Drop"
             fill
             priority
-            style={{ objectFit: 'cover', filter: 'saturate(1.05) contrast(1.05)' }}
+            style={{ objectFit: 'cover', objectPosition: 'center 65%', filter: 'saturate(1.05) contrast(1.05)' }}
           />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.05) 30%, rgba(0,0,0,0.4) 100%)' }} />
 
@@ -76,7 +76,7 @@ export default function Hero() {
           <div style={{ position: 'absolute', top: '36%', right: '6%', color: 'var(--accent)', fontSize: 48, fontFamily: 'var(--font-display)' }}>↗</div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', padding: '22px 6px', gap: 30, borderBottom: '1px solid var(--line)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '22px 6px', gap: 30, borderBottom: '1px solid var(--line)' }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase' }}>
             <span style={{ color: 'var(--black)', fontFamily: 'var(--font-display)', fontSize: 22, marginRight: 6 }}>5</span>
             items · 1 capsule
