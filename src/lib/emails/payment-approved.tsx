@@ -1,23 +1,25 @@
-import { Html, Head, Body, Container, Heading, Text, Link } from "@react-email/components";
+import { EmailButton, EmailDivider, EmailHeading, EmailLayout, EmailText } from "./email-layout";
 
 export default function PaymentApprovedEmail(params: {
   customerName: string;
   orderId: string;
 }) {
   return (
-    <Html>
-      <Head />
-      <Body style={{ fontFamily: 'sans-serif', backgroundColor: '#f9f9f9' }}>
-        <Container style={{ maxWidth: '600px', margin: 'auto', padding: '24px' }}>
-          <Heading>Payment Approved</Heading>
-          <Text>Hi {params.customerName}, your payment for order <strong>#{params.orderId.slice(0, 8)}</strong> has been approved.</Text>
-          <Text>We are now processing your order and will notify you once it has been shipped.</Text>
-          <Text>
-            <Link href={`https://ppij-shop.de/account/orders/${params.orderId}`}>View your order</Link>
-          </Text>
-          <Text>Thank you for shopping with us!</Text>
-        </Container>
-      </Body>
-    </Html>
-  )
+    <EmailLayout preview="Your payment has been approved">
+      <EmailHeading>Payment Approved</EmailHeading>
+      <EmailText>
+        Hi {params.customerName}, your payment for order <strong>#{params.orderId.slice(0, 8)}</strong> has been approved.
+      </EmailText>
+      <EmailText>
+        We are now processing your order and will notify you once it has been shipped.
+      </EmailText>
+      <EmailDivider />
+      <EmailButton href={`https://ppij-shop.de/account/orders/${params.orderId}`}>
+        View Order
+      </EmailButton>
+      <EmailText style={{ textAlign: "center", marginTop: "16px" }}>
+        Thank you for shopping with us!
+      </EmailText>
+    </EmailLayout>
+  );
 }
