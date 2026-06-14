@@ -208,7 +208,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
             onTouchStart={(event) => setTouchStartX(event.touches[0].clientX)}
             onTouchCancel={() => setTouchStartX(null)}
             onTouchEnd={handleTouchEnd}
-            style={{ background: 'var(--cream-2)', position: 'relative', aspectRatio: '4/5', overflow: 'hidden', touchAction: 'pan-y' }}
+            style={{ background: 'var(--cream-2)', position: 'relative', overflow: 'hidden', touchAction: 'pan-y' }}
           >
             <div
               style={{
