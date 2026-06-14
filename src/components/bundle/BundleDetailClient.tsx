@@ -44,9 +44,13 @@ export default function BundleDetailClient({ bundle }: { bundle: BundleWithProdu
     
     if (isComplete && isSignedIn) {
       const variantIds = Object.values(selectedVariants);
-      await addBundleToCartAction(bundle.id, variantIds);
-      await refreshCart();
-      showToast(`✦ added bundle · ${bundle.name}`);
+      try {
+        await addBundleToCartAction(bundle.id, variantIds);
+        await refreshCart();
+        showToast(`✦ added bundle · ${bundle.name}`);
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : 'Could not add bundle to cart.');
+      }
     } else if (isComplete) {
       showToast('Please sign in before adding items to your cart.');
     } else {
