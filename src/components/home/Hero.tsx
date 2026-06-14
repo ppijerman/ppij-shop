@@ -12,7 +12,7 @@ export default function Hero() {
   return (
     <section style={{ background: 'var(--cream)', padding: '24px 28px 0', position: 'relative' }}>
       <div style={{ maxWidth: 1440, margin: '0 auto' }}>
-        <div style={{ position: 'relative', overflow: 'hidden', height: 'clamp(440px, 64vh, 600px)', background: '#0a0a0a' }}>
+        <div style={{ position: 'relative', overflow: 'hidden', height: 'clamp(600px, 72vh, 700px)', background: '#0a0a0a' }}>
           <Image
             src="/assets/v4/home-img.jpg"
             alt="PPI Jerman Merch Drop"
