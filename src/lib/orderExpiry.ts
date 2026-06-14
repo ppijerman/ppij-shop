@@ -58,11 +58,20 @@ export async function expireOverdueAwaitingPaymentOrders(
 
       UNION ALL
 
+      SELECT unnest(oi.selected_variant_ids) AS variant_id, oi.quantity
+      FROM order_items oi
+      WHERE oi.order_id = ANY($1::uuid[])
+        AND oi.bundle_id IS NOT NULL
+        AND cardinality(oi.selected_variant_ids) > 0
+
+      UNION ALL
+
       SELECT bi.variant_id, oi.quantity
       FROM order_items oi
       JOIN bundle_items bi ON bi.bundle_id = oi.bundle_id
       WHERE oi.order_id = ANY($1::uuid[])
         AND oi.bundle_id IS NOT NULL
+        AND (oi.selected_variant_ids IS NULL OR cardinality(oi.selected_variant_ids) = 0)
     ) reserved_items
     GROUP BY variant_id
     `,

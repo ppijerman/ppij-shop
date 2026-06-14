@@ -6,6 +6,8 @@ import PaymentApprovedEmail from "../emails/payment-approved";
 import PaymentProofUploadedEmail from "../emails/payment-proof-uploaded";
 import PaymentRejectedEmail from "../emails/payment-rejected";
 import OrderShippedEmail from "../emails/order-shipped";
+import AdminPaymentProofReceivedEmail from "../emails/admin-payment-proof-received";
+import PickupLocationSetEmail from "../emails/pickup-location-set";
 
 export async function SendOrderConfirmationEmail(params: {
   to: string;
@@ -148,6 +150,69 @@ export async function SendPaymentRejectedEmail(params: {
   if (error) {
     console.error("Resend error: ", error);
     throw new Error("Failed to send payment rejected email");
+  }
+
+  return data;
+}
+
+export async function SendAdminPaymentProofNotificationEmail(params: {
+  customerName: string;
+  customerEmail: string;
+  orderId: string;
+  items: { name: string; quantity: number; price: string }[];
+  itemsTotal: string;
+  shippingCost: string;
+  total: string;
+}) {
+  const adminEmail = process.env.ADMIN_KK_EMAIL;
+  if (!adminEmail) {
+    console.warn('ADMIN_KK_EMAIL is not set, skipping admin notification');
+    return;
+  }
+
+  const { data, error } = await getResend().emails.send({
+    from: getFromEmail(),
+    to: adminEmail,
+    subject: `Payment Proof Submitted - Order #${params.orderId.substring(0, 8)}`,
+    react: AdminPaymentProofReceivedEmail({
+      customerName: params.customerName,
+      customerEmail: params.customerEmail,
+      orderId: params.orderId.substring(0, 8),
+      items: params.items,
+      itemsTotal: params.itemsTotal,
+      shippingCost: params.shippingCost,
+      total: params.total,
+    }),
+  });
+
+  if (error) {
+    console.error("Resend error: ", error);
+    throw new Error("Failed to send admin payment proof notification email");
+  }
+
+  return data;
+}
+
+export async function SendPickupLocationSetEmail(params: {
+  to: string;
+  customerName: string;
+  orderId: string;
+  pickupDetails: string;
+}) {
+  const { data, error } = await getResend().emails.send({
+    from: getFromEmail(),
+    to: params.to,
+    subject: `Pickup Location Ready - Order #${params.orderId.substring(0, 8)}`,
+    react: PickupLocationSetEmail({
+      customerName: params.customerName,
+      orderId: params.orderId.substring(0, 8),
+      pickupDetails: params.pickupDetails,
+    }),
+  });
+
+  if (error) {
+    console.error("Resend error: ", error);
+    throw new Error("Failed to send pickup location email");
   }
 
   return data;

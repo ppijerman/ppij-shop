@@ -100,6 +100,11 @@ export async function getOrderItems(orderId: string) {
         JOIN product_variants pv ON bi.variant_id = pv.id
         JOIN products p ON pv.product_id = p.id
         WHERE bi.bundle_id = oi.bundle_id
+          AND (
+            oi.selected_variant_ids IS NULL
+            OR array_length(oi.selected_variant_ids, 1) IS NULL
+            OR bi.variant_id = ANY(oi.selected_variant_ids)
+          )
       ) as bundle_products
     FROM order_items oi
     LEFT JOIN product_variants pv ON oi.variant_id = pv.id

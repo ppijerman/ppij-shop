@@ -6,7 +6,7 @@ import { requireOrderAdmin } from '@/lib/auth';
 import { getCurrentDbUserOrThrow } from '@/lib/users';
 import { expireOverdueAwaitingPaymentOrders, getPaymentExpiresAtExpression } from '@/lib/orderExpiry';
 import type { DeliveryAddress, PaymentMethod } from '@/types';
-import { SendOrderConfirmationEmail, SendOrderCancelledEmail, SendOrderExpiredEmail, SendPaymentApprovedEmail, SendPaymentProofUploadedEmail, SendPaymentRejectedEmail, SendOrderShippedEmail } from '@/lib/actions/send-order-email';
+import { SendOrderConfirmationEmail, SendOrderCancelledEmail, SendOrderExpiredEmail, SendPaymentApprovedEmail, SendPaymentProofUploadedEmail, SendPaymentRejectedEmail, SendOrderShippedEmail, SendAdminPaymentProofNotificationEmail, SendPickupLocationSetEmail } from '@/lib/actions/send-order-email';
 import { createParcel, getShippingMethods, getParcel } from '@/lib/sendcloud';
 import { FREE_SHIPPING_THRESHOLD } from '@/lib/constants';
 
@@ -53,13 +53,18 @@ async function getCartWeightG(userId: string): Promise<number> {
     FROM cart_items ci
     LEFT JOIN product_variants pv ON pv.id = ci.variant_id
     LEFT JOIN products p ON p.id = pv.product_id
-    LEFT JOIN (
-      SELECT bi.bundle_id, SUM(bp.weight_g) AS bundle_weight_g
+    LEFT JOIN LATERAL (
+      SELECT SUM(bp.weight_g) AS bundle_weight_g
       FROM bundle_items bi
       JOIN product_variants bpv ON bpv.id = bi.variant_id
       JOIN products bp ON bp.id = bpv.product_id
-      GROUP BY bi.bundle_id
-    ) bw ON bw.bundle_id = ci.bundle_id
+      WHERE bi.bundle_id = ci.bundle_id
+        AND (
+          ci.selected_variant_ids IS NULL
+          OR cardinality(ci.selected_variant_ids) = 0
+          OR bi.variant_id = ANY(ci.selected_variant_ids)
+        )
+    ) bw ON ci.bundle_id IS NOT NULL
     WHERE ci.user_id = $1
     `,
     [userId],
@@ -181,6 +186,7 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
         ci.variant_id,
         ci.bundle_id,
         ci.quantity,
+        ci.selected_variant_ids,
         pv.price AS variant_price,
         pv.sku AS variant_sku,
         p.name AS product_name,
@@ -229,12 +235,20 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
       if (item.variant_id) {
         requiredByVariant.set(item.variant_id, (requiredByVariant.get(item.variant_id) ?? 0) + quantity);
       } else if (item.bundle_id) {
-        const componentVariantIds = componentsByBundle.get(item.bundle_id) ?? [];
-        if (componentVariantIds.length === 0) {
+        const bundleComponentIds = componentsByBundle.get(item.bundle_id) ?? [];
+        const selectedIds: string[] = Array.isArray(item.selected_variant_ids) && item.selected_variant_ids.length > 0
+          ? item.selected_variant_ids
+          : bundleComponentIds;
+        if (selectedIds.length === 0) {
           return { ok: false, code: 'VALIDATION_ERROR', message: `${item.bundle_name} is not configured for checkout.` };
         }
 
-        for (const variantId of componentVariantIds) {
+        const bundleComponentSet = new Set(bundleComponentIds);
+        if (selectedIds.some(id => !bundleComponentSet.has(id))) {
+          return { ok: false, code: 'VALIDATION_ERROR', message: `${item.bundle_name} contains an invalid variant selection.` };
+        }
+
+        for (const variantId of selectedIds) {
           requiredByVariant.set(variantId, (requiredByVariant.get(variantId) ?? 0) + quantity);
         }
       }
@@ -314,9 +328,10 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
           quantity,
           price_at_purchase,
           product_name_snapshot,
-          sku_snapshot
+          sku_snapshot,
+          selected_variant_ids
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         `,
         [
           orderId,
@@ -326,6 +341,7 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
           Number(item.variant_price ?? item.bundle_price ?? 0),
           isBundle ? item.bundle_name : item.product_name,
           isBundle ? item.bundle_sku : item.variant_sku,
+          isBundle ? (item.selected_variant_ids ?? []) : null,
         ],
       );
     }
@@ -491,6 +507,48 @@ export async function uploadPaymentProofAction(formData: FormData): Promise<Simp
     }
   }
 
+  if (result.ok && user.email) {
+    try {
+      const orderDetailsRes = await db.query(
+        `
+        SELECT
+          o.total_price,
+          o.shipping_cost,
+          oi.quantity,
+          oi.price_at_purchase,
+          oi.product_name_snapshot AS name
+        FROM orders o
+        JOIN order_items oi ON oi.order_id = o.id
+        WHERE o.id = $1
+        `,
+        [orderId],
+      );
+      const rows = orderDetailsRes.rows;
+      if (rows.length > 0) {
+        const shippingCost = Number(rows[0].shipping_cost ?? 0);
+        const total = Number(rows[0].total_price ?? 0);
+        const itemsTotal = total - shippingCost;
+        const items = rows.map((r: any) => ({
+          name: r.name,
+          quantity: Number(r.quantity),
+          price: `€${Number(r.price_at_purchase).toFixed(2)}`,
+        }));
+
+        await SendAdminPaymentProofNotificationEmail({
+          customerName: user.first_name,
+          customerEmail: user.email,
+          orderId,
+          items,
+          itemsTotal: `€${itemsTotal.toFixed(2)}`,
+          shippingCost: `€${shippingCost.toFixed(2)}`,
+          total: `€${total.toFixed(2)}`,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to send admin payment proof notification email: ", err);
+    }
+  }
+
   return result;
 }
 
@@ -526,10 +584,18 @@ export async function cancelOrderByUserAction(orderId: string): Promise<SimpleAc
 
         UNION ALL
 
+        SELECT unnest(oi.selected_variant_ids) AS variant_id, oi.quantity
+        FROM order_items oi
+        WHERE oi.order_id = $1 AND oi.bundle_id IS NOT NULL
+          AND cardinality(oi.selected_variant_ids) > 0
+
+        UNION ALL
+
         SELECT bi.variant_id, oi.quantity
         FROM order_items oi
         JOIN bundle_items bi ON bi.bundle_id = oi.bundle_id
         WHERE oi.order_id = $1 AND oi.bundle_id IS NOT NULL
+          AND (oi.selected_variant_ids IS NULL OR cardinality(oi.selected_variant_ids) = 0)
       ) reserved_items
       GROUP BY variant_id
       `,
@@ -655,10 +721,18 @@ export async function updateOrderStatusAction(orderId: string, status: string, c
 
           UNION ALL
 
+          SELECT unnest(oi.selected_variant_ids) AS variant_id, oi.quantity
+          FROM order_items oi
+          WHERE oi.order_id = $1 AND oi.bundle_id IS NOT NULL
+            AND cardinality(oi.selected_variant_ids) > 0
+
+          UNION ALL
+
           SELECT bi.variant_id, oi.quantity
           FROM order_items oi
           JOIN bundle_items bi ON bi.bundle_id = oi.bundle_id
           WHERE oi.order_id = $1 AND oi.bundle_id IS NOT NULL
+            AND (oi.selected_variant_ids IS NULL OR cardinality(oi.selected_variant_ids) = 0)
         ) reserved_items
         GROUP BY variant_id
         `,
@@ -759,8 +833,10 @@ export async function updatePickupDetailsAction(
     return { ok: false, message: 'Pickup details must be 500 characters or fewer.' };
   }
 
-  return withTransaction(async (query) => {
-    const result = await query(
+  const buyerRef = { value: null as { email: string; first_name: string } | null };
+
+  const result = await withTransaction(async (query) => {
+    const updateResult = await query(
       `
       UPDATE orders
       SET pickup_details = $2
@@ -770,11 +846,11 @@ export async function updatePickupDetailsAction(
       [orderId, details],
     );
 
-    if (result.rowCount === 0) {
+    if (updateResult.rowCount === 0) {
       return { ok: false, message: 'Order not found or not a pickup order.' };
     }
 
-    const order = result.rows[0];
+    const order = updateResult.rows[0];
 
     await query(
       `
@@ -784,12 +860,35 @@ export async function updatePickupDetailsAction(
       [orderId, order.status, `Pickup details updated: ${truncateLogValue(details, 120)}`, admin.id],
     );
 
-    revalidatePath(`/admin/kk/orders/${orderId}`);
-    revalidatePath(`/admin/it/orders/${orderId}`);
-    revalidatePath(`/account/orders/${orderId}`);
+    const buyerResult = await query(
+      `SELECT u.email, u.first_name FROM orders o JOIN users u ON u.id = o.user_id WHERE o.id = $1`,
+      [orderId],
+    );
+    buyerRef.value = buyerResult.rows[0] ?? null;
 
     return { ok: true, message: 'Pickup details saved.' };
   });
+
+  if (result.ok) {
+    revalidatePath(`/admin/kk/orders/${orderId}`);
+    revalidatePath(`/admin/it/orders/${orderId}`);
+    revalidatePath(`/account/orders/${orderId}`);
+  }
+
+  if (result.ok && buyerRef.value?.email) {
+    try {
+      await SendPickupLocationSetEmail({
+        to: buyerRef.value.email,
+        customerName: buyerRef.value.first_name,
+        orderId,
+        pickupDetails: details,
+      });
+    } catch (err) {
+      console.error('Failed to send pickup location email:', err);
+    }
+  }
+
+  return result;
 }
 
 export async function updateShippingTrackingNumberAction(
@@ -919,13 +1018,18 @@ export async function approvePaymentAction(orderId: string): Promise<SimpleActio
       LEFT JOIN order_items oi ON oi.order_id = o.id
       LEFT JOIN product_variants pv ON pv.id = oi.variant_id
       LEFT JOIN products p ON p.id = pv.product_id
-      LEFT JOIN (
-        SELECT bi.bundle_id, SUM(bp.weight_g) AS bundle_weight_g
+      LEFT JOIN LATERAL (
+        SELECT SUM(bp.weight_g) AS bundle_weight_g
         FROM bundle_items bi
         JOIN product_variants bpv ON bpv.id = bi.variant_id
         JOIN products bp ON bp.id = bpv.product_id
-        GROUP BY bi.bundle_id
-      ) bw ON bw.bundle_id = oi.bundle_id
+        WHERE bi.bundle_id = oi.bundle_id
+          AND (
+            oi.selected_variant_ids IS NULL
+            OR cardinality(oi.selected_variant_ids) = 0
+            OR bi.variant_id = ANY(oi.selected_variant_ids)
+          )
+      ) bw ON oi.bundle_id IS NOT NULL
       WHERE o.id = $1
       GROUP BY o.id, o.delivery_type, o.delivery_address, o.shipping_method_id, u.email, u.first_name, u.last_name
       `,
