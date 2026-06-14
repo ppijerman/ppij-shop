@@ -16,10 +16,8 @@ interface ProductDetailPageProps {
 }
 
 const TABS = [
-  ['description', 'Detail Cerita'],
-  ['specs', 'Spesifikasi'],
-  ['care', 'Cara Merawat'],
-  ['shipping', 'Pengiriman'],
+  ['description', 'Story Details'],
+  ['care', 'Care Instructions'],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
@@ -172,32 +170,15 @@ export default function ProductDetailPage({
     product.category === 'TOTEBAG'
       ? [
           ['Material', 'Heavy canvas 400 gsm'],
-          ['Pencucian', 'Cuci tangan, jangan diperas'],
-          ['Pengeringan', 'Angin-anginkan, jangan dijemur langsung'],
-          ['Penyetrikaan', 'Setrika sedang, hindari area print'],
+          ['Washing', 'Hand wash only, do not wring'],
+          ['Drying', 'Air dry, avoid direct sunlight'],
+          ['Ironing', 'Medium heat, avoid print area'],
         ]
       : [
           ['Material', 'Cotton combed 30s ringspun, 220 gsm'],
-          ['Pencucian', 'Cuci dengan air dingin, balik luar dalam'],
-          ['Pengeringan', 'Jemur terbalik, hindari sinar matahari langsung'],
-          ['Penyetrikaan', 'Setrika sedang, hindari area print'],
-        ];
-
-  const specs: [string, string][] =
-    product.category === 'TOTEBAG'
-      ? [
-          ['Dimensi', '38 × 42 cm'],
-          ['Strap', '60 cm reinforced'],
-          ['Berat', '± 280 gram'],
-          ['Kapasitas', '~12 liter'],
-          ['Print', 'Screen print water-based'],
-        ]
-      : [
-          ['Fit', 'Oversized boxy'],
-          ['Material', '100% Cotton Combed 30s'],
-          ['Berat fabric', '220 gsm heavyweight'],
-          ['Print', 'DTG / Screen print'],
-          ['Origin', 'Made in EU'],
+          ['Washing', 'Cold water wash, turn inside out'],
+          ['Drying', 'Hang dry inside out, avoid direct sunlight'],
+          ['Ironing', 'Medium heat, avoid print area'],
         ];
 
   return (
@@ -489,18 +470,6 @@ export default function ProductDetailPage({
             )}
           </div>
 
-          <p
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 14.5,
-              color: 'var(--ink)',
-              lineHeight: 1.75,
-              marginTop: 18,
-            }}
-          >
-            {product.desc}
-          </p>
-
           <div style={{ marginTop: 22 }}>
             <div
               style={{
@@ -512,7 +481,7 @@ export default function ProductDetailPage({
                 marginBottom: 10,
               }}
             >
-              warna · <span style={{ color: 'var(--black)' }}>{selColor?.name || '...'}</span>
+              color · <span style={{ color: 'var(--black)' }}>{selColor?.name || '...'}</span>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               {uniqueColors.map((c) => (
@@ -757,7 +726,7 @@ export default function ProductDetailPage({
                   lineHeight: 1.2,
                 }}
               >
-                Cerita di balik {product.name}.
+                The story behind {product.name}.
               </h3>
               <p
                 style={{
@@ -768,68 +737,9 @@ export default function ProductDetailPage({
                   marginBottom: 14,
                 }}
               >
-                {product.desc} Setiap potongan kain dipilih dengan cermat — kami percaya
-                merch yang baik adalah yang bisa dipakai sehari-hari, kuat, dan nyaman.
-              </p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 15,
-                  color: 'var(--ink)',
-                  lineHeight: 1.85,
-                }}
-              >
-                Setiap pembelian mendukung kegiatan PPI Jerman — acara budaya, mentoring
-                mahasiswa baru, dan inisiatif komunitas pelajar Indonesia di seluruh
-                Deutschland.
+                {product.desc}
               </p>
             </div>
-          )}
-          {activeTab === 'specs' && (
-            <ul
-              style={{
-                listStyle: 'none',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 0,
-              }}
-            >
-              {specs.map(([k, v]) => (
-                <li
-                  key={k}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    padding: '14px 0',
-                    borderBottom: '1px solid var(--line)',
-                  }}
-                >
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 11,
-                      letterSpacing: '0.18em',
-                      textTransform: 'uppercase',
-                      color: 'var(--muted)',
-                      minWidth: 140,
-                    }}
-                  >
-                    {k}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 14,
-                      color: 'var(--black)',
-                      fontWeight: 500,
-                      textAlign: 'right',
-                    }}
-                  >
-                    {v}
-                  </span>
-                </li>
-              ))}
-            </ul>
           )}
           {activeTab === 'care' && (
             <ul
@@ -870,44 +780,6 @@ export default function ProductDetailPage({
                 </li>
               ))}
             </ul>
-          )}
-          {activeTab === 'shipping' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30 }}>
-              <div>
-                <div
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    letterSpacing: '0.22em',
-                    textTransform: 'uppercase',
-                    color: 'var(--accent-deep)',
-                    marginBottom: 8,
-                  }}
-                >
-                  — dalam jerman
-                </div>
-                <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink)' }}>
-                  3–5 hari kerja via DHL Express. Gratis ongkir untuk semua pesanan.
-                </p>
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    letterSpacing: '0.22em',
-                    textTransform: 'uppercase',
-                    color: 'var(--accent-deep)',
-                    marginBottom: 8,
-                  }}
-                >
-                  — europa
-                </div>
-                <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink)' }}>
-                  5–10 hari kerja ke seluruh negara EU. Gratis ongkir di atas €35.
-                </p>
-              </div>
-            </div>
           )}
         </div>
       </div>
