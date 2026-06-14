@@ -1,27 +1,25 @@
-import {
-  Body, Container, Head, Heading, Html, Link, Text,
-} from '@react-email/components';
+import { EmailButton, EmailDivider, EmailHeading, EmailLayout, EmailText } from "./email-layout";
 
 export default function PaymentRejectedEmail(params: {
   customerName: string;
-  orderId: string
+  orderId: string;
 }) {
   return (
-    <Html>
-      <Head />
-      <Body style={{ fontFamily: 'sans-serif', backgroundColor: '#f9f9f9' }}>
-      <Container style={{ maxWidth: '600px', margin: 'auto', padding: '24px' }}>
-          <Heading>Payment Proof Not Accepted</Heading>
-          <Text>Hi {params.customerName}, unfortunately your payment proof for order <strong>#{params.orderId.slice(0, 8)}</strong> could not be accepted.</Text>
-          <Text>
-            <strong>You have 30 minutes to upload a new proof</strong> before the order is cancelled.
-          </Text>
-          <Text>
-            <Link href={`https://ppij-shop.de/account/orders/${params.orderId}`}>Upload new proof now</Link>
-          </Text>
-          <Text>If you have any questions, please contact us directly.</Text>
-        </Container>
-      </Body>
-    </Html>
-  )
+    <EmailLayout preview="Action required: your payment proof was not accepted">
+      <EmailHeading danger>Payment Proof Not Accepted</EmailHeading>
+      <EmailText>
+        Hi {params.customerName}, unfortunately your payment proof for order <strong>#{params.orderId.slice(0, 8)}</strong> could not be accepted.
+      </EmailText>
+      <EmailText style={{ fontWeight: "700", color: "#b91c1c" }}>
+        You have 30 minutes to upload a new proof before the order is cancelled.
+      </EmailText>
+      <EmailDivider />
+      <EmailButton href={`https://ppij-shop.de/account/orders/${params.orderId}`} danger>
+        Upload New Proof Now
+      </EmailButton>
+      <EmailText style={{ textAlign: "center", marginTop: "16px" }}>
+        If you have any questions, please contact us directly.
+      </EmailText>
+    </EmailLayout>
+  );
 }
