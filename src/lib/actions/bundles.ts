@@ -2,6 +2,7 @@
 
 import { requireAdmin } from '../auth';
 import { db, withTransaction } from '../db';
+import { revalidatePath } from 'next/cache';
 import { generateSlug } from '../utils';
 
 export interface BundleData {
@@ -116,8 +117,25 @@ export async function updateBundle(bundleId: string, bundleData: BundleData) {
   });
 }
 
+export async function toggleBundleActiveAction(bundleId: string, isActive: boolean): Promise<void> {
+  await requireAdmin();
+  await db.query(`UPDATE bundles SET is_active = $2 WHERE id = $1`, [bundleId, isActive]);
+  revalidatePath('/catalog');
+  revalidatePath('/admin/kk/bundles');
+  revalidatePath('/admin/it/bundles');
+}
+
 export async function deleteBundle(bundleId: string) {
   await requireAdmin();
+
+  const hasOrders = await db.query(
+    `SELECT 1 FROM order_items WHERE bundle_id = $1 LIMIT 1`,
+    [bundleId],
+  );
+  if (hasOrders.rows.length > 0) {
+    throw new Error('This bundle has existing orders and cannot be deleted.');
+  }
+
   await db.query(
     `DELETE FROM bundles WHERE id = $1`,
     [bundleId]

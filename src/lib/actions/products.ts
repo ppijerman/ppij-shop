@@ -1,6 +1,7 @@
 'use server';
 
 import { db, withTransaction } from '../db';
+import { revalidatePath } from 'next/cache';
 import { FitType, ProductData } from '@/types';
 import { requireAdmin } from '../auth';
 
@@ -182,8 +183,27 @@ export async function updateProduct(id: string, productData: ProductData) {
 
 }
 
+export async function toggleProductActiveAction(productId: string, isActive: boolean): Promise<void> {
+  await requireAdmin();
+  await db.query(`UPDATE products SET is_active = $2 WHERE id = $1`, [productId, isActive]);
+  revalidatePath('/catalog');
+  revalidatePath('/admin/kk/products');
+  revalidatePath('/admin/it/products');
+}
+
 export async function deleteProduct(productId: string) {
   await requireAdmin();
+
+  const hasOrders = await db.query(
+    `SELECT 1 FROM order_items oi
+     JOIN product_variants pv ON pv.id = oi.variant_id
+     WHERE pv.product_id = $1 LIMIT 1`,
+    [productId],
+  );
+  if (hasOrders.rows.length > 0) {
+    throw new Error('This product has existing orders and cannot be deleted. Deactivate it instead.');
+  }
+
   await db.query(
     `DELETE FROM products WHERE id = $1`,
     [productId]
