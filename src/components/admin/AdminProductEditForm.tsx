@@ -15,9 +15,13 @@ export default function AdminProductEditForm({ initialData, updateProduct }: Adm
   const { showToast } = useToast();
 
   const handleSubmit = async (formData: FormData) => {
-    await updateProduct(formData);
-    showToast('Product updated successfully!');
-    router.push(`/admin/${role}/products`);
+    try {
+      await updateProduct(formData);
+      showToast('Product updated successfully!');
+      router.push(`/admin/${role}/products`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to save product.');
+    }
   };
 
   return (
