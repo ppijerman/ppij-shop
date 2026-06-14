@@ -238,6 +238,18 @@ svg {
   }
 }
 
+/* ---- Quick view modal ------------------------------------------------- */
+@media (max-width: 860px) {
+  .qv-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+@media (max-width: 560px) {
+  .qv-image {
+    aspect-ratio: 1 / 1 !important;
+  }
+}
+
 /* ---- Product detail --------------------------------------------------- */
 @media (max-width: 860px) {
   .pdp-grid {
