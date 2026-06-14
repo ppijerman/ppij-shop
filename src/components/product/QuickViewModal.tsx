@@ -17,6 +17,35 @@ const SIZE_ORDER = ['S', 'M', 'L', 'XL', 'XXL', 'ONE SIZE'];
 
 export default function QuickViewModal({ product, onClose }: QuickViewModalProps) {
   const variants = product.variants || [];
+  const imageSlides = useMemo(() => {
+    const slides: { id: string; url: string }[] = [];
+    const seen = new Set<string>();
+
+    const addSlide = (url: string | null | undefined, id: string) => {
+      if (!url || seen.has(url)) return;
+      seen.add(url);
+      slides.push({ id, url });
+    };
+
+    addSlide(product.primary_image, 'primary');
+    (product.images ?? []).forEach((image, index) => {
+      addSlide(image.url, image.id ?? `image-${index}`);
+    });
+
+    if (slides.length === 0) {
+      slides.push({ id: 'fallback', url: '/editorial-color.jpeg' });
+    }
+
+    return slides;
+  }, [product.images, product.primary_image]);
+
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const hasMultipleSlides = imageSlides.length > 1;
+
+  useEffect(() => {
+    setActiveSlide(0);
+  }, [product.id, imageSlides.length]);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -124,6 +153,30 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
     }
   }, [remainingStock]);
 
+  const goToPreviousSlide = () => {
+    if (!hasMultipleSlides) return;
+    setActiveSlide((current) => (current - 1 + imageSlides.length) % imageSlides.length);
+  };
+
+  const goToNextSlide = () => {
+    if (!hasMultipleSlides) return;
+    setActiveSlide((current) => (current + 1) % imageSlides.length);
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (touchStartX === null || !hasMultipleSlides) return;
+
+    const deltaX = event.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(deltaX) > 45) {
+      if (deltaX < 0) {
+        goToNextSlide();
+      } else {
+        goToPreviousSlide();
+      }
+    }
+    setTouchStartX(null);
+  };
+
   const handleAdd = async () => {
     if (!currentVariant || isSoldOut || cannotAddMore) {
       showToast(isSoldOut ? 'This item is sold out.' : 'You already have all available stock in your cart.');
@@ -150,13 +203,74 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
         onClick={e => e.stopPropagation()}
       >
         <div className="qv-grid" style={{ display: 'grid', gridTemplateColumns: '1.15fr 0.85fr' }}>
-          <div className="qv-image" style={{ background: 'var(--cream-2)', position: 'relative', aspectRatio: '4/5', overflow: 'hidden' }}>
-            <img
-              src={product.primary_image ?? '/editorial-color.jpeg'}
-              alt={product.name}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
-            />
+          <div
+            className="qv-image"
+            onTouchStart={(event) => setTouchStartX(event.touches[0].clientX)}
+            onTouchCancel={() => setTouchStartX(null)}
+            onTouchEnd={handleTouchEnd}
+            style={{ background: 'var(--cream-2)', position: 'relative', aspectRatio: '4/5', overflow: 'hidden', touchAction: 'pan-y' }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                width: '100%',
+                height: '100%',
+                transform: `translateX(-${activeSlide * 100}%)`,
+                transition: 'transform 0.36s cubic-bezier(0.22, 0.61, 0.36, 1)',
+                willChange: 'transform',
+              }}
+            >
+              {imageSlides.map((slide, index) => (
+                <img
+                  key={slide.id}
+                  src={slide.url}
+                  alt={`${product.name} view ${index + 1}`}
+                  draggable={false}
+                  style={{
+                    flex: '0 0 100%',
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    objectPosition: 'center top',
+                    display: 'block',
+                    userSelect: 'none',
+                  }}
+                />
+              ))}
+            </div>
             {product.tag && <div style={{ position: 'absolute', top: 18, right: 18, background: 'var(--accent)', color: '#fff', padding: '5px 12px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase' }}>{product.tag}</div>}
+            {hasMultipleSlides && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Previous product image"
+                  onClick={goToPreviousSlide}
+                  style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', width: 38, height: 38, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.75)', background: 'rgba(14,14,14,0.42)', color: 'var(--cream)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(6px)' }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next product image"
+                  onClick={goToNextSlide}
+                  style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', width: 38, height: 38, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.75)', background: 'rgba(14,14,14,0.42)', color: 'var(--cream)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(6px)' }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                </button>
+                <div style={{ position: 'absolute', left: 0, right: 0, bottom: 16, display: 'flex', justifyContent: 'center', gap: 7 }}>
+                  {imageSlides.map((slide, index) => (
+                    <button
+                      key={slide.id}
+                      type="button"
+                      aria-label={`Show product image ${index + 1}`}
+                      aria-current={activeSlide === index}
+                      onClick={() => setActiveSlide(index)}
+                      style={{ width: activeSlide === index ? 22 : 7, height: 7, borderRadius: 999, border: 'none', background: activeSlide === index ? 'var(--cream)' : 'rgba(255,255,255,0.55)', cursor: 'pointer', transition: 'width 0.18s ease, background 0.18s ease' }}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 18, position: 'relative' }}>
