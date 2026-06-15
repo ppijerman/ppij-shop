@@ -177,6 +177,7 @@ export default function SettingsForm({ user }: { user: DbUser }) {
               type="text"
               value={nameData.lastName}
               onChange={e => setNameData(prev => ({ ...prev, lastName: e.target.value }))}
+              required
               style={getFieldStyle(nameData.lastName !== initialLastName)}
             />
           </div>

@@ -6,7 +6,7 @@ import { requireOrderAdmin } from '@/lib/auth';
 import { getCurrentDbUserOrThrow } from '@/lib/users';
 import { expireOverdueAwaitingPaymentOrders, getPaymentExpiresAtExpression } from '@/lib/orderExpiry';
 import type { DeliveryAddress, PaymentMethod } from '@/types';
-import { SendOrderConfirmationEmail, SendOrderCancelledEmail, SendOrderExpiredEmail, SendPaymentApprovedEmail, SendPaymentProofUploadedEmail, SendPaymentRejectedEmail, SendOrderShippedEmail, SendAdminPaymentProofNotificationEmail, SendPickupLocationSetEmail } from '@/lib/actions/send-order-email';
+import { SendOrderConfirmationEmail, SendOrderCancelledEmail, SendOrderExpiredEmail, SendOrderDoneEmail, SendPaymentApprovedEmail, SendPaymentProofUploadedEmail, SendPaymentRejectedEmail, SendOrderShippedEmail, SendAdminPaymentProofNotificationEmail, SendPickupLocationSetEmail } from '@/lib/actions/send-order-email';
 import { createParcel, getShippingMethods, getParcel } from '@/lib/sendcloud';
 import { FREE_SHIPPING_THRESHOLD } from '@/lib/constants';
 
@@ -651,6 +651,14 @@ export async function updateOrderStatusAction(orderId: string, status: string, c
   const buyerRef = { value: null as { email: string; first_name: string } | null };
 
   const result = await withTransaction(async (query) => {
+    if (status === 'DONE') {
+      const buyerResult = await query(
+        `SELECT u.email, u.first_name FROM orders o JOIN users u ON u.id = o.user_id WHERE o.id = $1`,
+        [orderId],
+      );
+      buyerRef.value = buyerResult.rows[0] ?? null;
+    }
+
     if (status === 'SHIPPED') {
       const orderResult = await query(
         `
@@ -757,6 +765,18 @@ export async function updateOrderStatusAction(orderId: string, status: string, c
     revalidatePath(`/admin/kk/orders/${orderId}`);
     revalidatePath(`/admin/it/orders/${orderId}`);
     revalidatePath(`/account/orders/${orderId}`);
+  }
+
+  if (result.ok && status === 'DONE' && buyerRef.value?.email) {
+    try {
+      await SendOrderDoneEmail({
+        to: buyerRef.value.email,
+        customerName: buyerRef.value.first_name,
+        orderId,
+      });
+    } catch (err) {
+      console.error('Failed to send order done email:', err);
+    }
   }
 
   if (result.ok && status === 'CANCELLED' && buyerRef.value?.email) {
