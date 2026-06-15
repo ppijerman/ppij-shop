@@ -17,7 +17,7 @@ const getFieldStyle = (isChanged: boolean, isEmpty = false) => ({
   backgroundColor: isEmpty ? '#fef2f2' : isChanged ? '#fff7ed' : 'white',
 });
 
-const DEFAULT_SIZES = ['S', 'M', 'L', 'XL', 'XXL', 'ONE SIZE'];
+const DEFAULT_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 
 export default function ProductForm({ initialData, action }: ProductFormProps) {
   const variants = initialData?.variants || [];
