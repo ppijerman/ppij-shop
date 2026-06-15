@@ -14,7 +14,7 @@ export default function PaymentRejectedEmail(params: {
         You have 30 minutes to upload a new proof before the order is cancelled.
       </EmailText>
       <EmailDivider />
-      <EmailButton href={`https://ppij-shop.de/account/orders/${params.orderId}`} danger>
+      <EmailButton href={`https://shop.ppijerman.org/account/orders/${params.orderId}`} danger>
         Upload New Proof Now
       </EmailButton>
       <EmailText style={{ textAlign: "center", marginTop: "16px" }}>

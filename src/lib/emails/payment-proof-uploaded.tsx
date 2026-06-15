@@ -14,7 +14,7 @@ export default function PaymentProofUploadedEmail(params: {
         Our team will review it within 1–2 business days. You will receive another email once it is approved.
       </EmailText>
       <EmailDivider />
-      <EmailButton href={`https://ppij-shop.de/account/orders/${params.orderId}`}>
+      <EmailButton href={`https://shop.ppijerman.org/account/orders/${params.orderId}`}>
         View Order
       </EmailButton>
       <EmailText style={{ textAlign: "center", marginTop: "16px" }}>

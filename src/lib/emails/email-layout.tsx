@@ -80,7 +80,7 @@ export function EmailLayout({ children, preview }: { children: ReactNode; previe
           {/* Footer */}
           <Section style={{ textAlign: "center", padding: "24px 0 8px" }}>
             <Text style={{ fontFamily: font, fontSize: "12px", color: colors.muted, margin: "0 0 4px" }}>
-              PPI Jerman &mdash; <Link href="https://ppij-shop.de" style={{ color: colors.muted }}>ppij-shop.de</Link>
+              PPI Jerman &mdash; <Link href="https://shop.ppijerman.org" style={{ color: colors.muted }}>shop.ppijerman.org</Link>
             </Text>
             <Text style={{ fontFamily: font, fontSize: "12px", color: colors.muted, margin: 0 }}>
               &copy; {new Date().getFullYear()} PPI Jerman. All rights reserved.

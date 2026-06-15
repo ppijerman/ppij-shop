@@ -25,7 +25,7 @@ export default function OrderConfirmationEmail(params: {
         total={params.total}
       />
       <EmailDivider />
-      <EmailButton href={`https://ppij-shop.de/account/orders/${params.orderId}`}>
+      <EmailButton href={`https://shop.ppijerman.org/account/orders/${params.orderId}`}>
         View Order
       </EmailButton>
       <EmailText style={{ textAlign: "center", marginTop: "16px" }}>
