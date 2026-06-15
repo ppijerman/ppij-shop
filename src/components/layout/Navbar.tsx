@@ -117,7 +117,6 @@ export default function Navbar() {
                 borderRadius: 999,
                 padding: '8px 12px',
                 cursor: 'pointer',
-                display: 'flex',
                 alignItems: 'center',
                 transition: 'all 0.2s',
               }}

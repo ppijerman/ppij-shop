@@ -75,7 +75,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         </nav>
       </div>
 
-      <div style={{ borderTop: '1px solid var(--line)', paddingTop: 24, marginTop: isMobile ? 6 : 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ borderTop: '1px solid var(--line)', paddingTop: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <Link
           href={`${basePath}/settings`}
           style={{
@@ -112,7 +112,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
+        gap: 32,
         background: 'var(--cream-2)',
         position: isMobile ? 'relative' : undefined,
       }}>
