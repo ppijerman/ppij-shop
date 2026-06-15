@@ -44,7 +44,6 @@ export default function CatalogWrapper({ products, bundles }: { products: any[],
                   <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, minHeight: 140 }}>
                     <div>
                       <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 22, marginBottom: 8 }}>{bundle.name.toUpperCase()}</h3>
-                      <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, opacity: 0.8, lineHeight: 1.5 }}>{bundle.desc}</p>
                     </div>
                     <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 18 }}>€{Number(bundle.price).toFixed(2)}</span>
