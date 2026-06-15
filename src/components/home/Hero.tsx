@@ -76,12 +76,12 @@ export default function Hero() {
 
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '22px 6px', gap: 30, borderBottom: '1px solid var(--line)' }}>
+        <div className="hero-stat-bar" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '22px 6px', gap: 30, borderBottom: '1px solid var(--line)' }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.22em', textTransform: 'uppercase' }}>
             <span style={{ color: 'var(--black)', fontFamily: 'var(--font-display)', fontSize: 22, marginRight: 6 }}>5</span>
             items · 1 capsule
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div className="hero-stat-tags" style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
             {TAGS.map(t => (
               <span key={t} style={{ padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink)' }}>{t}</span>
             ))}

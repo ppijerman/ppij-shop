@@ -426,3 +426,16 @@ svg {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ---- Hero stat bar --------------------------------------------------- */
+@media (max-width: 560px) {
+  .hero-stat-bar {
+    display: flex !important;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .hero-stat-bar .hero-stat-tags {
+    justify-content: flex-start;
+  }
+}
