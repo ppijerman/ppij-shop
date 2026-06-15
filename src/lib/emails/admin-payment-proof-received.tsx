@@ -23,7 +23,7 @@ export default function AdminPaymentProofReceivedEmail(params: {
         total={params.total}
       />
       <EmailDivider />
-      <EmailButton href="https://ppij-shop.de/admin/kk/payments">
+      <EmailButton href="https://shop.ppijerman.org/admin/kk/payments">
         Review Payment
       </EmailButton>
     </EmailLayout>

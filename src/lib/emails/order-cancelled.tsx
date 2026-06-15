@@ -14,7 +14,7 @@ export default function OrderCancelledEmail(params: {
         If you still want to order, you are welcome to place a new order.
       </EmailText>
       <EmailDivider />
-      <EmailButton href="https://ppij-shop.de/catalog">
+      <EmailButton href="https://shop.ppijerman.org/catalog">
         Browse the Shop
       </EmailButton>
       <EmailText style={{ textAlign: "center", marginTop: "16px" }}>
