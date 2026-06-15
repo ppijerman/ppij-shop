@@ -189,6 +189,7 @@ svg {
   }
   .nav-mobile-panel {
     display: flex;
+    flex-direction: column;
   }
   /* Account dropdown spans the full navbar width on mobile, like the menu */
   .account-menu {
@@ -332,77 +333,6 @@ svg {
 }
 
 /* ---- Admin ------------------------------------------------------------ */
-/* Mobile bar + collapsible panel are inert on desktop. The collapse wrapper
-   is display:contents so the sidebar's top/bottom keep their space-between
-   placement. */
-.admin-mobile-bar {
-  display: none;
-}
-.admin-menu-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--black);
-  cursor: pointer;
-  padding: 0;
-}
-.admin-mobile-only {
-  display: none;
-}
-.admin-collapse {
-  display: contents;
-}
-
-@media (max-width: 900px) {
-  .admin-shell {
-    flex-direction: column !important;
-  }
-  .admin-sidebar {
-    width: 100% !important;
-    flex-direction: column !important;
-    padding: 0 !important;
-    border-right: none !important;
-    border-bottom: 1px solid var(--line) !important;
-  }
-  .admin-mobile-bar {
-    display: flex !important;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 18px;
-  }
-  /* Collapsed by default; the hamburger toggles the `.open` dropdown panel */
-  .admin-collapse {
-    display: none !important;
-  }
-  .admin-collapse.open {
-    display: flex !important;
-    flex-direction: column;
-    gap: 8px;
-    padding: 8px 16px 18px;
-    border-top: 1px solid var(--line);
-  }
-  .admin-collapse.open .admin-mobile-only {
-    display: flex !important;
-  }
-  /* Brand title already shown in the bar */
-  .admin-sidebar-brand {
-    display: none !important;
-  }
-  .admin-nav {
-    gap: 4px !important;
-  }
-  .admin-sidebar-bottom {
-    margin-top: 6px !important;
-  }
-  .admin-main {
-    padding: 28px 20px !important;
-  }
-}
 
 /* Collapse auto-fill grids with a large min track so they don't overflow
    very narrow phones. */

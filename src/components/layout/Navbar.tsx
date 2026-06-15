@@ -23,6 +23,8 @@ export default function Navbar() {
   const role = user?.publicMetadata?.role;
   const isAdmin = role === 'ADMIN_IT' || role === 'ADMIN_KK';
   const adminPrefix = role === 'ADMIN_IT' ? 'it' : 'kk';
+  const mobileToggleRef = useRef<HTMLDivElement | null>(null);
+  const mobilePanelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
@@ -33,6 +35,29 @@ export default function Navbar() {
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    function handlePointerDown(event: MouseEvent): void {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      const insideToggle = mobileToggleRef.current?.contains(target) ?? false;
+      const insidePanel = mobilePanelRef.current?.contains(target) ?? false;
+      if (!insideToggle && !insidePanel) setMenuOpen(false);
+    }
+
+    function handleEscape(event: KeyboardEvent): void {
+      if (event.key === 'Escape') setMenuOpen(false);
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [menuOpen]);
 
   if (pathname.startsWith('/admin')) return null;
 
@@ -78,64 +103,94 @@ export default function Navbar() {
             role={role as string}
           />
           {!isAdmin && <CartPill count={cartCount} className="nav-cart-desktop" />}
-          <button
-            type="button"
-            className="nav-toggle"
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen(open => !open)}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-              {menuOpen ? (
-                <>
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </>
-              ) : (
-                <>
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="3" y1="18" x2="21" y2="18" />
-                </>
-              )}
-            </svg>
-          </button>
+          <div ref={mobileToggleRef}>
+            <button
+              type="button"
+              className="nav-toggle"
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen(open => !open)}
+              style={{
+                background: menuOpen ? 'var(--accent)' : 'transparent',
+                color: menuOpen ? '#fff' : 'var(--black)',
+                border: '1px solid var(--line)',
+                borderRadius: 999,
+                padding: '8px 12px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'all 0.2s',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                {menuOpen ? (
+                  <>
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </>
+                ) : (
+                  <>
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                    <line x1="3" y1="18" x2="21" y2="18" />
+                  </>
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
       {menuOpen && (
         <div
+          ref={mobilePanelRef}
+          role="menu"
+          aria-label="Navigation menu"
           className="nav-mobile-panel"
           style={{
-            flexDirection: 'column',
-            padding: '8px 20px 18px',
-            borderTop: '1px solid var(--line)',
-            background: 'var(--cream)',
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            background: 'rgba(239,234,224,0.98)',
+            border: '1px solid var(--line)',
+            boxShadow: '0 18px 40px rgba(14,14,14,0.12)',
+            backdropFilter: 'blur(16px)',
+            padding: '8px',
+            zIndex: 1100,
             animation: 'fadeIn 0.18s ease',
           }}
         >
-          {displayLinks.map(l => (
-            <Link
-              key={l.href}
-              href={l.href}
-              onClick={() => setMenuOpen(false)}
-              style={{
-                textDecoration: 'none',
-                padding: '14px 4px',
-                borderBottom: '1px solid var(--line)',
-                fontFamily: 'var(--font-body)',
-                fontWeight: 600,
-                fontSize: 15,
-                letterSpacing: '0.02em',
-                color: isActive(l.href) ? 'var(--accent-deep)' : 'var(--ink)',
-              }}
-            >
-              {l.label}
-            </Link>
-          ))}
+          <div style={{ padding: '10px 12px 12px', borderBottom: '1px solid var(--line)', marginBottom: 6 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--muted)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+              Navigation
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {displayLinks.map((l, i) => (
+              <div
+                key={l.href}
+                style={{
+                  borderTop: i > 0 ? '1px solid var(--line)' : 'none',
+                  marginTop: i > 0 ? 6 : 0,
+                  paddingTop: i > 0 ? 6 : 0,
+                }}
+              >
+                <MobileNavItem
+                  href={l.href}
+                  active={isActive(l.href)}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {l.label}
+                </MobileNavItem>
+              </div>
+            ))}
+          </div>
           {!isAdmin && (
-            <div style={{ marginTop: 16 }} onClick={() => setMenuOpen(false)}>
-              <CartPill count={cartCount} />
+            <div style={{ borderTop: '1px solid var(--line)', marginTop: 6, paddingTop: 6 }}>
+              <div onClick={() => setMenuOpen(false)}>
+                <CartPill count={cartCount} />
+              </div>
             </div>
           )}
         </div>
@@ -399,6 +454,36 @@ function AccountControl({ authLoaded, isSignedIn, triggerName, signedInName, sig
         </div>
       )}
     </div>
+  );
+}
+
+function MobileNavItem({ href, active, onClick, children }: { href: string; active: boolean; onClick: () => void; children: React.ReactNode }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <Link
+      href={href}
+      role="menuitem"
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+        textDecoration: 'none',
+        background: hovered ? 'rgba(61, 90, 128, 0.1)' : 'transparent',
+        padding: '11px 12px',
+        color: active ? 'var(--accent-deep)' : 'var(--black)',
+        fontFamily: 'var(--font-body)',
+        fontSize: 13,
+        fontWeight: 600,
+        textAlign: 'left',
+        transition: 'all 0.2s',
+      }}
+    >
+      <span>{children}</span>
+    </Link>
   );
 }
 
