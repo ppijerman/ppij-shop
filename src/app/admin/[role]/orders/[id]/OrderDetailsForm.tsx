@@ -323,17 +323,18 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
                         </div>
                       )}
                       {item.bundle_id && item.bundle_products && (
-                        <div style={{ marginTop: 10, padding: 12, background: 'var(--cream-2)', borderRadius: 6, border: '1px solid var(--line)' }}>
-                          <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            Bundle Contents
+                        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 2 }}>
+                            Includes
                           </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                            {item.bundle_products.map((p: any, idx: number) => (
-                              <div key={idx} style={{ fontSize: 12, fontWeight: 500, color: 'var(--black)' }}>
-                                • {p.product_name} <span style={{ color: 'var(--muted)', fontSize: 11 }}>({p.color} • {p.size} • {p.fit})</span>
-                              </div>
-                            ))}
-                          </div>
+                          {item.bundle_products.map((p: any, idx: number) => (
+                            <div key={idx} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '6px 10px', background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 6 }}>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--black)' }}>{p.product_name}</span>
+                              <span style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
+                                {[p.size, p.color, p.fit].filter(Boolean).join(' · ')}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </td>
