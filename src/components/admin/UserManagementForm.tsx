@@ -281,7 +281,7 @@ function StatCard({ label, value, highlight = false }: { label: string; value: n
 }
 
 const tableHeadStyle: React.CSSProperties = { textAlign: 'left', padding: '16px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)' };
-const tableCellStyle: React.CSSProperties = { padding: '16px', fontSize: 14, fontFamily: 'var(--font-mono)' };
+const tableCellStyle: React.CSSProperties = { padding: '16px', fontSize: 14, fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
 const selectStyle: React.CSSProperties = { padding: '8px 10px', border: '1px solid var(--line)', borderRadius: 6, fontFamily: 'var(--font-mono)', fontSize: 12, background: 'white', color: 'var(--black)' };
 const secondaryButtonStyle: React.CSSProperties = { padding: '8px 10px', background: 'white', border: '1px solid var(--line)', borderRadius: 6, fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', cursor: 'pointer' };
 const dangerButtonStyle: React.CSSProperties = { padding: '8px 10px', background: '#b91c1c', color: 'white', border: 'none', borderRadius: 6, fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', cursor: 'pointer' };
