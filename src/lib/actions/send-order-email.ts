@@ -2,6 +2,7 @@ import { getResend, getFromEmail } from "@/lib/resend";
 import OrderConfirmationEmail from "@/lib/emails/order-confirmation";
 import OrderCancelledEmail from "@/lib/emails/order-cancelled";
 import OrderExpiredEmail from "@/lib/emails/order-expired";
+import OrderDoneEmail from "@/lib/emails/order-done";
 import PaymentApprovedEmail from "../emails/payment-approved";
 import PaymentProofUploadedEmail from "../emails/payment-proof-uploaded";
 import PaymentRejectedEmail from "../emails/payment-rejected";
@@ -24,7 +25,7 @@ export async function SendOrderConfirmationEmail(params: {
     subject: `Order Confirmed - #${params.orderId.substring(0, 8)}`,
     react: OrderConfirmationEmail({
       customerName: params.customerName,
-      orderId: params.orderId.substring(0, 8),
+      orderId: params.orderId,
       itemsTotal: params.itemsTotal,
       shippingCost: params.shippingCost,
       total: params.total,
@@ -51,7 +52,7 @@ export async function SendOrderCancelledEmail(params: {
     subject: `Order Cancelled - #${params.orderId.substring(0, 8)}`,
     react: OrderCancelledEmail({
       customerName: params.customerName,
-      orderId: params.orderId.substring(0, 8),
+      orderId: params.orderId,
     }),
   });
 
@@ -74,7 +75,7 @@ export async function SendOrderExpiredEmail(params: {
     subject: `Order Cancelled — Payment Window Expired - #${params.orderId.substring(0, 8)}`,
     react: OrderExpiredEmail({
       customerName: params.customerName,
-      orderId: params.orderId.substring(0, 8),
+      orderId: params.orderId,
     }),
   });
 
@@ -97,7 +98,7 @@ export async function SendPaymentApprovedEmail(params: {
     subject: `Payment Approved - Order #${params.orderId.substring(0, 8)}`,
     react: PaymentApprovedEmail({
       customerName: params.customerName,
-      orderId: params.orderId.substring(0, 8),
+      orderId: params.orderId,
     }),
   });
 
@@ -120,7 +121,7 @@ export async function SendPaymentProofUploadedEmail(params: {
     subject: `Payment Proof has been uploaded - Order #${params.orderId.substring(0, 8)}`,
     react: PaymentProofUploadedEmail({
       customerName: params.customerName,
-      orderId: params.orderId.substring(0, 8),
+      orderId: params.orderId,
     }),
   });
 
@@ -143,7 +144,7 @@ export async function SendPaymentRejectedEmail(params: {
     subject: `Payment Proof has been rejected - Order #${params.orderId.substring(0, 8)}`,
     react: PaymentRejectedEmail({
       customerName: params.customerName,
-      orderId: params.orderId.substring(0, 8),
+      orderId: params.orderId,
     })
   })
 
@@ -177,7 +178,7 @@ export async function SendAdminPaymentProofNotificationEmail(params: {
     react: AdminPaymentProofReceivedEmail({
       customerName: params.customerName,
       customerEmail: params.customerEmail,
-      orderId: params.orderId.substring(0, 8),
+      orderId: params.orderId,
       items: params.items,
       itemsTotal: params.itemsTotal,
       shippingCost: params.shippingCost,
@@ -205,7 +206,7 @@ export async function SendPickupLocationSetEmail(params: {
     subject: `Pickup Location Ready - Order #${params.orderId.substring(0, 8)}`,
     react: PickupLocationSetEmail({
       customerName: params.customerName,
-      orderId: params.orderId.substring(0, 8),
+      orderId: params.orderId,
       pickupDetails: params.pickupDetails,
     }),
   });
@@ -213,6 +214,29 @@ export async function SendPickupLocationSetEmail(params: {
   if (error) {
     console.error("Resend error: ", error);
     throw new Error("Failed to send pickup location email");
+  }
+
+  return data;
+}
+
+export async function SendOrderDoneEmail(params: {
+  to: string;
+  customerName: string;
+  orderId: string;
+}) {
+  const { data, error } = await getResend().emails.send({
+    from: getFromEmail(),
+    to: params.to,
+    subject: `Order Complete - #${params.orderId.substring(0, 8)}`,
+    react: OrderDoneEmail({
+      customerName: params.customerName,
+      orderId: params.orderId,
+    }),
+  });
+
+  if (error) {
+    console.error("Resend error: ", error);
+    throw new Error("Failed to send order done email");
   }
 
   return data;
@@ -231,7 +255,7 @@ export async function SendOrderShippedEmail(params: {
     subject: `Your Order Has Been Shipped - #${params.orderId.substring(0, 8)}`,
     react: OrderShippedEmail({
       customerName: params.customerName,
-      orderId: params.orderId.substring(0, 8),
+      orderId: params.orderId,
       shippingProvider: params.shippingProvider,
       trackingNumber: params.trackingNumber,
     })

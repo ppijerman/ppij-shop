@@ -37,6 +37,7 @@ export async function updateNameAction(firstName: string, lastName: string) {
   const trimmedLast = lastName.trim();
 
   if (!trimmedFirst) throw new Error('First name is required');
+  if (!trimmedLast) throw new Error('Last name is required');
 
   const client = await clerkClient();
   await client.users.updateUser(user.clerk_user_id, {
