@@ -1,12 +1,19 @@
 import { EmailButton, EmailDivider, EmailHeading, EmailLayout, EmailText, InfoBox } from "./email-layout";
 
+function getTrackingUrl(provider: string, trackingNumber: string): string {
+  const p = provider.toUpperCase();
+  if (p.includes('DHL')) return `https://www.dhl.com/en/express/tracking.html?AWB=${trackingNumber}`;
+  if (p.includes('DPD')) return `https://tracking.dpd.de/status/en_US/parcel/${trackingNumber}`;
+  return '';
+}
+
 export default function OrderShippedEmail(params: {
   customerName: string;
   orderId: string;
   shippingProvider: string;
   trackingNumber: string;
 }) {
-  const trackingUrl = '#';
+  const trackingUrl = getTrackingUrl(params.shippingProvider, params.trackingNumber);
 
   return (
     <EmailLayout preview={`Your order #${params.orderId.slice(0, 8)} is on its way!`}>
@@ -23,9 +30,11 @@ export default function OrderShippedEmail(params: {
         </EmailText>
       </InfoBox>
       <EmailDivider />
-      <EmailButton href={trackingUrl}>
-        Track Your Parcel
-      </EmailButton>
+      {trackingUrl ? (
+        <EmailButton href={trackingUrl}>
+          Track Your Parcel
+        </EmailButton>
+      ) : null}
       <EmailButton href={`https://shop.ppijerman.org/account/orders/${params.orderId}`}>
         View Order
       </EmailButton>

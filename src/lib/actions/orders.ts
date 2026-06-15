@@ -648,7 +648,7 @@ export async function updateOrderStatusAction(orderId: string, status: string, c
     return { ok: false, message: `Comment must be ${MAX_TIMELINE_COMMENT_LENGTH} characters or fewer.` };
   }
 
-  const buyerRef = { value: null as { email: string; first_name: string } | null };
+  const buyerRef = { value: null as { email: string; first_name: string; shippingProvider?: string | null; trackingNumber?: string | null } | null };
 
   const result = await withTransaction(async (query) => {
     if (status === 'DONE') {
@@ -662,10 +662,10 @@ export async function updateOrderStatusAction(orderId: string, status: string, c
     if (status === 'SHIPPED') {
       const orderResult = await query(
         `
-        SELECT delivery_type, shipping_tracking_number, shipping_provider
-        FROM orders
-        WHERE id = $1
-        FOR UPDATE
+        SELECT o.delivery_type, o.shipping_tracking_number, o.shipping_provider, u.email, u.first_name
+        FROM orders o JOIN users u ON u.id = o.user_id
+        WHERE o.id = $1
+        FOR UPDATE OF o
         `,
         [orderId],
       );
@@ -678,6 +678,13 @@ export async function updateOrderStatusAction(orderId: string, status: string, c
       if (order.delivery_type === 'DELIVERY' && (!order.shipping_tracking_number || !order.shipping_provider)) {
         return { ok: false, message: 'Add a shipping provider and number before marking the order as shipped.' };
       }
+
+      buyerRef.value = {
+        email: order.email,
+        first_name: order.first_name,
+        shippingProvider: order.shipping_provider,
+        trackingNumber: order.shipping_tracking_number,
+      };
     }
 
     if (status === 'CANCELLED') {
@@ -765,6 +772,20 @@ export async function updateOrderStatusAction(orderId: string, status: string, c
     revalidatePath(`/admin/kk/orders/${orderId}`);
     revalidatePath(`/admin/it/orders/${orderId}`);
     revalidatePath(`/account/orders/${orderId}`);
+  }
+
+  if (result.ok && status === 'SHIPPED' && buyerRef.value?.email) {
+    try {
+      await SendOrderShippedEmail({
+        to: buyerRef.value.email,
+        customerName: buyerRef.value.first_name,
+        orderId,
+        shippingProvider: buyerRef.value.shippingProvider ?? '',
+        trackingNumber: buyerRef.value.trackingNumber ?? '',
+      });
+    } catch (err) {
+      console.error('Failed to send order shipped email:', err);
+    }
   }
 
   if (result.ok && status === 'DONE' && buyerRef.value?.email) {
