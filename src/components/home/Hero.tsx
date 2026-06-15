@@ -73,7 +73,7 @@ export default function Hero() {
             </Link>
           </div>
 
-          <div style={{ position: 'absolute', top: '36%', right: '6%', color: 'var(--accent)', fontSize: 48, fontFamily: 'var(--font-display)' }}>↗</div>
+
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '22px 6px', gap: 30, borderBottom: '1px solid var(--line)' }}>
