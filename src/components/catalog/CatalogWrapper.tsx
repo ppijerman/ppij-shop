@@ -45,20 +45,20 @@ export default function CatalogWrapper({ products, bundles }: { products: any[],
                     <div>
                       <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 22, marginBottom: 8 }}>{bundle.name.toUpperCase()}</h3>
                     </div>
-                    <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                    <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 18 }}>€{Number(bundle.price).toFixed(2)}</span>
                         {bundle.original_price && (
-                          <>
-                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, textDecoration: 'line-through', opacity: 0.5 }}>€{Number(bundle.original_price).toFixed(2)}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, textDecoration: 'line-through', opacity: 0.5 }}>€{Number(bundle.original_price).toFixed(2)}</span>
                             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, background: 'var(--accent)', color: '#fff', padding: '2px 6px', borderRadius: 999 }}>
                               -{Math.round((1 - bundle.price / bundle.original_price) * 100)}%
                             </span>
-                          </>
+                          </div>
                         )}
                       </div>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', background: 'var(--accent)', color: '#fff', padding: '8px 14px', borderRadius: 999 }}>
-                        view bundle ↗
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', background: 'var(--accent)', color: '#fff', padding: '11px 18px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                        view bundle <span style={{ fontSize: 14 }}>↗</span>
                       </span>
                     </div>
                   </div>

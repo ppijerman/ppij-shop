@@ -127,14 +127,26 @@ body::before {
   z-index: 3000;
   background: var(--black);
   color: var(--cream);
-  padding: 12px 24px;   font-family: var(--font-mono);
+  padding: 12px 24px;
+  font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   border-radius: 999px;
   animation: fadeUp 0.3s ease;
   pointer-events: none;
- }
+  max-width: calc(100vw - 48px);
+}
+@media (max-width: 480px) {
+  .toast {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    text-align: center;
+    border-radius: 12px;
+    max-width: none;
+  }
+}
 
 /* =========================================================================
    Responsive overrides
@@ -186,6 +198,11 @@ svg {
   }
   .nav-cart-desktop {
     display: none !important;
+  }
+  .nav-cart-mobile {
+    padding: 13px 22px !important;
+    width: 100%;
+    justify-content: center;
   }
   .nav-mobile-panel {
     display: flex;
@@ -247,7 +264,11 @@ svg {
 }
 @media (max-width: 560px) {
   .qv-image {
-    aspect-ratio: 1 / 1 !important;
+    aspect-ratio: 4 / 5 !important;
+  }
+  .qv-image img {
+    object-fit: contain !important;
+    object-position: center !important;
   }
 }
 
@@ -282,8 +303,12 @@ svg {
     grid-template-columns: 1fr !important;
   }
   .qv-image {
-    aspect-ratio: 16 / 10 !important;
-    max-height: 42vh !important;
+    aspect-ratio: 4 / 5 !important;
+    max-height: 60vh !important;
+  }
+  .qv-image img {
+    object-fit: contain !important;
+    object-position: center !important;
   }
 }
 
