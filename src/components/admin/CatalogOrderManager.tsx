@@ -1,18 +1,18 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 
 type Item = { id: string; name: string; is_active: boolean; primary_image?: string; bundle_image_url?: string };
 
 function SortableList({
-  items,
+  list,
+  onReorder,
   onSave,
 }: {
-  items: Item[];
-  onSave: (ids: string[], onSuccess: () => void) => void;
+  list: Item[];
+  onReorder: (newList: Item[]) => void;
+  onSave: (ids: string[], onDone: () => void) => void;
 }) {
-  const [list, setList] = useState(items);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const dragIndex = useRef<number | null>(null);
@@ -21,12 +21,10 @@ function SortableList({
     const from = dragIndex.current;
     if (from === null || from === index) return;
     dragIndex.current = index;
-    setList(prev => {
-      const next = [...prev];
-      const [moved] = next.splice(from, 1);
-      next.splice(index, 0, moved);
-      return next;
-    });
+    const next = [...list];
+    const [moved] = next.splice(from, 1);
+    next.splice(index, 0, moved);
+    onReorder(next);
     setDirty(true);
   };
 
@@ -81,8 +79,8 @@ function SortableList({
         onClick={() => {
           setSaving(true);
           onSave(list.map(i => i.id), () => {
-            setDirty(false);
             setSaving(false);
+            setDirty(false);
           });
         }}
         style={{
@@ -107,15 +105,20 @@ function SortableList({
 
 export default function CatalogOrderManager({ products, bundles }: { products: any[]; bundles: any[] }) {
   const [tab, setTab] = useState<'products' | 'bundles'>('products');
+  const [productList, setProductList] = useState<Item[]>(
+    products.map(p => ({ id: p.id, name: p.name, is_active: p.is_active, primary_image: p.primary_image }))
+  );
+  const [bundleList, setBundleList] = useState<Item[]>(
+    bundles.map(b => ({ id: b.id, name: b.name, is_active: b.is_active, bundle_image_url: b.bundle_image_url }))
+  );
   const [toast, setToast] = useState('');
-  const router = useRouter();
 
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(''), 3000);
   };
 
-  const handleSave = async (endpoint: string, ids: string[], onSuccess: () => void) => {
+  const handleSave = async (endpoint: string, ids: string[], onDone: () => void) => {
     try {
       const res = await fetch(endpoint, {
         method: 'PATCH',
@@ -124,10 +127,10 @@ export default function CatalogOrderManager({ products, bundles }: { products: a
       });
       if (!res.ok) throw new Error('Failed to save');
       showToast('Order saved');
-      onSuccess();
-      router.refresh();
+      onDone();
     } catch {
       showToast('Failed to save order');
+      onDone();
     }
   };
 
@@ -153,15 +156,15 @@ export default function CatalogOrderManager({ products, bundles }: { products: a
 
       {tab === 'products' ? (
         <SortableList
-          key="products"
-          items={products.map(p => ({ id: p.id, name: p.name, is_active: p.is_active, primary_image: p.primary_image }))}
-          onSave={(ids, onSuccess) => handleSave('/api/products/reorder', ids, onSuccess)}
+          list={productList}
+          onReorder={setProductList}
+          onSave={(ids, onDone) => handleSave('/api/products/reorder', ids, onDone)}
         />
       ) : (
         <SortableList
-          key="bundles"
-          items={bundles.map(b => ({ id: b.id, name: b.name, is_active: b.is_active, bundle_image_url: b.bundle_image_url }))}
-          onSave={(ids, onSuccess) => handleSave('/api/bundles/reorder', ids, onSuccess)}
+          list={bundleList}
+          onReorder={setBundleList}
+          onSave={(ids, onDone) => handleSave('/api/bundles/reorder', ids, onDone)}
         />
       )}
 

@@ -83,8 +83,8 @@ export async function getShippingMethods(toCountry: string, weight: number): Pro
 
     const testMode = process.env.SENDCLOUD_TEST_MODE === 'true';
     const INCLUDE = testMode
-        ? /^(DHL Paket|DPD Classic KP|Unstamped letter)$/i
-        : /^(DHL Paket|DPD Classic KP)$/i;
+        ? /^(DHL Kleinpaket|DPD Classic KP|Unstamped letter)$/i
+        : /^(DHL Kleinpaket|DPD Classic KP)$/i;
 
     return body.data
         .filter((m) => {
