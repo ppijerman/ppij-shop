@@ -22,7 +22,7 @@ Customers can browse products, place orders, and submit bank transfer payment pr
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 14 (App Router, RSC) |
+| Framework | Next.js 16 (App Router, RSC) |
 | Language | TypeScript (strict mode) |
 | Database | PostgreSQL via `pg` driver with connection pooling |
 | Auth | Clerk (`@clerk/nextjs`) synced to local `users` table via webhook |
