@@ -71,6 +71,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           <AdminNavLink href={`${basePath}/payments`}>Payments</AdminNavLink>
           <AdminNavLink href={`${basePath}/products`}>Products</AdminNavLink>
           <AdminNavLink href={`${basePath}/bundles`}>Bundles</AdminNavLink>
+          <AdminNavLink href={`${basePath}/catalog-order`}>Catalog Order</AdminNavLink>
           {isItAdmin && <AdminNavLink href="/admin/it/users">Users</AdminNavLink>}
         </nav>
       </div>
