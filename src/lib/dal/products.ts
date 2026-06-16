@@ -53,7 +53,7 @@ export async function getProductBySlugWithVariants(slug: string) {
           'id', pimg.id,
           'url', CASE WHEN pimg.url IS NOT NULL THEN pimg.url ELSE '/api/products/images/' || pimg.id::text END,
           'is_primary', pimg.is_primary
-        ) ORDER BY pimg.is_primary DESC, pimg.id ASC)
+        ) ORDER BY pimg.is_primary DESC, pimg.sort_order ASC, pimg.id ASC)
         FROM product_images pimg
         WHERE pimg.product_id = p.id
       ) AS images
@@ -76,7 +76,7 @@ export async function getProductImages(productId: string) {
         CASE WHEN url IS NOT NULL THEN url ELSE '/api/products/images/' || id::text END AS url
       FROM product_images
       WHERE product_id = $1
-      ORDER BY is_primary DESC, id ASC
+      ORDER BY is_primary DESC, sort_order ASC, id ASC
     `,
     [productId]
   )
@@ -117,7 +117,7 @@ export async function getAllProductsWithVariants() {
           'id', pimg.id,
           'url', CASE WHEN pimg.url IS NOT NULL THEN pimg.url ELSE '/api/products/images/' || pimg.id::text END,
           'is_primary', pimg.is_primary
-        ) ORDER BY pimg.is_primary DESC, pimg.id ASC)
+        ) ORDER BY pimg.is_primary DESC, pimg.sort_order ASC, pimg.id ASC)
         FROM product_images pimg
         WHERE pimg.product_id = p.id
       ) AS images
@@ -155,7 +155,7 @@ export async function getAllProductsWithVariantsAdmin() {
           'id', pimg.id,
           'url', CASE WHEN pimg.url IS NOT NULL THEN pimg.url ELSE '/api/products/images/' || pimg.id::text END,
           'is_primary', pimg.is_primary
-        ) ORDER BY pimg.is_primary DESC, pimg.id ASC)
+        ) ORDER BY pimg.is_primary DESC, pimg.sort_order ASC, pimg.id ASC)
         FROM product_images pimg
         WHERE pimg.product_id = p.id
       ) AS images

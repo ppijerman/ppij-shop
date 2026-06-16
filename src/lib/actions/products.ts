@@ -32,11 +32,12 @@ export async function createProduct(productData: ProductData) {
   
     const productId = res.rows[0].id;
 
-    for (const image of productData.images) {
+    for (let i = 0; i < productData.images.length; i++) {
+      const image = productData.images[i];
       if (image.kind !== 'new') continue;
       await query(
-        `INSERT INTO product_images (product_id, data, content_type, is_primary) VALUES ($1, $2, $3, $4)`,
-        [productId, image.data, image.contentType, image.is_primary]
+        `INSERT INTO product_images (product_id, data, content_type, is_primary, sort_order) VALUES ($1, $2, $3, $4, $5)`,
+        [productId, image.data, image.contentType, image.is_primary, i]
       );
     }
     for ( const fitType of ['REGULAR', 'OVERSIZED'] as FitType[]) {
@@ -106,21 +107,25 @@ export async function updateProduct(id: string, productData: ProductData) {
         `DELETE FROM product_images WHERE product_id = $1 AND id != ALL($2::uuid[])`,
         [id, keepIds]
       );
-      for (const img of productData.images) {
-        if (img.kind === 'existing') {
-          await query(`UPDATE product_images SET is_primary = $1 WHERE id = $2 AND product_id = $3`, [img.is_primary, img.id, id]);
-        }
-      }
     } else {
       await query('DELETE FROM product_images WHERE product_id = $1', [id]);
     }
 
-    for (const img of productData.images) {
-      if (img.kind !== 'new') continue;
-      await query(
-        `INSERT INTO product_images (product_id, data, content_type, is_primary) VALUES ($1, $2, $3, $4)`,
-        [id, img.data, img.contentType, img.is_primary]
-      );
+    await query(`UPDATE product_images SET is_primary = false WHERE product_id = $1`, [id]);
+
+    for (let i = 0; i < productData.images.length; i++) {
+      const img = productData.images[i];
+      if (img.kind === 'existing') {
+        await query(
+          `UPDATE product_images SET is_primary = $1, sort_order = $2 WHERE id = $3 AND product_id = $4`,
+          [img.is_primary, i, img.id, id]
+        );
+      } else {
+        await query(
+          `INSERT INTO product_images (product_id, data, content_type, is_primary, sort_order) VALUES ($1, $2, $3, $4, $5)`,
+          [id, img.data, img.contentType, img.is_primary, i]
+        );
+      }
     }
 
     const existingVariants = await query(
