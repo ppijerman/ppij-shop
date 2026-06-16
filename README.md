@@ -29,6 +29,8 @@ Customers can browse products, place orders, and submit bank transfer payment pr
 | Styling | CSS custom properties — no Tailwind or CSS-in-JS |
 | Mutations | Next.js Server Actions — no separate API layer |
 | Migrations | dbmate |
+| Email | Resend (`@react-email/components`) |
+| Shipping | SendCloud API |
 
 ---
 
@@ -39,6 +41,8 @@ Customers can browse products, place orders, and submit bank transfer payment pr
 - Node.js 18+
 - PostgreSQL database
 - [Clerk](https://clerk.com) account
+- [Resend](https://resend.com) account (transactional email)
+- [SendCloud](https://www.sendcloud.com) account (shipping, optional for local dev)
 - [dbmate](https://github.com/amacneil/dbmate) for migrations
 
 ### Installation
@@ -55,18 +59,27 @@ Create a `.env.local` file in the project root:
 
 ```env
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/ppij_shop
+DATABASE_URL=postgres://user:password@localhost:5432/ppij_shop
 
 # Clerk
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
 CLERK_SECRET_KEY=sk_...
 CLERK_WEBHOOK_SECRET=whsec_...
 
-# Clerk redirect URLs
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
-NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
+# Email (Resend)
+RESEND_API_KEY=re_...
+RESEND_FROM_EMAIL=no-reply@shop.ppijerman.org
+ADMIN_KK_EMAIL=partnership@ppijerman.org
+
+# Shipping (SendCloud) — leave blank to disable shipping integration locally
+SENDCLOUD_API_KEY=
+SENDCLOUD_API_SECRET=
+SENDCLOUD_SENDER_ADDRESS_ID=
+SENDCLOUD_WEBHOOK_SECRET=
+SENDCLOUD_TEST_MODE=true
+
+# Cron job secret — used to authenticate the /api/cron/* endpoints
+CRON_SECRET=
 ```
 
 ### Database Setup
@@ -97,10 +110,11 @@ src/
 │   ├── layout.tsx                # Root layout
 │   ├── page.tsx                  # / — Home
 │   ├── catalog/                  # /catalog — Product listing
-│   ├── product/[id]/             # /product/[id] — Product detail
+│   ├── product/[slug]/           # /product/[slug] — Product detail
+│   ├── bundle/[slug]/            # /bundle/[slug] — Bundle detail
 │   ├── cart/                     # /cart — Shopping cart
 │   ├── account/orders/           # /account/orders — Order history & payment upload
-│   └── admin/[role]/             # /admin — Admin dashboard (payments, orders)
+│   └── admin/[role]/             # /admin/kk | /admin/it — Admin dashboard
 │
 ├── lib/
 │   ├── db.ts                     # DB pool & withTransaction()
@@ -140,22 +154,6 @@ AWAITING_PAYMENT → PAYMENT_REVIEW → PROCESSING → SHIPPED → DONE
 | `ADMIN_IT` | Manage orders, shipping, and product data |
 
 Admin routes live under `/admin/[role]` and are enforced inside Server Actions via `requireAdmin()` / `requireOrderAdmin()`.
-
----
-
-## Deployment
-
-This project is designed to deploy on [Vercel](https://vercel.com):
-
-1. Push to `master` — Vercel auto-deploys
-2. Set all environment variables in the Vercel dashboard
-3. Run database migrations against your production DB before or after deploy
-
-For database migrations in production:
-
-```bash
-DATABASE_URL=<production-url> npm run db:up
-```
 
 ---
 
