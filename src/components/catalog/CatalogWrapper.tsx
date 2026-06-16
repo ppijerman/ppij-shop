@@ -10,12 +10,18 @@ export default function CatalogWrapper({ products, bundles }: { products: any[],
 
   return (
     <>
+      <CapsuleGrid products={products} onQuickView={setSelectedProduct} />
+        {selectedProduct && (
+          <QuickViewModal
+            product={selectedProduct}
+            onClose={() => setSelectedProduct(null)}
+          />
+      )}
       {bundles.length > 0 && (
         <section style={{ padding: '80px 28px 40px' }}>
           <div style={{ maxWidth: 1440, margin: '0 auto' }}>
             <div style={{ marginBottom: 32 }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-deep)', letterSpacing: '0.3em', textTransform:
-      'uppercase', marginBottom: 8 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-deep)', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 8 }}>
                 -- excluesive deals --
               </div>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px, 6vw, 48px)', color: 'var(--black)' }}>
@@ -73,13 +79,6 @@ export default function CatalogWrapper({ products, bundles }: { products: any[],
           <div style={{ width: 60, height: 1, background: 'var(--line)' }} />
         </div>
         </section>
-      )}
-      <CapsuleGrid products={products} onQuickView={setSelectedProduct} />
-      {selectedProduct && (
-        <QuickViewModal
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-        />
       )}
     </>
   );
