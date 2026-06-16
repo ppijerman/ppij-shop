@@ -1,199 +1,171 @@
 # PPI Jerman — Merch Shop
 
-Official merchandise store for Perhimpunan Pelajar Indonesia di Jerman (PPI Jerman).
+Official merchandise store for **Perhimpunan Pelajar Indonesia di Jerman (PPI Jerman)** — the Indonesian student association in Germany.
+
+Customers can browse products, place orders, and submit bank transfer payment proofs. Admins review payments and manage order fulfillment through a built-in dashboard.
+
+---
+
+## Features
+
+- **Product catalog** — browse items with size, color, and fit-type (Regular / Oversized) variants
+- **Shopping cart** — persistent cart tied to signed-in user accounts
+- **Order placement** — variant-level stock management with price snapshotted at purchase
+- **Payment flow** — manual bank transfer upload; admins review and approve proofs
+- **Order tracking** — customers can follow their order from payment through shipping
+- **Admin dashboard** — separate views for payment review and order management (`ADMIN_KK` / `ADMIN_IT` roles)
+- **Role-based access control** — `BUYER`, `ADMIN_KK`, `ADMIN_IT` roles enforced server-side
 
 ---
 
 ## Tech Stack
 
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: Inline styles + CSS custom properties (design tokens)
-- **Fonts**: Google Fonts via `next/font/google` (Anton, Archivo, Caveat, JetBrains Mono, Instrument Serif)
-- **State**: React Context API (Cart, Toast, Tweaks)
-- **Images**: `next/image` dengan static assets di `/public`
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 14 (App Router, RSC) |
+| Language | TypeScript (strict mode) |
+| Database | PostgreSQL via `pg` driver with connection pooling |
+| Auth | Clerk (`@clerk/nextjs`) synced to local `users` table via webhook |
+| Styling | CSS custom properties — no Tailwind or CSS-in-JS |
+| Mutations | Next.js Server Actions — no separate API layer |
+| Migrations | dbmate |
+| Email | Resend (`@react-email/components`) |
+| Shipping | SendCloud API |
 
 ---
 
-## Memulai
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- PostgreSQL database
+- [Clerk](https://clerk.com) account
+- [Resend](https://resend.com) account (transactional email)
+- [SendCloud](https://www.sendcloud.com) account (shipping, optional for local dev)
+- [dbmate](https://github.com/amacneil/dbmate) for migrations
+
+### Installation
 
 ```bash
+git clone https://github.com/ppijerman/ppij-shop.git
+cd ppij-shop
 npm install
-npm run dev     # development server di http://localhost:3000
+```
+
+### Environment Variables
+
+Create a `.env.local` file in the project root:
+
+```env
+# Database
+DATABASE_URL=postgres://user:password@localhost:5432/ppij_shop
+
+# Clerk
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
+CLERK_SECRET_KEY=sk_...
+CLERK_WEBHOOK_SECRET=whsec_...
+
+# Email (Resend)
+RESEND_API_KEY=re_...
+RESEND_FROM_EMAIL=no-reply@shop.ppijerman.org
+ADMIN_KK_EMAIL=partnership@ppijerman.org
+
+# Shipping (SendCloud) — leave blank to disable shipping integration locally
+SENDCLOUD_API_KEY=
+SENDCLOUD_API_SECRET=
+SENDCLOUD_SENDER_ADDRESS_ID=
+SENDCLOUD_WEBHOOK_SECRET=
+SENDCLOUD_TEST_MODE=true
+
+# Cron job secret — used to authenticate the /api/cron/* endpoints
+CRON_SECRET=
+```
+
+### Database Setup
+
+```bash
+npm run db:up        # run all pending migrations
+npm run db:status    # check migration status
+npm run db:new       # create a new migration file
+npm run db:rollback  # roll back the last migration
+```
+
+### Run Locally
+
+```bash
+npm run dev     # starts dev server at http://localhost:3000
 npm run build   # production build
-npm run start   # production server
+npm run lint    # lint check
 ```
 
 ---
 
-## Struktur Proyek
+## Project Structure
 
 ```
 src/
-├── app/                          # Next.js App Router
-│   ├── globals.css               # CSS variables, keyframes, grain effect
-│   ├── layout.tsx                # Root layout: font, providers, PromoBar, Navbar, Footer
+├── app/                          # Next.js App Router pages
+│   ├── globals.css               # Design tokens (CSS variables)
+│   ├── layout.tsx                # Root layout
 │   ├── page.tsx                  # / — Home
-│   ├── catalog/page.tsx          # /catalog — Semua produk
-│   ├── product/[id]/page.tsx     # /product/[id] — Detail produk (dynamic route)
-│   ├── editorial/page.tsx        # /editorial — Editorial & foto
-│   ├── about/page.tsx            # /about — Tentang PPI Jerman
-│   ├── faq/page.tsx              # /faq — FAQ
-│   └── cart/page.tsx             # /cart — Keranjang belanja
+│   ├── catalog/                  # /catalog — Product listing
+│   ├── product/[slug]/           # /product/[slug] — Product detail
+│   ├── bundle/[slug]/            # /bundle/[slug] — Bundle detail
+│   ├── cart/                     # /cart — Shopping cart
+│   ├── account/orders/           # /account/orders — Order history & payment upload
+│   └── admin/[role]/             # /admin/kk | /admin/it — Admin dashboard
 │
-├── components/
-│   ├── layout/
-│   │   ├── PromoBar.tsx          # Marquee bar atas (server component)
-│   │   ├── Navbar.tsx            # Navigasi sticky + cart count
-│   │   └── Footer.tsx            # Footer dengan kolom link + sosial
-│   ├── home/
-│   │   ├── Hero.tsx              # Hero section dengan foto group
-│   │   ├── Editorial.tsx         # Editorial foto besar + CTA
-│   │   ├── PhotoStrip.tsx        # Kolase foto + spesifikasi produk
-│   │   └── CtaStrip.tsx          # Strip oranye "Represent. Wear Your Roots."
-│   ├── catalog/
-│   │   └── CapsuleGrid.tsx       # Grid produk dengan hover overlay + quick view
-│   ├── product/
-│   │   ├── ProductCrop.tsx       # Crop region dari grid foto (background-image)
-│   │   ├── ProductDetailPage.tsx # Halaman detail lengkap: galeri, varian, tab info
-│   │   └── QuickViewModal.tsx    # Modal quick view dari catalog
-│   ├── cart/
-│   │   └── CartView.tsx          # Halaman keranjang dengan summary
-│   ├── pages/
-│   │   ├── About.tsx             # Konten halaman About
-│   │   └── FAQ.tsx               # Accordion FAQ
-│   └── ui/
-│       ├── Toast.tsx             # Notifikasi "added to cart"
-│       └── tweaks/
-│           ├── TweaksPanel.tsx   # Floating panel untuk live tweaks
-│           └── TweakControls.tsx # Kontrol: TweakColor, TweakSlider, TweakToggle
+├── lib/
+│   ├── db.ts                     # DB pool & withTransaction()
+│   ├── auth.ts                   # requireAdmin(), requireOrderAdmin()
+│   ├── users.ts                  # getCurrentDbUserOrThrow()
+│   ├── actions/                  # Server Actions (auth-guarded mutations)
+│   └── dal/                      # Data Access Layer (raw SQL queries)
 │
-├── context/
-│   ├── CartContext.tsx           # State keranjang (add, update, remove)
-│   ├── ToastContext.tsx          # State notifikasi toast
-│   └── TweaksContext.tsx         # State tweaks UI (accent color, grid gap, badges)
-│
-├── data/
-│   └── products.ts               # Data 5 produk + array CATEGORIES
-│
-└── types/
-    └── index.ts                  # TypeScript types: Product, CartItem, Color, dll.
+├── components/                   # UI components
+├── context/                      # CartContext, ToastContext
+└── types/index.ts                # Shared TypeScript types
 ```
 
 ---
 
-## Halaman & Routes
+## Order Lifecycle
 
-| Route | Halaman | Keterangan |
-|---|---|---|
-| `/` | Home | Hero + grid produk + editorial + CTA |
-| `/catalog` | Shop | Grid semua produk |
-| `/product/[id]` | Detail Produk | Galeri, pilih warna/ukuran, add to cart, tab info |
-| `/editorial` | Editorial | Foto editorial + photo strip |
-| `/about` | About | Sejarah & info PPI Jerman |
-| `/faq` | FAQ | Accordion pertanyaan umum |
-| `/cart` | Keranjang | Daftar item + summary + checkout |
+```
+AWAITING_PAYMENT → PAYMENT_REVIEW → PROCESSING → SHIPPED → DONE
+                                                          ↘ CANCELLED
+```
+
+1. Customer places an order → status: `AWAITING_PAYMENT`
+2. Customer uploads bank transfer proof → status: `PAYMENT_REVIEW`
+3. Admin approves payment → status: `PROCESSING`
+4. Admin marks as shipped → status: `SHIPPED`
+5. Order delivered → status: `DONE`
 
 ---
 
-## Data Produk
+## Admin Roles
 
-Semua data produk ada di `src/data/products.ts`. Untuk menambah produk baru:
-
-```ts
-// src/data/products.ts
-{
-  id: 6,
-  no: '06',
-  category: 'T-SHIRT',          // 'T-SHIRT' | 'TOTE BAG'
-  name: 'Nama Produk',
-  subtitle: 'SUBTITLE — WARNA',
-  price: 25,
-  originalPrice: null,           // null jika tidak ada diskon
-  tag: 'NEW',                    // 'NEW' | 'BESTSELLER' | 'LIMITED' | null
-  colors: [{ name: 'White', hex: '#F5F1E6' }],
-  sizes: ['S', 'M', 'L', 'XL'], // atau ['ONE SIZE'] untuk tote bag
-  desc: 'Deskripsi produk...',
-  images: [],
-  primaryImg: 'tshirt_grid',    // 'tshirt_grid' | 'totebag_grid'
-  featurePos: { x: 50, y: 50 }, // posisi crop dari foto grid (0–100)
-}
-```
-
----
-
-## State Management
-
-### CartContext
-Menyimpan item keranjang di memory (reset saat refresh).
-
-```tsx
-const { cart, addToCart, updateCart, removeFromCart, cartCount, total } = useCart();
-```
-
-### ToastContext
-Menampilkan notifikasi toast singkat.
-
-```tsx
-const { showToast } = useToast();
-showToast('✦ added · Nama Produk');
-```
-
-### TweaksContext
-Live customization UI via floating panel (pojok kanan bawah → tombol "⚙ tweaks").
-
-```tsx
-const { tweaks } = useTweaks();
-// tweaks.accentColor  → warna aksen (default: #F39200)
-// tweaks.gridGap      → jarak antar card produk (default: 22px)
-// tweaks.showBadges   → tampilkan badge NEW/BESTSELLER/LIMITED (default: true)
-```
-
----
-
-## Design Tokens
-
-Semua warna dan font didefinisikan sebagai CSS custom properties di `globals.css`:
-
-```css
---cream: #EFEAE0      /* background utama */
---black: #0E0E0E      /* teks utama */
---orange: #F39200     /* aksen (dapat diubah via TweaksPanel) */
---muted: #8A8579      /* teks sekunder */
---line: rgba(14,14,14,0.14)  /* border/divider */
-
---font-display: Anton         /* heading besar */
---font-body: Archivo          /* teks umum */
---font-mono: JetBrains Mono   /* label, badge, kode */
---font-serif: Instrument Serif /* heading editorial */
---font-script: Caveat          /* aksen dekoratif */
-```
-
----
-
-## Assets
-
-Foto produk disimpan di `public/assets/v4/`:
-
-| File | Digunakan untuk |
+| Role | Access |
 |---|---|
-| `hero-group.jpeg` | Hero section |
-| `editorial-color.jpeg` | Section editorial |
-| `editorial-collage.jpeg` | Photo strip & halaman About |
-| `tshirt-grid.jpeg` | Sumber crop foto produk T-Shirt |
-| `totebag-grid.jpeg` | Sumber crop foto produk Tote Bag |
+| `BUYER` | Place orders, upload payment proofs, view own orders |
+| `ADMIN_KK` | Review and approve payment proofs |
+| `ADMIN_IT` | Manage orders, shipping, and product data |
 
-> **Cara kerja ProductCrop**: Alih-alih foto per produk, komponen `ProductCrop` melakukan crop region tertentu dari foto grid menggunakan `background-position`. Posisi diatur via `featurePos: { x, y }` di data produk.
+Admin routes live under `/admin/[role]` and are enforced inside Server Actions via `requireAdmin()` / `requireOrderAdmin()`.
 
 ---
 
-## TODO / Pengembangan Lanjutan
+## Contributing
 
-- [ ] Koneksi ke payment gateway (Stripe / PayPal)
-- [ ] Persistensi keranjang via `localStorage`
-- [ ] Halaman checkout
-- [ ] Filter & search produk di halaman catalog
-- [ ] Sistem autentikasi akun
-- [ ] CMS untuk manajemen produk (Sanity / Contentful)
-- [ ] Responsive / mobile layout
-- [ ] Foto produk individual (saat ini menggunakan crop dari foto grid)
+1. Branch off `master` — never push directly to `master`
+2. Open a pull request with a clear description of the change
+3. If your change includes a migration, include it in the same PR
+4. Get review and approval before merging
+
+---
+
+## License
+
+Internal project — PPI Jerman. Not open for public contributions at this time.
