@@ -21,7 +21,7 @@ export default function PhotoStrip() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 32 }}>
             <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, lineHeight: 1.7, color: 'var(--ink)' }}>
-              Setiap drop kami adalah hasil kolaborasi pelajar Indonesia di Jerman — dari illustrator, fotografer, hingga model. Setiap produk membawa cerita yang sangat dekat dengan kami.
+              Setiap drop kami adalah hasil kolaborasi pelajar Indonesia di Jerman dari illustrator, fotografer, hingga model. Setiap produk membawa cerita yang sangat dekat dengan kami.
             </p>
           </div>
         </div>

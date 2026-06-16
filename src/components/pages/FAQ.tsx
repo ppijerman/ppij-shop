@@ -44,9 +44,10 @@ export default function FAQ() {
                       src="/assets/v4/size-guide.jpeg"
                       alt="PPI Jerman merchandise size guide"
                       style={{
-                        width: '100%',
+                        width: '80%',
                         height: 'auto',
                         display: 'block',
+                        margin: '0 auto',
                       }}
                     />
                   </div>
