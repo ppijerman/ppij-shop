@@ -124,6 +124,7 @@ export async function getAllProductsWithVariants() {
     FROM products p
     LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
     WHERE p.is_active = true
+    ORDER BY p.display_order ASC
     `
   );
   return res.rows;
@@ -165,4 +166,12 @@ export async function getAllProductsWithVariantsAdmin() {
     `
   );
   return res.rows;
+}
+
+export async function reorderProducts(orderedIds: string[]) {
+  await Promise.all(
+    orderedIds.map((id, i) =>
+      db.query('UPDATE products SET display_order = $1 WHERE id = $2', [i, id])
+    )
+  );
 }

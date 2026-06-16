@@ -115,6 +115,7 @@ CREATE TABLE public.bundles (
     image_data bytea,
     image_content_type text,
     is_active boolean DEFAULT true NOT NULL,
+    display_order integer DEFAULT 0 NOT NULL,
     CONSTRAINT chk_bundle_original_price CHECK (((original_price IS NULL) OR (original_price >= price))),
     CONSTRAINT chk_bundle_price CHECK ((price >= (0)::numeric))
 );
@@ -255,7 +256,8 @@ CREATE TABLE public.products (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     weight_g numeric NOT NULL,
-    is_active boolean DEFAULT true NOT NULL
+    is_active boolean DEFAULT true NOT NULL,
+    display_order integer DEFAULT 0 NOT NULL
 );
 
 
@@ -712,4 +714,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260613210852'),
     ('20260614021425'),
     ('20260614212346'),
-    ('20260616025933');
+    ('20260616025933'),
+    ('20260616032043');

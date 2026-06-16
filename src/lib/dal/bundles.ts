@@ -20,6 +20,7 @@ export async function getAllBundles() {
       ) AS product_images
     FROM bundles b
     WHERE b.is_active = true
+    ORDER BY b.display_order ASC
   `)
   return res.rows
 }
@@ -134,4 +135,12 @@ export async function getAllBundleItems() {
     `
   );
   return res.rows;
+}
+
+export async function reorderBundles(orderedIds: string[]) {
+  await Promise.all(
+    orderedIds.map((id, i) =>
+      db.query('UPDATE bundles SET display_order = $1 WHERE id = $2', [i, id])
+    )
+  );
 }
