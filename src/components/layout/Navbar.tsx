@@ -155,12 +155,12 @@ export default function Navbar() {
             border: '1px solid var(--line)',
             boxShadow: '0 18px 40px rgba(14,14,14,0.12)',
             backdropFilter: 'blur(16px)',
-            padding: '8px',
+            padding: '10px',
             zIndex: 1100,
             animation: 'fadeIn 0.18s ease',
           }}
         >
-          <div style={{ padding: '10px 12px 12px', borderBottom: '1px solid var(--line)', marginBottom: 6 }}>
+          <div style={{ padding: '10px 12px 12px', marginBottom: 6 }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--muted)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
               Navigation
             </div>
@@ -186,9 +186,9 @@ export default function Navbar() {
             ))}
           </div>
           {!isAdmin && (
-            <div style={{ borderTop: '1px solid var(--line)', marginTop: 6, paddingTop: 6 }}>
+            <div style={{ marginTop: 6, paddingTop: 6 }}>
               <div onClick={() => setMenuOpen(false)}>
-                <CartPill count={cartCount} />
+                <CartPill count={cartCount} className="nav-cart-mobile" />
               </div>
             </div>
           )}

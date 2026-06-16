@@ -401,7 +401,7 @@ export default function CartView() {
                   {checkoutError ?? error}
                 </div>
               )}
-              <button disabled={isDisabled} type="submit" style={{ width: '100%', background: isDisabled ? 'var(--muted)' : 'var(--accent)', color: '#fff', border: 'none', padding: '15px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: isDisabled ? 'not-allowed' : 'pointer', marginTop: 18, borderRadius: 999, fontWeight: 600 }}>
+              <button disabled={isDisabled} type="submit" style={{ width: '100%', background: isDisabled ? 'var(--muted)' : 'var(--accent)', color: '#fff', border: 'none', padding: '18px 24px', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: isDisabled ? 'not-allowed' : 'pointer', marginTop: 18, borderRadius: 999, fontWeight: 600 }}>
                 {submitting ? 'creating order...' : 'place order ↗'}
               </button>
             </div>
