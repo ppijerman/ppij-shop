@@ -13,7 +13,7 @@ export default function AdminPaymentProofReceivedEmail(params: {
     <EmailLayout preview={`Payment proof from ${params.customerName}`}>
       <EmailHeading>New Payment Proof Submitted</EmailHeading>
       <EmailText>
-        <strong>{params.customerName}</strong> ({params.customerEmail}) has uploaded a payment proof for order <strong>#{params.orderId}</strong>.
+        <strong>{params.customerName}</strong> ({params.customerEmail}) has uploaded a payment proof for order <strong>#{params.orderId.slice(0, 8)}</strong>.
       </EmailText>
       <EmailDivider />
       <OrderItemsTable
@@ -23,7 +23,7 @@ export default function AdminPaymentProofReceivedEmail(params: {
         total={params.total}
       />
       <EmailDivider />
-      <EmailButton href="https://shop.ppijerman.org/admin/kk/payments">
+      <EmailButton href={`https://shop.ppijerman.org/admin/kk/orders/${params.orderId}`}>
         Review Payment
       </EmailButton>
     </EmailLayout>
