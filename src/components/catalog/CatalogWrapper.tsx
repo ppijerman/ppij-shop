@@ -46,7 +46,17 @@ export default function CatalogWrapper({ products, bundles }: { products: any[],
                       <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 22, marginBottom: 8 }}>{bundle.name.toUpperCase()}</h3>
                     </div>
                     <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 18 }}>€{Number(bundle.price).toFixed(2)}</span>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 18 }}>€{Number(bundle.price).toFixed(2)}</span>
+                        {bundle.original_price && (
+                          <>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, textDecoration: 'line-through', opacity: 0.5 }}>€{Number(bundle.original_price).toFixed(2)}</span>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, background: 'var(--accent)', color: '#fff', padding: '2px 6px', borderRadius: 999 }}>
+                              -{Math.round((1 - bundle.price / bundle.original_price) * 100)}%
+                            </span>
+                          </>
+                        )}
+                      </div>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', background: 'var(--accent)', color: '#fff', padding: '8px 14px', borderRadius: 999 }}>
                         view bundle ↗
                       </span>
