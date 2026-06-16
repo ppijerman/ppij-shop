@@ -1,7 +1,7 @@
 'use client';
 
 import { FitConfig, FitType } from '@/types';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 import { getCroppedFile } from '@/lib/image-utils';
@@ -74,6 +74,7 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
   });
   const [fileInputKey, setFileInputKey] = useState(0);
   const [attempted, setAttempted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [cropQueue, setCropQueue] = useState<{ src: string; name: string }[]>([]);
   const [cropQueueTotal, setCropQueueTotal] = useState(0);
@@ -116,6 +117,20 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
     setCroppedAreaPixels(null);
   };
 
+  const dragIndex = useRef<number | null>(null);
+
+  const handleDragEnter = (index: number) => {
+    const from = dragIndex.current;
+    if (from === null || from === index) return;
+    dragIndex.current = index;
+    setImages(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(index, 0, moved);
+      return next;
+    });
+  };
+
   const isEmpty = (val: any) => val === '' || val === null || val === undefined;
   const enabledFits = (['REGULAR', 'OVERSIZED'] as FitType[]).filter(f => fits[f].enabled);
   const fitsValid = enabledFits.length > 0 && enabledFits.every(f => !isEmpty(fits[f].price) && fits[f].sizes.length > 0);
@@ -150,20 +165,25 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
     if (isEmpty(formData.name) || isEmpty(formData.skuPrefix) || isEmpty(formData.weight) || isEmpty(formData.desc) || !colorsValid || !fitsValid) {
       return;
     }
-    const fd = new FormData(e.currentTarget);
-    images.forEach((img, i) => {
-      if (img.kind === 'existing') {
-        fd.set(`image_existing_id_${i}`, img.id);
-      } else {
-        fd.set(`image_file_${i}`, img.file);
-      }
-    });
-    fd.set('image_count', String(images.length));
-    const primaryIdx = images.findIndex(img => img.is_primary);
-    fd.set('image_primary', String(primaryIdx >= 0 ? primaryIdx : 0));
-    fd.set('colors', JSON.stringify(colors));
-    fd.set('fits', JSON.stringify(fits));
-    await action(fd);
+    setIsSubmitting(true);
+    try {
+      const fd = new FormData(e.currentTarget);
+      images.forEach((img, i) => {
+        if (img.kind === 'existing') {
+          fd.set(`image_existing_id_${i}`, img.id);
+        } else {
+          fd.set(`image_file_${i}`, img.file);
+        }
+      });
+      fd.set('image_count', String(images.length));
+      const primaryIdx = images.findIndex(img => img.is_primary);
+      fd.set('image_primary', String(primaryIdx >= 0 ? primaryIdx : 0));
+      fd.set('colors', JSON.stringify(colors));
+      fd.set('fits', JSON.stringify(fits));
+      await action(fd);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -447,15 +467,20 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
             return (
             <div
               key={imgUrl}
+              draggable
+              onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; dragIndex.current = index; }}
+              onDragEnter={() => handleDragEnter(index)}
+              onDragOver={e => e.preventDefault()}
+              onDragEnd={() => { dragIndex.current = null; }}
               style={{
                 border: `2px solid ${image.is_primary ? 'var(--black)' : 'var(--line)'}`,
                 borderRadius: 8,
-                overflow: 'hidden',
                 position: 'relative',
-                padding: 8
+                padding: 8,
+                cursor: 'grab',
               }}
             >
-              <img src={imgUrl} alt="Product preview" style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4 }} />
+              <img src={imgUrl} alt="Product preview" draggable={false} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4, pointerEvents: 'none' }} />
               {image.is_primary && (
                 <span 
                   style={{
@@ -520,23 +545,25 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
         </div>
       </div>
 
-      <button 
+      <button
         type="submit"
+        disabled={isSubmitting}
         style={{
           width: '100%',
           padding: '16px',
-          background: 'var(--black)',
+          background: isSubmitting ? 'var(--muted)' : 'var(--black)',
           color: 'var(--cream)',
           border: 'none',
           borderRadius: 8,
           fontFamily: 'var(--font-mono)',
           fontSize: 14,
           fontWeight: 700,
-          cursor: 'pointer',
-          letterSpacing: '0.1em'
+          cursor: isSubmitting ? 'not-allowed' : 'pointer',
+          letterSpacing: '0.1em',
+          transition: 'background 0.2s',
         }}
       >
-        {initialData ? 'SAVE CHANGES' : 'CREATE PRODUCT'}
+        {isSubmitting ? 'SAVING…' : (initialData ? 'SAVE CHANGES' : 'CREATE PRODUCT')}
       </button>
 
       {cropQueue.length > 0 && (

@@ -211,7 +211,8 @@ CREATE TABLE public.product_images (
     url text,
     is_primary boolean DEFAULT false NOT NULL,
     data bytea,
-    content_type text
+    content_type text,
+    sort_order integer DEFAULT 0 NOT NULL
 );
 
 
@@ -710,4 +711,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260613171034'),
     ('20260613210852'),
     ('20260614021425'),
-    ('20260614212346');
+    ('20260614212346'),
+    ('20260616025933');

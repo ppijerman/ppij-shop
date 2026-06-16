@@ -9,11 +9,15 @@ export async function getCroppedFile(src: string, crop: Area, originalName: stri
     img.onerror = reject;
     img.src = src;
   });
+  const MAX = 1600;
+  const scale = Math.min(1, MAX / Math.max(crop.width, crop.height));
+  const outW = Math.round(crop.width * scale);
+  const outH = Math.round(crop.height * scale);
   const canvas = document.createElement('canvas');
-  canvas.width = crop.width;
-  canvas.height = crop.height;
+  canvas.width = outW;
+  canvas.height = outH;
   const ctx = canvas.getContext('2d')!;
-  ctx.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+  ctx.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, outW, outH);
   return new Promise<File>((resolve, reject) =>
     canvas.toBlob(blob => {
       if (!blob) { reject(new Error('Failed to generate cropped image')); return; }
