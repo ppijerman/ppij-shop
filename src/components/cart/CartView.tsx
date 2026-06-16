@@ -291,8 +291,8 @@ export default function CartView() {
                   </div>
                   </>
                 ) : (
-                  <p style={{ color: 'var(--muted)', fontSize: 14, lineHeight: 1.6 }}>
-                    Pickup details will be confirmed by the PPIJ team after your payment proof is reviewed.
+                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', letterSpacing: '0.08em', marginBottom: 4 }}>
+                    Pickup location: <span style={{ color: 'var(--black)', fontWeight: 600 }}>Berlin, Germany</span>. Specific meetup point shared once payment is verified.
                   </p>
                 )}
               </section>
