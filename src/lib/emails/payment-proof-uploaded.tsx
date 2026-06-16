@@ -11,7 +11,7 @@ export default function PaymentProofUploadedEmail(params: {
         Hi {params.customerName}, we received your payment proof for order <strong>#{params.orderId.slice(0, 8)}</strong>.
       </EmailText>
       <EmailText>
-        Our team will review it within 1–2 business days. You will receive another email once it is approved.
+        Our team will review it within 1–3 business days. You will receive another email once it is approved.
       </EmailText>
       <EmailDivider />
       <EmailButton href={`https://shop.ppijerman.org/account/orders/${params.orderId}`}>
