@@ -39,7 +39,7 @@ export default function ProductForm({ initialData, action }: ProductFormProps) {
 
   const [fits, setFits] = useState<Record<FitType, FitConfig>>(() => {
     const initialFits: Record<FitType, FitConfig> = {
-      REGULAR: { enabled: true, price: 0, originalPrice: null, sizes: [], stock: {} },
+      REGULAR: { enabled: variants.length === 0, price: 0, originalPrice: null, sizes: [], stock: {} },
       OVERSIZED: { enabled: false, price: 0, originalPrice: null, sizes: [], stock: {} }
     };
 

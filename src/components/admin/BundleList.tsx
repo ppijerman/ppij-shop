@@ -136,7 +136,6 @@ function BundleTable({
             <tr key={bundle.id} style={{ borderBottom: '1px solid var(--line)' }}>
               <td style={tdStyle}>
                 <div style={{ fontWeight: 600, color: inactive ? 'var(--muted)' : 'inherit' }}>{bundle.name}</div>
-                <div style={{ fontSize: 11, color: 'var(--muted)' }}>{bundle.desc}</div>
               </td>
               <td style={tdStyle}>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -150,7 +149,14 @@ function BundleTable({
                 </div>
               </td>
               <td style={{ ...tdStyle, color: inactive ? 'var(--muted)' : 'inherit' }}>
-                €{Number(bundle.price).toFixed(2)}
+                {bundle.original_price ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span>€{Number(bundle.price).toFixed(2)}</span>
+                    <span style={{ fontSize: 11, textDecoration: 'line-through', color: 'var(--muted)' }}>€{Number(bundle.original_price).toFixed(2)}</span>
+                  </div>
+                ) : (
+                  <>€{Number(bundle.price).toFixed(2)}</>
+                )}
               </td>
               <td style={tdStyle}>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
