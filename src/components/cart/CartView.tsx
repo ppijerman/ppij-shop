@@ -291,9 +291,32 @@ export default function CartView() {
                   </div>
                   </>
                 ) : (
-                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', letterSpacing: '0.08em', marginBottom: 4 }}>
-                    Pickup location: <span style={{ color: 'var(--black)', fontWeight: 600 }}>Berlin, Germany</span>. Specific meetup point shared once payment is verified.
-                  </p>
+                   <div style={{ marginBottom: 4 }}>
+                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', letterSpacing: '0.08em', marginBottom: 8 }}>
+                      Pickup locations:
+                    </p>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {[
+                        { city: 'Munich, U3 Olympiazentrum', note: null },
+                        { city: 'Hamburg', note: 'Only on 12.09.' },
+                        { city: 'Berlin', note: 'Only on 20.09.' },
+                        { city: 'Kiel', note: 'Only on 26.09.' },
+                      ].map((loc) => (
+                        <li key={loc.city} style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--black)', letterSpacing: '0.08em', display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                          <span style={{ color: 'var(--accent)' }}>•</span>
+                          <span style={{ fontWeight: 600 }}>
+                            {loc.city}
+                            {loc.note && (
+                              <span style={{ fontWeight: 400, color: 'var(--muted)' }}> ({loc.note})</span>
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', letterSpacing: '0.08em', marginTop: 10 }}>
+                      Specific meetup point shared once payment is verified.
+                    </p>
+                  </div>
                 )}
               </section>
 
