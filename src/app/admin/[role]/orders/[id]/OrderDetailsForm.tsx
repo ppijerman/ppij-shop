@@ -11,6 +11,7 @@ import {
   updatePickupDetailsAction,
   updateShippingTrackingNumberAction,
 } from '@/lib/actions/orders';
+import { labelForPickupLocation } from '@/lib/pickup';
 
 const SHIPPING_PROVIDERS = ['DHL', 'Hermes', 'DPD', 'UPS', 'FedEx', 'Deutsche Post', 'Pickup / Manual'] as const;
 
@@ -800,10 +801,16 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
           <h2 style={h2Style}>Buyer Information</h2>
           <div style={{ background: 'white', padding: 24, borderRadius: 8, border: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 16 }}>
             {initialOrder.delivery_type === 'PICKUP' ? (
-              <div>
-                <p style={infoLabel}>Delivery Type</p>
-                <p style={infoValue}>Pickup</p>
-              </div>
+              <>
+                <div>
+                  <p style={infoLabel}>Delivery Type</p>
+                  <p style={infoValue}>Pickup</p>
+                </div>
+                <div>
+                  <p style={infoLabel}>Pickup Location</p>
+                  <p style={infoValue}>{labelForPickupLocation(initialOrder.pickup_location)}</p>
+                </div>
+              </>
             ) : (
               <>
                 <div>

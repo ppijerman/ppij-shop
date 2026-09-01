@@ -13,6 +13,7 @@ const ORDER_COLUMNS = `
   o.shipping_tracking_number,
   o.shipping_provider,
   o.pickup_details,
+  o.pickup_location,
   o.payment_expires_at,
   o.created_at,
   o.updated_at,

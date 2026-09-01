@@ -2,6 +2,7 @@ import { getOrderByIdForUser, getOrderItems, getCancellationNote } from '@/lib/d
 import { getCurrentDbUserOrThrow } from '@/lib/users';
 import { getPaymentInstruction } from '@/lib/payment';
 import { getOrderStatusLabel } from '@/lib/orderStatus';
+import { labelForPickupLocation } from '@/lib/pickup';
 import PaymentProofUploadForm from '@/components/account/PaymentProofUploadForm';
 import PaymentProofPreviewButton from '@/components/account/PaymentProofPreviewButton';
 import CancelOrderButton from '@/components/account/CancelOrderButton';
@@ -126,9 +127,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               {order.delivery_type === 'PICKUP' ? 'PICKUP LOCATION' : 'DELIVERY ADDRESS'}
             </h3>
             {order.delivery_type === 'PICKUP' ? (
-              <p style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-line' }}>
-                {order.pickup_details ?? 'Pickup details will be confirmed after payment review.'}
-              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <p style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.6 }}>
+                  {labelForPickupLocation(order.pickup_location)}
+                </p>
+                <p style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-line', opacity: 0.8 }}>
+                  {order.pickup_details ?? 'Pickup details will be confirmed after payment review.'}
+                </p>
+              </div>
             ) : (
               <div style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.6 }}>
                 <p>{order.delivery_address?.street}</p>
