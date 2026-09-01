@@ -311,7 +311,7 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
 
     const orderResult = await query(
       `
-      INSERT INTO orders (user_id, status, total_price, delivery_address, delivery_type, payment_method, payment_expires_at, shipping_cost, shipping_method_id)
+      INSERT INTO orders (user_id, status, total_price, delivery_address, delivery_type, payment_method, payment_expires_at, shipping_cost, shipping_method_id, pickup_location)
       VALUES ($1, 'AWAITING_PAYMENT', $2, $3::jsonb, $4::delivery_type, $5::payment_method, ${getPaymentExpiresAtExpression()}, $6, $7, $8)
       RETURNING id
       `,

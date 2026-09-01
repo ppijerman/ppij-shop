@@ -126,7 +126,7 @@ export default function CartView() {
             <input type="hidden" name="deliveryType" value={deliveryType} />
             <input type="hidden" name="paymentMethod" value="IBAN" />
             <input type="hidden" name="shippingMethodId" value={deliveryType === 'DELIVERY' ? (selectedMethodId ?? '') : ''} />
-            <input type="hidden" name="pickuplocation" value={deliveryType === 'PICKUP' ? pickupLocation : ''} />
+            <input type="hidden" name="pickupLocation" value={deliveryType === 'PICKUP' ? pickupLocation : ''} />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
               <div>

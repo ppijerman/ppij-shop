@@ -196,6 +196,7 @@ CREATE TABLE public.orders (
     shipping_cost numeric DEFAULT 0 NOT NULL,
     shipping_method_id text,
     sendcloud_parcel_id bigint,
+    pickup_location text,
     CONSTRAINT chk_delivery_address_logic CHECK (((delivery_type = 'PICKUP'::public.delivery_type) OR ((delivery_type = 'DELIVERY'::public.delivery_type) AND (delivery_address ? 'street'::text) AND (delivery_address ? 'city'::text) AND (delivery_address ? 'postcode'::text) AND (delivery_address ? 'country'::text)))),
     CONSTRAINT chk_order_total_price CHECK ((total_price >= (0)::numeric)),
     CONSTRAINT orders_payment_method_iban_only CHECK ((payment_method = 'IBAN'::public.payment_method))
@@ -715,4 +716,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260614021425'),
     ('20260614212346'),
     ('20260616025933'),
-    ('20260616032043');
+    ('20260616032043'),
+    ('20260901160556');
