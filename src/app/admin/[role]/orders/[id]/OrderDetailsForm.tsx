@@ -807,8 +807,8 @@ export default function OrderDetailsForm({ initialOrder, items, statusLogs }: { 
                   <p style={infoValue}>Pickup</p>
                 </div>
                 <div>
-                  <p style={infoLabel}>Buyer&apos;s Pickup Location</p>
-                  <p style={infoLabel}>{labelForPickupLocation(initialOrder.pickup_location)}</p>
+                  <p style={infoLabel}>Pickup Location</p>
+                  <p style={infoValue}>{labelForPickupLocation(initialOrder.pickup_location)}</p>
                 </div>
               </>
             ) : (
