@@ -9,6 +9,7 @@ import type { DeliveryAddress, PaymentMethod } from '@/types';
 import { SendOrderConfirmationEmail, SendOrderCancelledEmail, SendOrderExpiredEmail, SendOrderDoneEmail, SendPaymentApprovedEmail, SendPaymentProofUploadedEmail, SendPaymentRejectedEmail, SendOrderShippedEmail, SendAdminPaymentProofNotificationEmail, SendPickupLocationSetEmail } from '@/lib/actions/send-order-email';
 import { createParcel, getShippingMethods, getParcel } from '@/lib/sendcloud';
 import { FREE_SHIPPING_THRESHOLD } from '@/lib/constants';
+import { isPickupLocation } from '../pickup';
 
 const ORDER_STATUSES = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'] as const;
 const PAYMENT_METHODS = ['IBAN'] as const;
@@ -143,6 +144,15 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
   }
 
   const isDelivery = deliveryTypeInput === 'DELIVERY';
+
+  let pickupLocation: string | null = null;
+  if (!isDelivery) {
+    const pickupInput = formString(formData, 'pickupLocation');
+    if (!isPickupLocation(pickupInput)) {
+      return { ok: false, code: 'VALIDATION_ERROR', message: 'Choose a pickup location.' };
+    }
+    pickupLocation = pickupInput;
+  }
 
   let deliveryAddress: DeliveryAddress | null = null;
   if (isDelivery) {
@@ -302,7 +312,7 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
     const orderResult = await query(
       `
       INSERT INTO orders (user_id, status, total_price, delivery_address, delivery_type, payment_method, payment_expires_at, shipping_cost, shipping_method_id)
-      VALUES ($1, 'AWAITING_PAYMENT', $2, $3::jsonb, $4::delivery_type, $5::payment_method, ${getPaymentExpiresAtExpression()}, $6, $7)
+      VALUES ($1, 'AWAITING_PAYMENT', $2, $3::jsonb, $4::delivery_type, $5::payment_method, ${getPaymentExpiresAtExpression()}, $6, $7, $8)
       RETURNING id
       `,
       [
@@ -313,6 +323,7 @@ export async function createOrder(formData: FormData): Promise<CreateOrderResult
         paymentMethodInput,
         shippingCost,
         shippingMethodId,
+        pickupLocation,
       ],
     );
     const orderId = orderResult.rows[0].id;

@@ -11,6 +11,7 @@ import { getPaymentInstruction } from '@/lib/payment';
 import { FREE_SHIPPING_THRESHOLD } from '@/lib/constants';
 
 import type { ShippingOption } from '@/lib/actions/orders';
+import { PICKUP_LOCATIONS } from '@/lib/pickup';
 
 type DeliveryType = 'PICKUP' | 'DELIVERY';
 
@@ -19,6 +20,7 @@ export default function CartView() {
   const { showToast } = useToast();
   const router = useRouter();
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('PICKUP');
+  const [pickupLocation, setPickupLocation] = useState<string>('');
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [legalAccepted, setLegalAccepted] = useState(false);
   const [legalError, setLegalError] = useState<string | null>(null);
@@ -29,7 +31,9 @@ export default function CartView() {
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingError, setShippingError] = useState<string | null>(null);
   const paymentInstruction = getPaymentInstruction('IBAN');
-  const isDisabled = submitting || loading || shippingLoading || (deliveryType === 'DELIVERY' && shippingOptions.length === 0);
+  const isDisabled = submitting || loading || shippingLoading 
+    || (deliveryType === 'DELIVERY' && shippingOptions.length === 0)
+    || (deliveryType === 'PICKUP' && !pickupLocation);
 
   async function handleCheckout(formData: FormData) {
     setSubmitting(true);
@@ -122,6 +126,7 @@ export default function CartView() {
             <input type="hidden" name="deliveryType" value={deliveryType} />
             <input type="hidden" name="paymentMethod" value="IBAN" />
             <input type="hidden" name="shippingMethodId" value={deliveryType === 'DELIVERY' ? (selectedMethodId ?? '') : ''} />
+            <input type="hidden" name="pickuplocation" value={deliveryType === 'PICKUP' ? pickupLocation : ''} />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
               <div>
@@ -292,27 +297,20 @@ export default function CartView() {
                   </>
                 ) : (
                    <div style={{ marginBottom: 4 }}>
-                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', letterSpacing: '0.08em', marginBottom: 8 }}>
+                    <label style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', letterSpacing: '0.08em', marginBottom: 8 }}>
                       Pickup locations:
-                    </p>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      {[
-                        { city: 'Munich, U3 Olympiazentrum', note: null },
-                        { city: 'Hamburg', note: 'Only on 12.09.' },
-                        { city: 'Berlin', note: 'Only on 20.09.' },
-                        { city: 'Kiel', note: 'Only on 26.09.' },
-                      ].map((loc) => (
-                        <li key={loc.city} style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--black)', letterSpacing: '0.08em', display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                          <span style={{ color: 'var(--accent)' }}>•</span>
-                          <span style={{ fontWeight: 600 }}>
-                            {loc.city}
-                            {loc.note && (
-                              <span style={{ fontWeight: 400, color: 'var(--muted)' }}> ({loc.note})</span>
-                            )}
-                          </span>
-                        </li>
+                    </label>
+                    <select
+                      value={pickupLocation}
+                      onChange={(e) => setPickupLocation(e.target.value)}
+                      required
+                      style={{ width: '100%', padding: '12px', fontFamily: 'var(--font-mono)', fontSize: 12, border: '1px solid var(--line)', background: 'white', color: 'var(--black)' }}
+                    >
+                      <option value="" disabled>Select a locations...</option>
+                      {PICKUP_LOCATIONS.map((loc) => (
+                        <option key={loc.value} value={loc.value}>{loc.label}</option>
                       ))}
-                    </ul>
+                    </select>
                     <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', letterSpacing: '0.08em', marginTop: 10 }}>
                       Specific meetup point shared once payment is verified.
                     </p>
