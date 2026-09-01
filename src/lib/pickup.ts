@@ -1,5 +1,5 @@
 export const PICKUP_LOCATIONS = [
-    { value: 'MUNICH', label: 'MUNICH, U3 Olympiazentrum' },
+    { value: 'MUNICH', label: 'Munich, U3 Olympiazentrum' },
     { value: 'HAMBURG', label: 'Hamburg (only on 12.09.2026)' },
     { value: 'BERLIN', label: 'Berlin (only on 20.09.2026)' },
     { value: 'KIEL', label: 'Kiel (only on 26.09.2026)' }

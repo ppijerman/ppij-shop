@@ -9,7 +9,7 @@ import type { DeliveryAddress, PaymentMethod } from '@/types';
 import { SendOrderConfirmationEmail, SendOrderCancelledEmail, SendOrderExpiredEmail, SendOrderDoneEmail, SendPaymentApprovedEmail, SendPaymentProofUploadedEmail, SendPaymentRejectedEmail, SendOrderShippedEmail, SendAdminPaymentProofNotificationEmail, SendPickupLocationSetEmail } from '@/lib/actions/send-order-email';
 import { createParcel, getShippingMethods, getParcel } from '@/lib/sendcloud';
 import { FREE_SHIPPING_THRESHOLD } from '@/lib/constants';
-import { isPickupLocation } from '../pickup';
+import { isPickupLocation } from '@/lib/pickup';
 
 const ORDER_STATUSES = ['AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PROCESSING', 'SHIPPED', 'DONE', 'CANCELLED'] as const;
 const PAYMENT_METHODS = ['IBAN'] as const;
