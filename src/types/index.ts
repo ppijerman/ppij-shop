@@ -137,6 +137,7 @@ export interface Order {
   shipping_tracking_number: string | null;
   shipping_provider: string | null;
   pickup_details: string | null;
+  pickup_location: string | null;
   created_at: string;
   updated_at: string;
   items: OrderItem[];

@@ -297,16 +297,17 @@ export default function CartView() {
                   </>
                 ) : (
                    <div style={{ marginBottom: 4 }}>
-                    <label style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', letterSpacing: '0.08em', marginBottom: 8 }}>
-                      Pickup locations:
+                    <label htmlFor="pickup-location" style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', letterSpacing: '0.08em', marginBottom: 8 }}>
+                      Pickup location:
                     </label>
                     <select
+                      id="pickup-location"
                       value={pickupLocation}
                       onChange={(e) => setPickupLocation(e.target.value)}
                       required
                       style={{ width: '100%', padding: '12px', fontFamily: 'var(--font-mono)', fontSize: 12, border: '1px solid var(--line)', background: 'white', color: 'var(--black)' }}
                     >
-                      <option value="" disabled>Select a locations...</option>
+                      <option value="" disabled>Select a location...</option>
                       {PICKUP_LOCATIONS.map((loc) => (
                         <option key={loc.value} value={loc.value}>{loc.label}</option>
                       ))}
