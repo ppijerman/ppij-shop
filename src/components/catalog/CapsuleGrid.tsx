@@ -16,7 +16,7 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
     <section id="catalog" style={{ background: 'var(--cream)', padding: '60px 28px 40px' }}>
       <div style={{ maxWidth: 1440, margin: '0 auto' }}>
         <div style={{ textAlign: 'left', marginBottom: 32 }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.3em', textTransform: 'uppercase',marginBottom: 8 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 8 }}>
             —— essentials ——
           </div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px, 6vw, 48px)', color: 'var(--black)' }}>
@@ -28,11 +28,11 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
           {products.map((product, i) => {
             const isHovered = hoveredId === product.id;
             const categoryLabel = product.category === 'TOTEBAG' ? 'TOTE BAG' : 'T-SHIRT';
-            
+
             const prices = product.variants?.map((v: any) => Number(v.price)) || [0];
             const minPrice = Math.min(...prices);
             const hasPriceRange = new Set(prices).size > 1;
-            
+
             const originalPrices = product.variants?.map((v: any) => Number(v.original_price)).filter((p: number) => p > 0) || [];
             const minOriginalPrice = originalPrices.length > 0 ? Math.min(...originalPrices) : null;
 
@@ -47,20 +47,43 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
               >
                 <Link href={`/product/${product.slug}`} style={{ textDecoration: 'none', display: 'block' }}>
                   <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--cream-2)' }}>
-                    <ProductCrop src={product.primary_image} height={340} />
+                    <div style={{ filter: isSoldOut ? 'grayscale(40%) opacity(0.85)' : 'none', transition: 'filter 0.2s' }}>
+                      <ProductCrop src={product.primary_image} height={340} />
+                    </div>
+
                     {product.tag && (
-                      <div style={{ position: 'absolute', top: 10, left: 10, background: 'var(--cream)', padding: '4px 9px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--accent-deep)', border: '1px solid var(--accent-deep)' }}>
+                      <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 2, background: 'var(--cream)', padding: '4px 9px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--accent-deep)', border: '1px solid var(--accent-deep)' }}>
                         {product.tag}
                       </div>
                     )}
+
+                    {/* Restyled Sold Out Badge */}
                     {isSoldOut && (
-                      <div style={{ position: 'absolute', top: 10, right: 10, background: 'var(--black)', color: 'var(--cream)', padding: '5px 10px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 700 }}>
-                        sold out
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 10,
+                          right: 10,
+                          zIndex: 2,
+                          background: '#e53e3e',
+                          color: '#ffffff',
+                          padding: '4px 10px',
+                          borderRadius: 999,
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 9,
+                          fontWeight: 700,
+                          letterSpacing: '0.15em',
+                          textTransform: 'uppercase',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                        }}
+                      >
+                        Sold Out
                       </div>
                     )}
-                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(14,14,14,0.55)', backdropFilter: 'blur(2px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, opacity: isHovered ? 1 : 0, transition: 'opacity 0.25s' }}>
-                      <span style={{ background: 'var(--accent)', color: '#fff', padding: '10px 18px', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
-                        view details <span style={{ fontSize: 13 }}>↗</span>
+
+                    <div style={{ position: 'absolute', inset: 0, zIndex: 3, background: 'rgba(14,14,14,0.55)', backdropFilter: 'blur(2px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, opacity: isHovered ? 1 : 0, transition: 'opacity 0.25s' }}>
+                      <span style={{ background: isSoldOut ? '#4a5568' : 'var(--accent)', color: '#fff', padding: '10px 18px', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
+                        {isSoldOut ? 'sold out' : <>view details <span style={{ fontSize: 13 }}>↗</span></>}
                       </span>
                       <button
                         onClick={e => { e.preventDefault(); e.stopPropagation(); onQuickView(product); }}
