@@ -29,14 +29,17 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
             const isHovered = hoveredId === product.id;
             const categoryLabel = product.category === 'TOTEBAG' ? 'TOTE BAG' : 'T-SHIRT';
 
-            const prices = product.variants?.map((v: any) => Number(v.price)) || [0];
-            const minPrice = Math.min(...prices);
+            const variants = Array.isArray(product.variants) ? product.variants : [];
+            const prices = variants.map((v: any) => Number(v.price));
+            const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
             const hasPriceRange = new Set(prices).size > 1;
 
-            const originalPrices = product.variants?.map((v: any) => Number(v.original_price)).filter((p: number) => p > 0) || [];
+            const originalPrices = variants.map((v: any) => Number(v.original_price)).filter((p: number) => p > 0);
             const minOriginalPrice = originalPrices.length > 0 ? Math.min(...originalPrices) : null;
 
-            const isSoldOut = !product.variants?.some((variant: any) => Number(variant.stock) > 0);
+            // Falsely "Sold Out" fix: pastikan varian ada sebelum mengecek stok
+            const hasVariants = variants.length > 0;
+            const isSoldOut = hasVariants && !variants.some((variant: any) => Number(variant.stock) > 0);
 
             return (
               <div
@@ -57,14 +60,14 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
                       </div>
                     )}
 
-                    {/* Restyled Sold Out Badge */}
+                    {/* zIndex: 4 agar badge tidak tertutup oleh hover overlay (zIndex: 3) */}
                     {isSoldOut && (
                       <div
                         style={{
                           position: 'absolute',
                           top: 10,
                           right: 10,
-                          zIndex: 2,
+                          zIndex: 4,
                           background: '#e53e3e',
                           color: '#ffffff',
                           padding: '4px 10px',
@@ -82,8 +85,8 @@ export default function CapsuleGrid({ products, onQuickView }: CapsuleGridProps)
                     )}
 
                     <div style={{ position: 'absolute', inset: 0, zIndex: 3, background: 'rgba(14,14,14,0.55)', backdropFilter: 'blur(2px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, opacity: isHovered ? 1 : 0, transition: 'opacity 0.25s' }}>
-                      <span style={{ background: isSoldOut ? '#4a5568' : 'var(--accent)', color: '#fff', padding: '10px 18px', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
-                        {isSoldOut ? 'sold out' : <>view details <span style={{ fontSize: 13 }}>↗</span></>}
+                      <span style={{ background: 'var(--accent)', color: '#fff', padding: '10px 18px', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
+                        view details <span style={{ fontSize: 13 }}>↗</span>
                       </span>
                       <button
                         onClick={e => { e.preventDefault(); e.stopPropagation(); onQuickView(product); }}

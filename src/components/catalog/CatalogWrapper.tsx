@@ -11,18 +11,18 @@ export default function CatalogWrapper({ products, bundles }: { products: any[],
   return (
     <>
       <CapsuleGrid products={products} onQuickView={setSelectedProduct} />
-        {selectedProduct && (
-          <QuickViewModal
-            product={selectedProduct}
-            onClose={() => setSelectedProduct(null)}
-          />
+      {selectedProduct && (
+        <QuickViewModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
       )}
       {bundles.length > 0 && (
         <section style={{ padding: '80px 28px 40px' }}>
           <div style={{ maxWidth: 1440, margin: '0 auto' }}>
             <div style={{ marginBottom: 32 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-deep)', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 8 }}>
-                -- excluesive deals --
+                -- exclusive deals --
               </div>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px, 6vw, 48px)', color: 'var(--black)' }}>
                 CURATED BUNDLES<span style={{ color: 'var(--accent)' }}>.</span>
@@ -31,11 +31,7 @@ export default function CatalogWrapper({ products, bundles }: { products: any[],
 
             <div className="bundle-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 20 }}>
               {bundles.map(bundle => {
-                // Bundle is sold out if any associated variant has stock <= 0
-                const bundleItems: any[] = bundle.items ?? bundle.variants ?? bundle.bundle_items ?? [];
-                const isSoldOut = bundle.is_sold_out ?? (
-                  bundleItems.length > 0 && bundleItems.some((item: any) => (item.stock ?? item.variant_stock ?? 0) <= 0)
-                );
+                const isSoldOut = Boolean(bundle.is_sold_out);
 
                 return (
                   <Link
@@ -55,7 +51,6 @@ export default function CatalogWrapper({ products, bundles }: { products: any[],
                     onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-5px)'}
                     onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
                   >
-                    {/* Sold Out Badge */}
                     {isSoldOut && (
                       <div
                         style={{
@@ -121,7 +116,7 @@ export default function CatalogWrapper({ products, bundles }: { products: any[],
                             fontSize: 11,
                             letterSpacing: '0.2em',
                             textTransform: 'uppercase',
-                            background: isSoldOut ? '#4a5568' : 'var(--accent)',
+                            background: 'var(--accent)',
                             color: '#fff',
                             padding: '11px 18px',
                             borderRadius: 999,
@@ -131,7 +126,7 @@ export default function CatalogWrapper({ products, bundles }: { products: any[],
                             flexShrink: 0
                           }}
                         >
-                          {isSoldOut ? 'sold out' : <>view bundle <span style={{ fontSize: 14 }}>↗</span></>}
+                          view bundle <span style={{ fontSize: 14 }}>↗</span>
                         </span>
                       </div>
                     </div>
