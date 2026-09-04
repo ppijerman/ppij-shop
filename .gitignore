@@ -41,4 +41,3 @@ next-env.d.ts
 
 # azure deployment docs
 /AZURE_DEPLOY.md
-.env.local

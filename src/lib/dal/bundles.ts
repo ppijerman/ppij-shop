@@ -18,14 +18,6 @@ export async function getAllBundles() {
           LIMIT 3
         ) subq
       ) AS product_images,
-      EXISTS (
-        SELECT 1
-        FROM bundle_items bi
-        JOIN product_variants pv ON bi.variant_id = pv.id
-        WHERE bi.bundle_id = b.id AND pv.stock <= 0
-      ) OR NOT EXISTS (
-        SELECT 1 FROM bundle_items bi WHERE bi.bundle_id = b.id
-      ) AS is_sold_out
     FROM bundles b
     WHERE b.is_active = true
     ORDER BY b.display_order ASC
