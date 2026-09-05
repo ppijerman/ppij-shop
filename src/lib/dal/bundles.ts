@@ -18,14 +18,20 @@ export async function getAllBundles(includeInactive = false) {
           LIMIT 3
         ) subq
       ) AS product_images,
-      EXISTS (
-        SELECT 1
-        FROM bundle_items bi
-        JOIN product_variants pv ON bi.variant_id = pv.id
-        WHERE bi.bundle_id = b.id AND (pv.stock <= 0 OR pv.stock IS NULL)
-      ) OR NOT EXISTS (
+      (
+  -- Cek apakah ada produk dalam bundle yang SEMUA variannya habis (stok = 0 / NULL)
+    EXISTS (
+      SELECT 1
+      FROM bundle_items bi
+      JOIN product_variants pv ON bi.variant_id = pv.id
+      WHERE bi.bundle_id = b.id
+      GROUP BY pv.product_id
+      HAVING COALESCE(SUM(CASE WHEN pv.stock > 0 THEN pv.stock ELSE 0 END), 0) = 0
+    )
+      OR NOT EXISTS (
         SELECT 1 FROM bundle_items bi WHERE bi.bundle_id = b.id
-      ) AS is_sold_out
+    )
+  ) AS is_sold_out
     FROM bundles b
     ${includeInactive ? '' : 'WHERE b.is_active = true'}
     ORDER BY ${includeInactive ? 'b.is_active DESC, b.created_at DESC' : 'b.display_order ASC'}
