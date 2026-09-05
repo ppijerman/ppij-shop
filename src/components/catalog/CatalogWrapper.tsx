@@ -47,7 +47,7 @@ export default function CatalogWrapper({ products, bundles }: { products: any[],
                       flexDirection: 'column',
                       transition: 'transform 0.2s',
                       overflow: 'hidden',
-                      opacity: isSoldOut ? 0.75 : 1
+                      opacity: 1
                     }}
                     onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-5px)'}
                     onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}

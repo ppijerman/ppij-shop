@@ -1,11 +1,11 @@
-import { getAllBundlesAdmin, getAllBundleItems } from '@/lib/dal/bundles';
+import { getAllBundles, getAllBundleItems } from '@/lib/dal/bundles';
 import Link from 'next/link';
 import BundleList from '@/components/admin/BundleList';
 import { deleteBundle, toggleBundleActiveAction } from '@/lib/actions/bundles';
 
 export default async function AdminBundles({ params }: { params: Promise<{ role: string }> }) {
   const { role } = await params;
-  const bundles = await getAllBundlesAdmin();
+  const bundles = await getAllBundles(true);
   const bundleItems = await getAllBundleItems();
 
   async function deleteBundleAction(id: string) {

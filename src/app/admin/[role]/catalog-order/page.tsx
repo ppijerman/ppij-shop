@@ -1,11 +1,11 @@
 import { getAllProductsWithVariantsAdmin } from '@/lib/dal/products';
-import { getAllBundlesAdmin } from '@/lib/dal/bundles';
+import { getAllBundles } from '@/lib/dal/bundles';
 import CatalogOrderManager from '@/components/admin/CatalogOrderManager';
 
 export default async function CatalogOrderPage() {
   const [products, bundles] = await Promise.all([
     getAllProductsWithVariantsAdmin(),
-    getAllBundlesAdmin(),
+    getAllBundles(true),
   ]);
 
   products.sort((a: any, b: any) => a.display_order - b.display_order);
