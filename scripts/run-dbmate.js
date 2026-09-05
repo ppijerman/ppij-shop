@@ -46,8 +46,9 @@ const parseEnvValue = (envFileContent, key) => {
 };
 
 const runDbmate = (args, databaseUrl) => {
-  const dbmateExecutablePath = process.platform === 'win32'
-    ? path.join(os.homedir(), 'scoop', 'shims', 'dbmate.exe')
+  const scoopDbmatePath = path.join(os.homedir(), 'scoop', 'shims', 'dbmate.exe');
+  const dbmateExecutablePath = process.platform === 'win32' && fs.existsSync(scoopDbmatePath)
+    ? scoopDbmatePath
     : 'dbmate';
 
   const result = spawnSync(dbmateExecutablePath, args, {
