@@ -23,8 +23,10 @@ export async function getAllBundles(includeInactive = false) {
         FROM bundle_items bi
         JOIN product_variants pv ON bi.variant_id = pv.id
         WHERE bi.bundle_id = b.id
-        GROUP BY pv.product_id
-        HAVING MAX(pv.stock) <= 0
+        AND NOT EXISTS (
+          SELECT 1 FROM product_variants all_pv
+          WHERE all_pv.product_id = pv.product_id AND all_pv.stock > 0
+        )
       ) AS is_sold_out
     FROM bundles b
     ${includeInactive ? '' : 'WHERE b.is_active = true'}
